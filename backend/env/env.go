@@ -60,12 +60,6 @@ func (o *env) Load() error {
 			return
 		}
 
-		dbHost, e := parseToString("DB_HOST")
-		if e != nil {
-			err = e
-			return
-		}
-
 		dbName, e := parseToString("DB_NAME")
 		if e != nil {
 			err = e
@@ -80,7 +74,8 @@ func (o *env) Load() error {
 			authCookieDomain:   parseToStringFallback("AUTH_COOKIE_DOMAIN", "localhost"),
 			dbUser:             dbUser,
 			dbPass:             dbPass,
-			dbHost:             dbHost,
+			dbHost:             parseToStringFallback("DB_HOST", "localhost"),
+			dbPort:             parseToStringFallback("DB_PORT", "5432"),
 			dbName:             dbName,
 		}
 	})

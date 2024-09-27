@@ -9,6 +9,7 @@ type values struct {
 	dbUser             string
 	dbPass             string
 	dbHost             string
+	dbPort             string
 	dbName             string
 }
 
@@ -21,6 +22,7 @@ type Values interface {
 	DBUser() string
 	DBPass() string
 	DBHost() string
+	DBPort() string
 	DBName() string
 }
 
@@ -54,6 +56,10 @@ func (v *values) DBPass() string {
 
 func (v *values) DBHost() string {
 	return v.dbHost
+}
+
+func (v *values) DBPort() string {
+	return v.dbPort
 }
 
 func (v *values) DBName() string {
