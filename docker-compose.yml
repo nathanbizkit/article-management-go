@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/env/.env.local
+    depends_on:
+      - db
+    ports:
+      - 8000:8000
+
+  db:
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - ./backend/db/data:/var/lib/postgresql/data
+      - ./backend/db/scripts:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: app
+    ports:
+      - 5432:5432

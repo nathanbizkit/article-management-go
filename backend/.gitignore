@@ -23,5 +23,10 @@ go.work
 log/
 .DS_Store
 .idea/
-.env
-.env.dev
+
+*.env
+*.env.*
+!*.env.local
+!*.env.*.local
+!*.env.template
+!*.env.*.template
