@@ -1,4 +1,3 @@
--- FUNCTIONS
 DO $$
 BEGIN
 	CREATE FUNCTION article_management.update_updated_at_column( )
