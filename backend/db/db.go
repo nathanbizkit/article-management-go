@@ -10,9 +10,7 @@ import (
 
 func New(e env.ENVer) (*sql.DB, error) {
 	psqlInfo := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
-		e.Values().DBUser(), e.Values().DBPass(),
-		e.Values().DBHost(), e.Values().DBPort(),
-		e.Values().DBName())
+		e.DBUser(), e.DBPass(), e.DBHost(), e.DBPort(), e.DBName())
 
 	var d *sql.DB
 	var err error

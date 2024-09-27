@@ -22,8 +22,8 @@ func main() {
 	w := zerolog.ConsoleWriter{Out: os.Stderr}
 	l := zerolog.New(w).With().Timestamp().Caller().Logger()
 
-	e := env.New(".env")
-	if err := e.Load(); err != nil {
+	e, err := env.New(".env").Load()
+	if err != nil {
 		err = fmt.Errorf("failed to load env: %w", err)
 		l.Fatal().Err(err).Msg("failed to load env")
 	}
@@ -37,13 +37,13 @@ func main() {
 	}
 
 	l.Info().Str("name", "postgres").
-		Str("database", e.Values().DBName()).
+		Str("database", e.DBName()).
 		Msg("succeeded to connect to the database")
 
-	l.Info().Str("mode", e.Values().AppMode()).
-		Msgf("setting app to %s mode", e.Values().AppMode())
+	l.Info().Str("mode", e.AppMode()).
+		Msgf("setting app to %s mode", e.AppMode())
 
-	if e.Values().AppMode() == "production" || e.Values().AppMode() == "prod" {
+	if e.AppMode() == "production" || e.AppMode() == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -59,11 +59,11 @@ func main() {
 	defer stop()
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", e.Values().AppPort()),
+		Addr:    fmt.Sprintf(":%s", e.AppPort()),
 		Handler: router,
 	}
 
-	l.Info().Str("port", e.Values().AppPort()).Msg("starting server...")
+	l.Info().Str("port", e.AppPort()).Msg("starting server...")
 
 	go func() {
 		err := srv.ListenAndServe()

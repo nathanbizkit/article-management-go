@@ -9,85 +9,127 @@ import (
 )
 
 type env struct {
-	loadOnce sync.Once
-	isLoaded bool
-	filePath string
-	values   Values
+	loadOnce           sync.Once
+	filePath           string
+	appMode            string
+	appPort            string
+	corsAllowedOrigins []string
+	authSecretKey      string
+	authCookieDomain   string
+	dbUser             string
+	dbPass             string
+	dbHost             string
+	dbPort             string
+	dbName             string
 }
 
 type ENVer interface {
-	Load() error
-	Values() Values
+	Load() (ENVer, error)
+	AppMode() string
+	AppPort() string
+	CorsAllowedOrigins() []string
+	AuthSecretKey() string
+	AuthCookieDomain() string
+	DBUser() string
+	DBPass() string
+	DBHost() string
+	DBPort() string
+	DBName() string
 }
 
-func New(file string) ENVer {
-	return &env{filePath: file}
+func New(filePath string) ENVer {
+	return &env{filePath: filePath}
 }
 
-func (o *env) Load() error {
+func (o *env) Load() (ENVer, error) {
 	var err error
 
 	o.loadOnce.Do(func() {
-		o.isLoaded = true
-
 		viper.SetConfigFile(o.filePath)
 
 		if e := viper.ReadInConfig(); e != nil {
 			viper.AutomaticEnv()
 		}
 
+		o.appMode = parseToStringFallback("APP_MODE", "develop")
+		o.appPort = parseToStringFallback("APP_PORT", "8000")
+		o.authCookieDomain = parseToStringFallback("AUTH_COOKIE_DOMAIN", "localhost")
+		o.dbHost = parseToStringFallback("DB_HOST", "localhost")
+		o.dbPort = parseToStringFallback("DB_PORT", "5432")
+		o.corsAllowedOrigins = make([]string, 0)
+
 		corsAllowedOrigins := parseToStringFallback("CORS_ALLOWED_ORIGINS", "", "*")
-		corsAllowedOriginsArr := make([]string, 0)
 		if len(corsAllowedOrigins) > 0 {
-			corsAllowedOriginsArr = strings.Split(strings.TrimSpace(corsAllowedOrigins), ",")
+			o.corsAllowedOrigins = strings.Split(strings.TrimSpace(corsAllowedOrigins), ",")
 		}
 
-		authSecretKey, e := parseToString("AUTH_SECRET_KEY")
+		var e error
+		o.authSecretKey, e = parseToString("AUTH_SECRET_KEY")
 		if e != nil {
 			err = e
 			return
 		}
 
-		dbUser, e := parseToString("DB_USER")
+		o.dbUser, e = parseToString("DB_USER")
 		if e != nil {
 			err = e
 			return
 		}
 
-		dbPass, e := parseToString("DB_PASS")
+		o.dbPass, e = parseToString("DB_PASS")
 		if e != nil {
 			err = e
 			return
 		}
 
-		dbName, e := parseToString("DB_NAME")
+		o.dbName, e = parseToString("DB_NAME")
 		if e != nil {
 			err = e
 			return
-		}
-
-		o.values = &values{
-			appMode:            parseToStringFallback("APP_MODE", "develop"),
-			appPort:            parseToStringFallback("APP_PORT", "8000"),
-			corsAllowedOrigins: corsAllowedOriginsArr,
-			authSecretKey:      authSecretKey,
-			authCookieDomain:   parseToStringFallback("AUTH_COOKIE_DOMAIN", "localhost"),
-			dbUser:             dbUser,
-			dbPass:             dbPass,
-			dbHost:             parseToStringFallback("DB_HOST", "localhost"),
-			dbPort:             parseToStringFallback("DB_PORT", "5432"),
-			dbName:             dbName,
 		}
 	})
 
-	return err
+	return o, err
 }
 
-func (o *env) Values() Values {
-	if !o.isLoaded {
-		o.Load()
-	}
-	return o.values
+func (o *env) AppMode() string {
+	return o.appMode
+}
+
+func (o *env) AppPort() string {
+	return o.appPort
+}
+
+func (o *env) CorsAllowedOrigins() []string {
+	return o.corsAllowedOrigins
+}
+
+func (o *env) AuthSecretKey() string {
+	return o.authSecretKey
+}
+
+func (o *env) AuthCookieDomain() string {
+	return o.authCookieDomain
+}
+
+func (o *env) DBUser() string {
+	return o.dbUser
+}
+
+func (o *env) DBPass() string {
+	return o.dbPass
+}
+
+func (o *env) DBHost() string {
+	return o.dbHost
+}
+
+func (o *env) DBPort() string {
+	return o.dbPort
+}
+
+func (o *env) DBName() string {
+	return o.dbName
 }
 
 func parseToString(key string) (string, error) {
