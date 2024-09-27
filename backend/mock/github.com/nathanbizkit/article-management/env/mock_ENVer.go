@@ -469,63 +469,6 @@ func (_c *ENVer_DBUser_Call) RunAndReturn(run func() string) *ENVer_DBUser_Call 
 	return _c
 }
 
-// Load provides a mock function with given fields:
-func (_m *ENVer) Load() (ENVer, error) {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Load")
-	}
-
-	var r0 ENVer
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (ENVer, error)); ok {
-		return rf()
-	}
-	if rf, ok := ret.Get(0).(func() ENVer); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ENVer)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ENVer_Load_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Load'
-type ENVer_Load_Call struct {
-	*mock.Call
-}
-
-// Load is a helper method to define mock.On call
-func (_e *ENVer_Expecter) Load() *ENVer_Load_Call {
-	return &ENVer_Load_Call{Call: _e.mock.On("Load")}
-}
-
-func (_c *ENVer_Load_Call) Run(run func()) *ENVer_Load_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ENVer_Load_Call) Return(_a0 ENVer, _a1 error) *ENVer_Load_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *ENVer_Load_Call) RunAndReturn(run func() (ENVer, error)) *ENVer_Load_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewENVer creates a new instance of ENVer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewENVer(t interface {

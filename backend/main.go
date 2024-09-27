@@ -22,7 +22,7 @@ func main() {
 	w := zerolog.ConsoleWriter{Out: os.Stderr}
 	l := zerolog.New(w).With().Timestamp().Caller().Logger()
 
-	e, err := env.New(".env").Load()
+	e, err := env.Load(".env")
 	if err != nil {
 		err = fmt.Errorf("failed to load env: %w", err)
 		l.Fatal().Err(err).Msg("failed to load env")
