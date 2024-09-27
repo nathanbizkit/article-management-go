@@ -10,23 +10,27 @@ import (
 
 type env struct {
 	loadOnce sync.Once
+	isLoaded bool
+	filePath string
 	values   Values
 }
 
 type ENVer interface {
-	Load(path string) error
+	Load() error
 	Values() Values
 }
 
-func New() ENVer {
-	return &env{}
+func New(file string) ENVer {
+	return &env{filePath: file}
 }
 
-func (o *env) Load(path string) error {
+func (o *env) Load() error {
 	var err error
 
 	o.loadOnce.Do(func() {
-		viper.SetConfigFile(path)
+		o.isLoaded = true
+
+		viper.SetConfigFile(o.filePath)
 
 		if e := viper.ReadInConfig(); e != nil {
 			viper.AutomaticEnv()
@@ -85,6 +89,9 @@ func (o *env) Load(path string) error {
 }
 
 func (o *env) Values() Values {
+	if !o.isLoaded {
+		o.Load()
+	}
 	return o.values
 }
 
