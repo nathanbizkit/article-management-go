@@ -1,5 +1,5 @@
 ----DOWN
-DROP SCHEMA IF EXISTS article_management CASCADE;
+DROP SCHEMA if EXISTS article_management CASCADE;
 
 ----UP
-CREATE SCHEMA IF NOT EXISTS article_management;
+CREATE SCHEMA if NOT EXISTS article_management;
