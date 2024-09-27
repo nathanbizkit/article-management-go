@@ -18,7 +18,7 @@ type ENVer interface {
 	Values() Values
 }
 
-func NewEnv() ENVer {
+func New() ENVer {
 	return &env{}
 }
 
