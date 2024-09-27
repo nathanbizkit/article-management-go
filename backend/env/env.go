@@ -91,7 +91,7 @@ func (o *env) Values() Values {
 func parseToString(key string) (string, error) {
 	value, ok := viper.Get(key).(string)
 	if !ok || value == "" {
-		return "", fmt.Errorf("%s is required in env", key)
+		return "", fmt.Errorf("$%s is not set", key)
 	}
 	return value, nil
 }
