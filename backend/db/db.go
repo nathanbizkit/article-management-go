@@ -1,0 +1,32 @@
+package db
+
+import (
+	"database/sql"
+	"fmt"
+	"time"
+
+	"github.com/nathanbizkit/article-management/env"
+)
+
+func New(e env.ENVer) (*sql.DB, error) {
+	psqlInfo := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+		e.Values().DBUser(), e.Values().DBPass(),
+		e.Values().DBHost(), e.Values().DBPort(),
+		e.Values().DBName())
+
+	var d *sql.DB
+	var err error
+	for i := 0; i < 10; i++ {
+		d, err = sql.Open("postgres", psqlInfo)
+		if err == nil {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return d, nil
+}
