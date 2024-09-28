@@ -1,9 +1,7 @@
 package env
 
 import (
-	"errors"
-	"fmt"
-
+	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
 )
 
@@ -11,16 +9,16 @@ type ENV struct {
 	AppMode            string   `mapstructure:"APP_MODE"`
 	AppPort            string   `mapstructure:"APP_PORT"`
 	CORSAllowedOrigins []string `mapstructure:"CORS_ALLOWED_ORIGINS"`
-	AuthJWTSecretKey   string   `mapstructure:"AUTH_JWT_SECRET_KEY"`
+	AuthJWTSecretKey   string   `mapstructure:"AUTH_JWT_SECRET_KEY" validate:"required"`
 	AuthCookieDomain   string   `mapstructure:"AUTH_COOKIE_DOMAIN"`
-	DBUser             string   `mapstructure:"DB_USER"`
-	DBPass             string   `mapstructure:"DB_PASS"`
+	DBUser             string   `mapstructure:"DB_USER" validate:"required"`
+	DBPass             string   `mapstructure:"DB_PASS" validate:"required"`
 	DBHost             string   `mapstructure:"DB_HOST"`
 	DBPort             string   `mapstructure:"DB_PORT"`
-	DBName             string   `mapstructure:"DB_NAME"`
+	DBName             string   `mapstructure:"DB_NAME" validate:"required"`
 }
 
-func Load() (*ENV, error) {
+func Parse(val *validator.Validate) (*ENV, error) {
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
 	viper.AddConfigPath("./env")
@@ -28,7 +26,9 @@ func Load() (*ENV, error) {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println(err.Error())
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, err
+		}
 	}
 
 	// viper does not read from environment directly
@@ -47,26 +47,10 @@ func Load() (*ENV, error) {
 	viper.SetDefault("DB_NAME", "")
 
 	e := &ENV{}
-
 	if err := viper.Unmarshal(e); err != nil {
 		return nil, err
 	}
 
-	if e.AuthJWTSecretKey == "" {
-		return nil, errors.New("AUTH_JWT_SECRET_KEY is not set")
-	}
-
-	if e.DBUser == "" {
-		return nil, errors.New("DB_USER is not set")
-	}
-
-	if e.DBPass == "" {
-		return nil, errors.New("DB_PASS is not set")
-	}
-
-	if e.DBName == "" {
-		return nil, errors.New("DB_NAME is not set")
-	}
-
-	return e, nil
+	err := val.Struct(e)
+	return e, err
 }

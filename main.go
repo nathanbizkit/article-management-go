@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/nanmu42/gzip"
 	"github.com/nathanbizkit/article-management/db"
 	"github.com/nathanbizkit/article-management/env"
@@ -22,7 +23,9 @@ func main() {
 	w := zerolog.ConsoleWriter{Out: os.Stderr}
 	l := zerolog.New(w).With().Timestamp().Caller().Logger()
 
-	e, err := env.Load()
+	validate := validator.New(validator.WithRequiredStructEnabled())
+
+	e, err := env.Parse(validate)
 	if err != nil {
 		err = fmt.Errorf("failed to load env: %w", err)
 		l.Fatal().Err(err).Msg("failed to load env")
