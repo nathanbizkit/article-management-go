@@ -21,12 +21,13 @@ vendor/
 go.work
 
 log/
+db/data/*
 .DS_Store
 .idea/
 
 *.env
 *.env.*
-!*.env.local
-!*.env.*.local
-!*.env.template
-!*.env.*.template
+!local.env
+!local.env.*
+!template.env
+!template.env.*
