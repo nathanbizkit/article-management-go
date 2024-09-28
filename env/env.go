@@ -1,6 +1,7 @@
 package env
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -52,19 +53,19 @@ func Load() (*ENV, error) {
 	}
 
 	if e.AuthJWTSecretKey == "" {
-		return nil, fmt.Errorf("$%s is not set", "AUTH_JWT_SECRET_KEY")
+		return nil, errors.New("AUTH_JWT_SECRET_KEY is not set")
 	}
 
 	if e.DBUser == "" {
-		return nil, fmt.Errorf("$%s is not set", "DB_USER")
+		return nil, errors.New("DB_USER is not set")
 	}
 
 	if e.DBPass == "" {
-		return nil, fmt.Errorf("$%s is not set", "DB_PASS")
+		return nil, errors.New("DB_PASS is not set")
 	}
 
 	if e.DBName == "" {
-		return nil, fmt.Errorf("$%s is not set", "DB_NAME")
+		return nil, errors.New("DB_NAME is not set")
 	}
 
 	return e, nil
