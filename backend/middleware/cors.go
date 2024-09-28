@@ -6,14 +6,13 @@ import (
 	"github.com/nathanbizkit/article-management/env"
 )
 
-func CORS(e env.ENVer) gin.HandlerFunc {
+func CORS(e *env.ENV) gin.HandlerFunc {
 	config := cors.DefaultConfig()
 	config.AllowCredentials = true
 
-	allowedOrigins := e.CorsAllowedOrigins()
-	if len(allowedOrigins) > 0 {
+	if len(e.CORSAllowedOrigins) > 0 {
 		config.AllowAllOrigins = false
-		config.AllowOrigins = allowedOrigins
+		config.AllowOrigins = e.CORSAllowedOrigins
 	} else {
 		config.AllowAllOrigins = true
 	}

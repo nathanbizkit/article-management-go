@@ -2,15 +2,17 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
+	_ "github.com/lib/pq"
 	"github.com/nathanbizkit/article-management/env"
 )
 
-func New(e env.ENVer) (*sql.DB, error) {
+func New(e *env.ENV) (*sql.DB, error) {
 	psqlInfo := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
-		e.DBUser(), e.DBPass(), e.DBHost(), e.DBPort(), e.DBName())
+		e.DBUser, e.DBPass, e.DBHost, e.DBPort, e.DBName)
 
 	var d *sql.DB
 	var err error
@@ -31,4 +33,23 @@ func New(e env.ENVer) (*sql.DB, error) {
 	}
 
 	return d, nil
+}
+
+func RunInTx(db *sql.DB, fn func(tx *sql.Tx) error) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	err = fn(tx)
+	if err == nil {
+		return tx.Commit()
+	}
+
+	rollbackErr := tx.Rollback()
+	if rollbackErr != nil {
+		return errors.Join(err, rollbackErr)
+	}
+
+	return err
 }

@@ -2,146 +2,70 @@ package env
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spf13/viper"
 )
 
-type env struct {
-	appMode            string
-	appPort            string
-	corsAllowedOrigins []string
-	authSecretKey      string
-	authCookieDomain   string
-	dbUser             string
-	dbPass             string
-	dbHost             string
-	dbPort             string
-	dbName             string
+type ENV struct {
+	AppMode            string   `mapstructure:"APP_MODE"`
+	AppPort            string   `mapstructure:"APP_PORT"`
+	CORSAllowedOrigins []string `mapstructure:"CORS_ALLOWED_ORIGINS"`
+	AuthJWTSecretKey   string   `mapstructure:"AUTH_JWT_SECRET_KEY"`
+	AuthCookieDomain   string   `mapstructure:"AUTH_COOKIE_DOMAIN"`
+	DBUser             string   `mapstructure:"DB_USER"`
+	DBPass             string   `mapstructure:"DB_PASS"`
+	DBHost             string   `mapstructure:"DB_HOST"`
+	DBPort             string   `mapstructure:"DB_PORT"`
+	DBName             string   `mapstructure:"DB_NAME"`
 }
 
-type ENVer interface {
-	AppMode() string
-	AppPort() string
-	CorsAllowedOrigins() []string
-	AuthSecretKey() string
-	AuthCookieDomain() string
-	DBUser() string
-	DBPass() string
-	DBHost() string
-	DBPort() string
-	DBName() string
-}
-
-func Load(filePath string) (ENVer, error) {
-	e := &env{}
-
-	viper.SetConfigFile(filePath)
+func Load() (*ENV, error) {
+	viper.SetConfigName(".env")
+	viper.SetConfigType("env")
+	viper.AddConfigPath("./env")
+	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		viper.AutomaticEnv()
+		fmt.Println(err.Error())
 	}
 
-	e.appMode = parseToStringFallback("APP_MODE", "develop")
-	e.appPort = parseToStringFallback("APP_PORT", "8000")
-	e.authCookieDomain = parseToStringFallback("AUTH_COOKIE_DOMAIN", "localhost")
-	e.dbHost = parseToStringFallback("DB_HOST", "localhost")
-	e.dbPort = parseToStringFallback("DB_PORT", "5432")
-	e.corsAllowedOrigins = make([]string, 0)
+	// viper does not read from environment directly
+	// it needs to call SetDefault to allow it to bind
+	// directly from environment even if it must not be empty
+	// which we can check later
+	viper.SetDefault("APP_MODE", "develop")
+	viper.SetDefault("APP_PORT", "8000")
+	viper.SetDefault("CORS_ALLOWED_ORIGINS", "*")
+	viper.SetDefault("AUTH_JWT_SECRET_KEY", "")
+	viper.SetDefault("AUTH_COOKIE_DOMAIN", "localhost")
+	viper.SetDefault("DB_USER", "")
+	viper.SetDefault("DB_PASS", "")
+	viper.SetDefault("DB_HOST", "localhost")
+	viper.SetDefault("DB_PORT", "5432")
+	viper.SetDefault("DB_NAME", "")
 
-	corsAllowedOrigins := parseToStringFallback("CORS_ALLOWED_ORIGINS", "", "*")
-	if len(corsAllowedOrigins) > 0 {
-		e.corsAllowedOrigins = strings.Split(strings.TrimSpace(corsAllowedOrigins), ",")
-	}
+	e := &ENV{}
 
-	var err error
-	e.authSecretKey, err = parseToString("AUTH_SECRET_KEY")
-	if err != nil {
+	if err := viper.Unmarshal(e); err != nil {
 		return nil, err
 	}
 
-	e.dbUser, err = parseToString("DB_USER")
-	if err != nil {
-		return nil, err
+	if e.AuthJWTSecretKey == "" {
+		return nil, fmt.Errorf("$%s is not set", "AUTH_JWT_SECRET_KEY")
 	}
 
-	e.dbPass, err = parseToString("DB_PASS")
-	if err != nil {
-		return nil, err
+	if e.DBUser == "" {
+		return nil, fmt.Errorf("$%s is not set", "DB_USER")
 	}
 
-	e.dbName, err = parseToString("DB_NAME")
-	if err != nil {
-		return nil, err
+	if e.DBPass == "" {
+		return nil, fmt.Errorf("$%s is not set", "DB_PASS")
+	}
+
+	if e.DBName == "" {
+		return nil, fmt.Errorf("$%s is not set", "DB_NAME")
 	}
 
 	return e, nil
-}
-
-func (e *env) AppMode() string {
-	return e.appMode
-}
-
-func (e *env) AppPort() string {
-	return e.appPort
-}
-
-func (e *env) CorsAllowedOrigins() []string {
-	return e.corsAllowedOrigins
-}
-
-func (e *env) AuthSecretKey() string {
-	return e.authSecretKey
-}
-
-func (e *env) AuthCookieDomain() string {
-	return e.authCookieDomain
-}
-
-func (e *env) DBUser() string {
-	return e.dbUser
-}
-
-func (e *env) DBPass() string {
-	return e.dbPass
-}
-
-func (e *env) DBHost() string {
-	return e.dbHost
-}
-
-func (e *env) DBPort() string {
-	return e.dbPort
-}
-
-func (e *env) DBName() string {
-	return e.dbName
-}
-
-func parseToString(key string) (string, error) {
-	value, ok := viper.Get(key).(string)
-	if !ok || value == "" {
-		return "", fmt.Errorf("$%s is not set", key)
-	}
-	return value, nil
-}
-
-func parseToStringFallback(key, fallback string, ignoreValues ...string) string {
-	value, ok := viper.Get(key).(string)
-
-	var isIgnored bool
-	if len(ignoreValues) > 0 {
-		for _, v := range ignoreValues {
-			if value == v {
-				isIgnored = true
-				break
-			}
-		}
-	}
-
-	if !ok || value == "" || isIgnored {
-		return fallback
-	}
-
-	return value
 }

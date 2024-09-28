@@ -1,4 +1,4 @@
-package backend
+package main
 
 import (
 	"context"
@@ -22,7 +22,7 @@ func main() {
 	w := zerolog.ConsoleWriter{Out: os.Stderr}
 	l := zerolog.New(w).With().Timestamp().Caller().Logger()
 
-	e, err := env.Load(".env")
+	e, err := env.Load()
 	if err != nil {
 		err = fmt.Errorf("failed to load env: %w", err)
 		l.Fatal().Err(err).Msg("failed to load env")
@@ -37,13 +37,13 @@ func main() {
 	}
 
 	l.Info().Str("name", "postgres").
-		Str("database", e.DBName()).
+		Str("database", e.DBName).
 		Msg("succeeded to connect to the database")
 
-	l.Info().Str("mode", e.AppMode()).
-		Msgf("setting app to %s mode", e.AppMode())
+	l.Info().Str("mode", e.AppMode).
+		Msgf("setting app to %s mode", e.AppMode)
 
-	if e.AppMode() == "production" || e.AppMode() == "prod" {
+	if e.AppMode == "production" || e.AppMode == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -59,11 +59,11 @@ func main() {
 	defer stop()
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", e.AppPort()),
+		Addr:    fmt.Sprintf(":%s", e.AppPort),
 		Handler: router,
 	}
 
-	l.Info().Str("port", e.AppPort()).Msg("starting server...")
+	l.Info().Str("port", e.AppPort).Msg("starting server...")
 
 	go func() {
 		err := srv.ListenAndServe()
