@@ -2,6 +2,7 @@ package env
 
 import (
 	"github.com/go-playground/validator/v10"
+	"github.com/nathanbizkit/article-management/util"
 	"github.com/spf13/viper"
 )
 
@@ -18,6 +19,7 @@ type ENV struct {
 	DBName             string   `mapstructure:"DB_NAME" validate:"required"`
 }
 
+// Parse loads environment variables either from .env or environment directly and returns a new env
 func Parse(val *validator.Validate) (*ENV, error) {
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
@@ -51,6 +53,9 @@ func Parse(val *validator.Validate) (*ENV, error) {
 		return nil, err
 	}
 
-	err := val.Struct(e)
-	return e, err
+	if err := val.Struct(e); err != nil {
+		return nil, util.JoinValidationErrors(err)
+	}
+
+	return e, nil
 }

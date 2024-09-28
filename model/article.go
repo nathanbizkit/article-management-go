@@ -1,5 +1,17 @@
 package model
 
+import "time"
+
 type Article struct {
-	ID int
+	ID             uint
+	Title          string
+	Description    string
+	Body           string
+	UserID         uint
+	Author         User
+	FavoriteCount  int64
+	FavoritedUsers []User
+	Comments       []Comment
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
 }

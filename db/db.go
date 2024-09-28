@@ -10,6 +10,7 @@ import (
 	"github.com/nathanbizkit/article-management/env"
 )
 
+// New returns a database pool connection
 func New(e *env.ENV) (*sql.DB, error) {
 	psqlInfo := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
 		e.DBUser, e.DBPass, e.DBHost, e.DBPort, e.DBName)
@@ -35,6 +36,7 @@ func New(e *env.ENV) (*sql.DB, error) {
 	return d, nil
 }
 
+// RunInTx wraps database operations with a transaction
 func RunInTx(db *sql.DB, fn func(tx *sql.Tx) error) error {
 	tx, err := db.Begin()
 	if err != nil {
