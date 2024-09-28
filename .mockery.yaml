@@ -4,4 +4,3 @@ inpackage: True
 dir: "mock/{{.PackagePath}}"
 mockname: "{{.InterfaceName}}"
 packages:
-  github.com/nathanbizkit/article-management/env:
