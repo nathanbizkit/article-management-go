@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	validation "github.com/go-ozzo/ozzo-validation"
+)
 
 // Comment model
 type Comment struct {
@@ -12,4 +16,22 @@ type Comment struct {
 	Article   Article
 	CreatedAt time.Time
 	UpdatedAt *time.Time
+}
+
+// Validate validates fields of comment model
+func (c Comment) Validate() error {
+	return validation.ValidateStruct(&c,
+		validation.Field(
+			&c.Body,
+			validation.Required,
+		),
+		validation.Field(
+			&c.UserID,
+			validation.Required,
+		),
+		validation.Field(
+			&c.ArticleID,
+			validation.Required,
+		),
+	)
 }
