@@ -3,10 +3,17 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/nathanbizkit/article-management/env"
+)
+
+const (
+	tokenExpirationDuration        = 72 * time.Hour
+	refreshTokenExpirationDuration = 14 * (24 * time.Hour)
 )
 
 type claims struct {
@@ -14,35 +21,55 @@ type claims struct {
 	jwt.RegisteredClaims
 }
 
+// AuthToken definition
+type AuthToken struct {
+	Token        string
+	RefreshToken string
+}
+
+// Auth is an authentication service
 type Auth struct {
-	e *env.ENV
+	env *env.ENV
 }
 
 // New returns a new auth with env
 func New(e *env.ENV) *Auth {
-	return &Auth{e: e}
+	return &Auth{env: e}
 }
 
-// GenerateToken generates a new token
-func (a *Auth) GenerateToken(id uint) (string, error) {
-	return generateToken(a.e.AuthJWTSecretKey, id, time.Now(), 72*time.Hour)
+// GenerateToken generates a new auth token
+func (a *Auth) GenerateToken(id uint) (*AuthToken, error) {
+	token, err := generateToken(
+		a.env.AuthJWTSecretKey, id, time.Now(), tokenExpirationDuration)
+	if err != nil {
+		return nil, err
+	}
+
+	rt, err := generateToken(
+		a.env.AuthJWTSecretKey, id, time.Now(), refreshTokenExpirationDuration)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthToken{Token: token, RefreshToken: rt}, nil
 }
 
-// GenerateTokenWithTime generates a new token with expired date computed with specified time
-func (a *Auth) GenerateTokenWithTime(id uint, t time.Time) (string, error) {
+// GenerateTokenWithTime generates a new auth token with expired date computed with specified time
+func (a *Auth) GenerateTokenWithTime(id uint, t time.Time) (*AuthToken, error) {
 	// for testing purposes
-	return generateToken(a.e.AuthJWTSecretKey, id, t, 72*time.Hour)
-}
+	token, err := generateToken(
+		a.env.AuthJWTSecretKey, id, t, tokenExpirationDuration)
+	if err != nil {
+		return nil, err
+	}
 
-// GenerateRefreshToken generates a new refresh token
-func (a *Auth) GenerateRefreshToken(id uint) (string, error) {
-	return generateToken(a.e.AuthJWTSecretKey, id, time.Now(), 72*(24*time.Hour))
-}
+	rt, err := generateToken(
+		a.env.AuthJWTSecretKey, id, t, refreshTokenExpirationDuration)
+	if err != nil {
+		return nil, err
+	}
 
-// GenerateRefreshTokenWithTime generates a new refresh token with expired date computed with specified time
-func (a *Auth) GenerateRefreshTokenWithTime(id uint, t time.Time) (string, error) {
-	// for testing purposes
-	return generateToken(a.e.AuthJWTSecretKey, id, t, 72*(24*time.Hour))
+	return &AuthToken{Token: token, RefreshToken: rt}, nil
 }
 
 func generateToken(key string, id uint, now time.Time, fromNow time.Duration) (string, error) {
@@ -63,15 +90,20 @@ func generateToken(key string, id uint, now time.Time, fromNow time.Duration) (s
 	return t, nil
 }
 
-// GetUserID gets a user id from a token
-func (a *Auth) GetUserID(token string) (uint, error) {
-	parsed, err := jwt.ParseWithClaims(
-		token, &claims{},
+// GetUserID gets a user id from request context
+func (a *Auth) GetUserID(ctx *gin.Context) (uint, error) {
+	tokenString, err := ctx.Cookie("session")
+	if err != nil {
+		return 0, err
+	}
+
+	token, err := jwt.ParseWithClaims(
+		tokenString, &claims{},
 		func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 			}
-			return []byte(a.e.AuthJWTSecretKey), nil
+			return []byte(a.env.AuthJWTSecretKey), nil
 		},
 		jwt.WithExpirationRequired(),
 		jwt.WithIssuedAt(),
@@ -80,14 +112,38 @@ func (a *Auth) GetUserID(token string) (uint, error) {
 		return 0, err
 	}
 
-	if !parsed.Valid {
+	if !token.Valid {
 		return 0, errors.New("invalid token")
 	}
 
-	c, ok := parsed.Claims.(*claims)
+	c, ok := token.Claims.(*claims)
 	if !ok {
 		return 0, errors.New("invalid: cannot map token to claims")
 	}
 
 	return c.UserID, nil
+}
+
+// SetCookieToken sets a jwt token cookie in http header
+func (a *Auth) SetCookieToken(ctx *gin.Context, t AuthToken) {
+	ctx.SetSameSite(http.SameSiteStrictMode)
+	ctx.SetCookie(
+		"session", t.Token, 0, "/", a.env.AuthCookieDomain, false, true)
+	ctx.SetCookie(
+		"refreshToken", t.RefreshToken, 0, "/", a.env.AuthCookieDomain, false, true)
+}
+
+// GetCookieToken returns a jwt token in http cookie
+func (a *Auth) GetCookieToken(ctx *gin.Context) (*AuthToken, error) {
+	t, err := ctx.Cookie("session")
+	if err != nil {
+		return nil, err
+	}
+
+	rt, err := ctx.Cookie("refreshToken")
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthToken{Token: t, RefreshToken: rt}, nil
 }

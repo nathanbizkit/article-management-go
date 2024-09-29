@@ -2,6 +2,7 @@ package model
 
 import "time"
 
+// Article model
 type Article struct {
 	ID             uint
 	Title          string

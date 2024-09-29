@@ -3,8 +3,8 @@
 ## TODOs
 
 - [ ] Users and Authentication
-  - [ ] `POST /signin`: Existing user login
-  - [ ] `POST /signup`: Register a new user
+  - [ ] `POST /login`: Existing user login
+  - [ ] `POST /register`: Register a new user
   - [ ] `GET /me`: Get current user
   - [ ] `PUT /me`: Update current user
 - [ ] Profiles

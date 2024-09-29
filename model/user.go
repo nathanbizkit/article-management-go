@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// User model
 type User struct {
 	ID               uint
 	Username         string
@@ -30,7 +31,6 @@ func (u *User) HashPassword() error {
 	h, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
-
 	}
 
 	u.Password = string(h)

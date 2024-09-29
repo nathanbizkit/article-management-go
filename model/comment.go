@@ -2,6 +2,7 @@ package model
 
 import "time"
 
+// Comment model
 type Comment struct {
 	ID        uint
 	Body      string

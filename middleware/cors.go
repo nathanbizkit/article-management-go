@@ -6,6 +6,7 @@ import (
 	"github.com/nathanbizkit/article-management/env"
 )
 
+// CORS attaches cors middleware to http engine
 func CORS(e *env.ENV) gin.HandlerFunc {
 	config := cors.DefaultConfig()
 	config.AllowCredentials = true

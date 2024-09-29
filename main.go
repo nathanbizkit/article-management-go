@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/nanmu42/gzip"
+	"github.com/nathanbizkit/article-management/auth"
 	"github.com/nathanbizkit/article-management/db"
 	"github.com/nathanbizkit/article-management/env"
+	"github.com/nathanbizkit/article-management/handler"
 	"github.com/nathanbizkit/article-management/middleware"
+	"github.com/nathanbizkit/article-management/store"
 	"github.com/rs/zerolog"
 	_ "go.uber.org/automaxprocs"
 )
@@ -23,11 +25,8 @@ func main() {
 	w := zerolog.ConsoleWriter{Out: os.Stderr}
 	l := zerolog.New(w).With().Timestamp().Caller().Logger()
 
-	validate := validator.New(validator.WithRequiredStructEnabled())
-
-	e, err := env.Parse(validate)
+	e, err := env.Parse()
 	if err != nil {
-		err = fmt.Errorf("failed to load env: %w", err)
 		l.Fatal().Err(err).Msg("failed to load env")
 	}
 
@@ -35,27 +34,31 @@ func main() {
 
 	d, err := db.New(e)
 	if err != nil {
-		err = fmt.Errorf("failed to connect to dabase: %w", err)
 		l.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
-	l.Info().Str("name", "postgres").
-		Str("database", e.DBName).
-		Msg("succeeded to connect to the database")
-
-	l.Info().Str("mode", e.AppMode).
-		Msgf("setting app to %s mode", e.AppMode)
+	l.Info().Str("name", "postgres").Str("database", e.DBName).
+		Msg("succeeded to connect to database")
 
 	if e.AppMode == "production" || e.AppMode == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	l.Info().Str("mode", e.AppMode).Msgf("setting app to %s mode", e.AppMode)
 	l.Info().Str("mode", gin.Mode()).
 		Msgf("gin router is running in %s mode", gin.Mode())
 
 	router := gin.Default()
 	router.Use(gzip.DefaultHandler().Gin)
 	router.Use(middleware.CORS(e))
+
+	auth := auth.New(e)
+
+	us := store.NewUserStore(d)
+	as := store.NewArticleStore(d)
+
+	h := handler.New(&l, e, auth, us, as)
+	handler.Route(router, auth, h)
 
 	ctx, stop := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM)
