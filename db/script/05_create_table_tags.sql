@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS article_management.tags (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(50) PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ
 );
