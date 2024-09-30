@@ -11,7 +11,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const passwordMinLen = 7
+const (
+	userShortMaxLen = 100
+	userLongMaxLen  = 255
+	passwordMinLen  = 7
+)
 
 // User model
 type User struct {
@@ -34,12 +38,27 @@ func (u User) Validate() error {
 		validation.Field(
 			&u.Username,
 			validation.Required,
+			validation.Length(0, userShortMaxLen),
 			validation.Match(regexp.MustCompile("[a-zA-Z0-9]+")),
 		),
 		validation.Field(
 			&u.Email,
 			validation.Required,
+			validation.Length(0, userShortMaxLen),
 			is.Email,
+		),
+		validation.Field(
+			&u.Name,
+			validation.Length(0, userShortMaxLen),
+		),
+		validation.Field(
+			&u.Bio,
+			validation.Length(0, userLongMaxLen),
+		),
+		validation.Field(
+			&u.Image,
+			validation.Length(0, userLongMaxLen),
+			is.URL,
 		),
 		validation.Field(
 			&u.Password,

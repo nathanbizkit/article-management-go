@@ -2,14 +2,20 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation"
 )
 
+const (
+	articleShortMaxLen = 100
+	articleLongMaxLen  = 255
+	tagMaxLen          = 50
+)
+
 // Tag model
 type Tag struct {
-	ID        uint
 	Name      string
 	CreatedAt time.Time
 	UpdatedAt *time.Time
@@ -37,6 +43,11 @@ func (a Article) Validate() error {
 		validation.Field(
 			&a.Title,
 			validation.Required,
+			validation.Length(0, articleShortMaxLen),
+		),
+		validation.Field(
+			&a.Description,
+			validation.Length(0, articleShortMaxLen),
 		),
 		validation.Field(
 			&a.Body,
@@ -57,7 +68,10 @@ func (a Article) Validate() error {
 func validateTag(value interface{}) error {
 	t, _ := value.(Tag)
 	if len(t.Name) == 0 {
-		return errors.New("must have a name")
+		return errors.New("must not be empty")
+	}
+	if len(t.Name) > tagMaxLen {
+		return fmt.Errorf("the length must be no more than %d", tagMaxLen)
 	}
 	return nil
 }
