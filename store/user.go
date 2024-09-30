@@ -83,16 +83,16 @@ func (s *UserStore) GetByUsername(ctx context.Context, username uint) (*model.Us
 	return &m, nil
 }
 
-// Create creates a user
+// Create creates a user and returns the newly created user
 func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, error) {
 	// TODO
 	return nil, nil
 }
 
-// Update updates all user fields
-func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, error) {
+// Update updates a user
+func (s *UserStore) Update(ctx context.Context, m *model.User, updateFunc func(u *model.User)) error {
 	// TODO
-	return nil, nil
+	return nil
 }
 
 // IsFollowing returns wheter user A follows user B

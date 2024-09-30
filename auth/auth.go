@@ -128,9 +128,9 @@ func (a *Auth) GetUserID(ctx *gin.Context) (uint, error) {
 func (a *Auth) SetCookieToken(ctx *gin.Context, t AuthToken) {
 	ctx.SetSameSite(http.SameSiteStrictMode)
 	ctx.SetCookie(
-		"session", t.Token, 0, "/", a.env.AuthCookieDomain, false, true)
+		"session", t.Token, 0, "/api/", a.env.AuthCookieDomain, true, true)
 	ctx.SetCookie(
-		"refreshToken", t.RefreshToken, 0, "/", a.env.AuthCookieDomain, false, true)
+		"refreshToken", t.RefreshToken, 0, "/api/", a.env.AuthCookieDomain, true, true)
 }
 
 // GetCookieToken returns a jwt token in http cookie
