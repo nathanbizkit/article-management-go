@@ -27,7 +27,8 @@ func Parse() (*ENV, error) {
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
+	err := viper.ReadInConfig()
+	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return nil, err
 		}
@@ -49,11 +50,12 @@ func Parse() (*ENV, error) {
 	viper.SetDefault("DB_NAME", "")
 
 	e := &ENV{}
-	if err := viper.Unmarshal(e); err != nil {
+	err = viper.Unmarshal(e)
+	if err != nil {
 		return nil, err
 	}
 
-	err := validation.ValidateStruct(e,
+	err = validation.ValidateStruct(e,
 		validation.Field(
 			&e.AppMode,
 			validation.In("dev", "develop", "prod", "production"),

@@ -86,11 +86,13 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := d.Close(); err != nil {
+	err = d.Close()
+	if err != nil {
 		l.Fatal().Err(err).Msg("failed to close database connection")
 	}
 
-	if err := srv.Shutdown(ctx); err != nil {
+	err = srv.Shutdown(ctx)
+	if err != nil {
 		l.Fatal().Err(err).Msg("failed to shutdown http server")
 	}
 

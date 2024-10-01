@@ -29,7 +29,8 @@ func New(e *env.ENV) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if err = d.Ping(); err != nil {
+	err = d.Ping()
+	if err != nil {
 		return nil, err
 	}
 
