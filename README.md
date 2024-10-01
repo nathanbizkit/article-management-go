@@ -5,12 +5,13 @@
 - [ ] Users and Authentication
   - [ ] `POST /login`: Existing user login
   - [ ] `POST /register`: Register a new user
+  - [ ] `POST /refresh_token`: Refresh user token with refresh token
   - [ ] `GET /me`: Get current user
   - [ ] `PUT /me`: Update current user
 - [ ] Profiles
   - [ ] `GET /profiles/{username}`: Get a profile
   - [ ] `POST /profiles/{username}/follow`: Follow a user
-  - [ ] `POST /profiles/{username}/unfollow`: Unfollow a user
+  - [ ] `DELETE /profiles/{username}/follow`: Unfollow a user
 - [ ] Articles
   - [ ] `GET /articles/feed`: Get recent articles from users you follow
   - [ ] `GET /articles`: Get recent articles globally
@@ -24,6 +25,6 @@
   - [ ] `DELETE /articles/{slug}/comments/{id}`: Delete a comment for an article
 - [ ] Favorites
   - [ ] `POST /articles/{slug}/favorite`: Favorite an article
-  - [ ] `POST /articles/{slug}/unfavorite`: Unfavorite an article
+  - [ ] `DELETE /articles/{slug}/favorite`: Unfavorite an article
 - [ ] Default
   - [ ] `GET /tags`: Get tages
