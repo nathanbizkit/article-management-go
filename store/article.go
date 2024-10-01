@@ -44,61 +44,61 @@ func (s *ArticleStore) GetArticles(
 }
 
 // GetFeedArticles gets following users' articles
-func (s *ArticleStore) GetFeedArticles(userIDs []uint, limit, offset int64) ([]model.Article, error) {
+func (s *ArticleStore) GetFeedArticles(ctx context.Context, userIDs []uint, limit, offset int64) ([]model.Article, error) {
 	// TODO
 	return []model.Article{}, nil
 }
 
 // Delete deletes an article
-func (s *ArticleStore) Delete(m *model.Article) error {
+func (s *ArticleStore) Delete(ctx context.Context, m *model.Article) error {
 	// TODO
 	return nil
 }
 
 // IsFavorited checks whether the article is favorited by the user
-func (s *ArticleStore) IsFavorited(a *model.Article, u *model.User) (bool, error) {
+func (s *ArticleStore) IsFavorited(ctx context.Context, a *model.Article, u *model.User) (bool, error) {
 	// TODO
 	return false, nil
 }
 
 // AddFavorite favorites an article
-func (s *ArticleStore) AddFavorite(a *model.Article, u *model.User, updateFunc func(u *model.User)) error {
+func (s *ArticleStore) AddFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(u *model.User)) error {
 	// TODO
 	return nil
 }
 
 // DeleteFavorite unfavorites an article
-func (s *ArticleStore) DeleteFavorite(a *model.Article, u *model.User, updateFunc func(u *model.User)) error {
+func (s *ArticleStore) DeleteFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(u *model.User)) error {
 	// TODO
 	return nil
 }
 
 // GetTags gets all tags
-func (s *ArticleStore) GetTags() ([]model.Tag, error) {
+func (s *ArticleStore) GetTags(ctx context.Context) ([]model.Tag, error) {
 	// TODO
 	return []model.Tag{}, nil
 }
 
 // CreateComment creates a comment of the article
-func (s *ArticleStore) CreateComment(m *model.Comment) (*model.Comment, error) {
+func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*model.Comment, error) {
 	// TODO
 	return nil, nil
 }
 
 // GetComments gets comments of the article
-func (s *ArticleStore) GetComments(m *model.Article) ([]model.Comment, error) {
+func (s *ArticleStore) GetComments(ctx context.Context, m *model.Article) ([]model.Comment, error) {
 	// TODO
 	return []model.Comment{}, nil
 }
 
 // GetCommentByID finds a comment from id
-func (s *ArticleStore) GetCommentByID(id uint) (*model.Comment, error) {
+func (s *ArticleStore) GetCommentByID(ctx context.Context, id uint) (*model.Comment, error) {
 	// TODO
 	return nil, nil
 }
 
 // DeleteComment deletes a comment
-func (s *ArticleStore) DeleteComment(m *model.Comment) error {
+func (s *ArticleStore) DeleteComment(ctx context.Context, m *model.Comment) error {
 	// TODO
 	return nil
 }
