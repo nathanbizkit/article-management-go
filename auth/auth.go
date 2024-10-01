@@ -90,6 +90,16 @@ func generateToken(key string, id uint, now time.Time, fromNow time.Duration) (s
 	return t, nil
 }
 
+// SetContextUserID sets auth user id to http context
+func (a *Auth) SetContextUserID(ctx *gin.Context, id uint) {
+	ctx.Set("auth_user_id", id)
+}
+
+// GetContextUserID returns auth user id from http context
+func (a *Auth) GetContextUserID(ctx *gin.Context) uint {
+	return ctx.GetUint("auth_user_id")
+}
+
 // GetUserID gets a user id from request context
 func (a *Auth) GetUserID(ctx *gin.Context) (uint, error) {
 	tokenString, err := ctx.Cookie("session")

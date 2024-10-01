@@ -10,10 +10,13 @@ import (
 // Auth guards against unauthenticated incoming request
 func Auth(a *auth.Auth) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if _, err := a.GetUserID(ctx); err != nil {
+		id, err := a.GetUserID(ctx)
+		if err != nil {
 			ctx.AbortWithStatusJSON(
 				http.StatusUnauthorized, gin.H{"error": "unauthenticated"})
 			return
 		}
+
+		a.SetContextUserID(ctx, id)
 	}
 }
