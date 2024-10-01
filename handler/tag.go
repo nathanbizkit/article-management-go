@@ -13,9 +13,9 @@ func (h *Handler) GetTags(ctx *gin.Context) {
 
 	tags, err := h.as.GetTags(ctx.Request.Context())
 	if err != nil {
-		h.logger.Error().Err(err).Msg("failed to get tags")
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError,
-			gin.H{"error": "internal server error"})
+		msg := "failed to get tags"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 
@@ -24,5 +24,5 @@ func (h *Handler) GetTags(ctx *gin.Context) {
 		tagNames = append(tagNames, t.Name)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"payload": message.TagsResponse{Tags: tagNames}})
+	ctx.JSON(http.StatusOK, message.TagsResponse{Tags: tagNames})
 }
