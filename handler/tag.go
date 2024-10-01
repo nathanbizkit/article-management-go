@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/messages"
+	"github.com/nathanbizkit/article-management/message"
 )
 
 // GetTags returns all of tags
@@ -24,5 +24,5 @@ func (h *Handler) GetTags(ctx *gin.Context) {
 		tagNames = append(tagNames, t.Name)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"payload": messages.TagsResponse{Tags: tagNames}})
+	ctx.JSON(http.StatusOK, gin.H{"payload": message.TagsResponse{Tags: tagNames}})
 }
