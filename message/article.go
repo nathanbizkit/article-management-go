@@ -53,11 +53,11 @@ type TagsResponse struct {
 
 // CommentResponse definition
 type CommentResponse struct {
-	ID        uint              `json:"id"`
-	Body      string            `json:"body"`
-	Author    []ProfileResponse `json:"author"`
-	CreatedAt time.Time         `json:"created_at"`
-	UpdatedAt *time.Time        `json:"updated_at"`
+	ID        uint            `json:"id"`
+	Body      string          `json:"body"`
+	Author    ProfileResponse `json:"author"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt *time.Time      `json:"updated_at"`
 }
 
 // CommentsResponse definition
