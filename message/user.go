@@ -1,7 +1,5 @@
 package message
 
-import "time"
-
 /* Request message */
 
 // LoginUserRequest definition
@@ -40,8 +38,8 @@ type UserReponse struct {
 	Image            string            `json:"image"`
 	Follows          []ProfileResponse `json:"follows"`
 	FavoriteArticles []ArticleResponse `json:"articles"`
-	CreatedAt        time.Time         `json:"created_at"`
-	UpdatedAt        *time.Time        `json:"updated_at"`
+	CreatedAt        string            `json:"created_at"`
+	UpdatedAt        *string           `json:"updated_at"`
 }
 
 // ProfileResponse definition

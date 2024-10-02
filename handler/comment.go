@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nathanbizkit/article-management/message"
@@ -13,32 +12,13 @@ import (
 func (h *Handler) CreateComment(ctx *gin.Context) {
 	h.logger.Info().Interface("req", ctx.Request).Msg("create comment")
 
-	userID := h.auth.GetContextUserID(ctx)
+	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	currentUser, err := h.us.GetByID(ctx.Request.Context(), userID)
-	if err != nil {
-		h.logger.Error().Err(err).
-			Msg(fmt.Sprintf("current user (id=%d) not found", userID))
-		ctx.AbortWithStatusJSON(http.StatusNotFound,
-			gin.H{"error": "current user not found"})
-		return
-	}
-
-	articleID, err := strconv.Atoi(ctx.Param("slug"))
-	if err != nil {
-		h.logger.Error().Err(err).
-			Msg(fmt.Sprintf("cannot convert slug (%s) into integer", ctx.Param("slug")))
-		ctx.AbortWithStatusJSON(http.StatusBadRequest,
-			gin.H{"error": "invalid article id"})
-		return
-	}
-
+	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
 	article, err := h.as.GetByID(ctx.Request.Context(), uint(articleID))
 	if err != nil {
-		h.logger.Error().Err(err).
-			Msg(fmt.Sprintf("requested article (slug=%d) not found", articleID))
-		ctx.AbortWithStatusJSON(http.StatusNotFound,
-			gin.H{"error": "requested article not found"})
+		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
 		return
 	}
 
@@ -46,14 +26,13 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 	err = ctx.ShouldBindJSON(&r)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("failed to bind request body")
-		ctx.AbortWithStatusJSON(http.StatusBadRequest,
-			gin.H{"error": "invalid request body"})
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
 	comment := model.Comment{
 		Body:      r.Body,
-		UserID:    userID,
+		UserID:    currentUser.ID,
 		Author:    *currentUser,
 		ArticleID: article.ID,
 		Article:   *article,
@@ -71,29 +50,89 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 	if err != nil {
 		msg := "failed to create comment"
 		h.logger.Error().Err(err).Msg(msg)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError,
-			gin.H{"error": msg})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, message.CommentResponse{
-		ID:   createdComment.ID,
-		Body: createdComment.Body,
-		Author: message.ProfileResponse{
-			Username:  currentUser.Username,
-			Bio:       currentUser.Bio,
-			Image:     currentUser.Image,
-			Following: false,
-		},
-		CreatedAt: createdComment.CreatedAt,
-		UpdatedAt: createdComment.UpdatedAt,
-	})
+	ctx.JSON(http.StatusOK, createdComment.ResponseComment(false))
 }
 
 func (h *Handler) GetComments(ctx *gin.Context) {
-	// TODO
+	h.logger.Info().Interface("req", ctx.Request).Msg("get comments")
+
+	currentUser := h.GetCurrentUserOrAbort(ctx)
+
+	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
+	article, err := h.as.GetByID(ctx.Request.Context(), uint(articleID))
+	if err != nil {
+		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
+		return
+	}
+
+	comments, err := h.as.GetComments(ctx.Request.Context(), article)
+	if err != nil {
+		msg := "failed to get comments"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
+		return
+	}
+
+	crs := make([]message.CommentResponse, 0, len(comments))
+	for _, c := range comments {
+		cr := c.ResponseComment(false)
+
+		follwing, err := h.us.IsFollowing(ctx.Request.Context(), currentUser, &c.Author)
+		if err != nil {
+			msg := "failed to get following status"
+			h.logger.Error().Err(err).Msg(msg)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+		cr.Author = c.Author.ResponseProfile(follwing)
+
+		crs = append(crs, cr)
+	}
+
+	ctx.JSON(http.StatusOK, message.CommentsResponse{Comments: crs})
 }
 
 func (h *Handler) DeleteComment(ctx *gin.Context) {
-	// TODO
+	h.logger.Info().Interface("req", ctx.Request).Msg("delete comment")
+
+	currentUser := h.GetCurrentUserOrAbort(ctx)
+
+	commentID := h.GetParamAsIDOrAbort(ctx, "id")
+	comment, err := h.as.GetCommentByID(ctx.Request.Context(), commentID)
+	if err != nil {
+		h.logger.Error().Err(err).Msg(fmt.Sprintf("comment (id=%d) not found", commentID))
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "comment not found"})
+		return
+	}
+
+	if ctx.Param("slug") != fmt.Sprintf("%d", comment.ArticleID) {
+		msg := "the comment is not in the article"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
+		return
+	}
+
+	if comment.UserID != currentUser.ID {
+		err := fmt.Errorf("current user (id=%d) is forbidden to delete this comment (id=%d)",
+			currentUser.ID, comment.ID)
+		msg := "forbidden"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": msg})
+		return
+	}
+
+	err = h.as.DeleteComment(ctx.Request.Context(), comment)
+	if err != nil {
+		msg := "failed to delete comment"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
+		return
+	}
+
+	ctx.AbortWithStatus(http.StatusOK)
 }

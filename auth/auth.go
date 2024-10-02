@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	tokenExpirationDuration        = 72 * time.Hour
-	refreshTokenExpirationDuration = 14 * (24 * time.Hour)
+	tokenTTL   = 72 * time.Hour
+	refreshTTL = 14 * (24 * time.Hour)
 )
 
 type claims struct {
@@ -39,14 +39,12 @@ func New(e *env.ENV) *Auth {
 
 // GenerateToken generates a new auth token
 func (a *Auth) GenerateToken(id uint) (*AuthToken, error) {
-	token, err := generateToken(
-		a.env.AuthJWTSecretKey, id, time.Now(), tokenExpirationDuration)
+	token, err := generateToken(a.env.AuthJWTSecretKey, id, time.Now(), tokenTTL)
 	if err != nil {
 		return nil, err
 	}
 
-	rt, err := generateToken(
-		a.env.AuthJWTSecretKey, id, time.Now(), refreshTokenExpirationDuration)
+	rt, err := generateToken(a.env.AuthJWTSecretKey, id, time.Now(), refreshTTL)
 	if err != nil {
 		return nil, err
 	}
@@ -57,14 +55,12 @@ func (a *Auth) GenerateToken(id uint) (*AuthToken, error) {
 // GenerateTokenWithTime generates a new auth token with expired date computed with specified time
 func (a *Auth) GenerateTokenWithTime(id uint, t time.Time) (*AuthToken, error) {
 	// for testing purposes
-	token, err := generateToken(
-		a.env.AuthJWTSecretKey, id, t, tokenExpirationDuration)
+	token, err := generateToken(a.env.AuthJWTSecretKey, id, t, tokenTTL)
 	if err != nil {
 		return nil, err
 	}
 
-	rt, err := generateToken(
-		a.env.AuthJWTSecretKey, id, t, refreshTokenExpirationDuration)
+	rt, err := generateToken(a.env.AuthJWTSecretKey, id, t, refreshTTL)
 	if err != nil {
 		return nil, err
 	}
@@ -135,12 +131,10 @@ func (a *Auth) GetUserID(ctx *gin.Context) (uint, error) {
 }
 
 // SetCookieToken sets a jwt token cookie in http header
-func (a *Auth) SetCookieToken(ctx *gin.Context, t AuthToken) {
+func (a *Auth) SetCookieToken(ctx *gin.Context, t AuthToken, maxAge int, path string) {
 	ctx.SetSameSite(http.SameSiteStrictMode)
-	ctx.SetCookie(
-		"session", t.Token, 0, "/api/", a.env.AuthCookieDomain, true, true)
-	ctx.SetCookie(
-		"refreshToken", t.RefreshToken, 0, "/api/", a.env.AuthCookieDomain, true, true)
+	ctx.SetCookie("session", t.Token, maxAge, path, a.env.AuthCookieDomain, true, true)
+	ctx.SetCookie("refreshToken", t.RefreshToken, maxAge, path, a.env.AuthCookieDomain, true, true)
 }
 
 // GetCookieToken returns a jwt token in http cookie

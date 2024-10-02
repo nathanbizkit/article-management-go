@@ -6,6 +6,7 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/nathanbizkit/article-management/message"
 )
 
 const (
@@ -89,4 +90,31 @@ func (a *Article) Overwrite(title, description, body string) {
 	if body != "" {
 		a.Body = body
 	}
+}
+
+// ResponseArticle generates response message from article
+func (a *Article) ResponseArticle(favorited bool, author message.ProfileResponse) message.ArticleResponse {
+	ar := message.ArticleResponse{
+		ID:             a.ID,
+		Title:          a.Title,
+		Description:    a.Description,
+		Body:           a.Body,
+		Favorited:      favorited,
+		FavoritesCount: a.FavoriteCount,
+		Author:         author,
+		CreatedAt:      a.CreatedAt.Format(time.RFC3339Nano),
+	}
+
+	if a.UpdatedAt != nil {
+		d := a.UpdatedAt.Format(time.RFC3339Nano)
+		ar.UpdatedAt = &d
+	}
+
+	tags := make([]string, 0, len(a.Tags))
+	for _, t := range a.Tags {
+		tags = append(tags, t.Name)
+	}
+	ar.Tags = tags
+
+	return ar
 }

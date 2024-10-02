@@ -8,6 +8,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/nathanbizkit/article-management/message"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,17 +20,15 @@ const (
 
 // User model
 type User struct {
-	ID               uint
-	Username         string
-	Email            string
-	Password         string
-	Name             string
-	Bio              string
-	Image            string
-	CreatedAt        time.Time
-	UpdatedAt        *time.Time
-	Follows          []User
-	FavoriteArticles []Article
+	ID        uint
+	Username  string
+	Email     string
+	Password  string
+	Name      string
+	Bio       string
+	Image     string
+	CreatedAt time.Time
+	UpdatedAt *time.Time
 }
 
 // Validate validates fields of user model
@@ -147,4 +146,34 @@ func (u *User) HashPassword() error {
 func (u *User) CheckPassword(plain string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plain))
 	return err == nil
+}
+
+// ResponseUser generates response message for user
+func (u *User) ResponseUser() message.UserReponse {
+	ur := message.UserReponse{
+		ID:        u.ID,
+		Username:  u.Username,
+		Email:     u.Email,
+		Name:      u.Name,
+		Bio:       u.Bio,
+		Image:     u.Image,
+		CreatedAt: u.CreatedAt.Format(time.RFC3339Nano),
+	}
+
+	if u.UpdatedAt != nil {
+		d := u.UpdatedAt.Format(time.RFC3339Nano)
+		ur.UpdatedAt = &d
+	}
+
+	return ur
+}
+
+// ResponseProfile generates response message for user's profile
+func (u *User) ResponseProfile(following bool) message.ProfileResponse {
+	return message.ProfileResponse{
+		Username:  u.Username,
+		Bio:       u.Bio,
+		Image:     u.Image,
+		Following: following,
+	}
 }

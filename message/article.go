@@ -1,7 +1,5 @@
 package message
 
-import "time"
-
 /* Request message */
 
 // CreateArticleRequest definition
@@ -36,8 +34,8 @@ type ArticleResponse struct {
 	Favorited      bool            `json:"favorited"`
 	FavoritesCount int64           `json:"favorites_count"`
 	Author         ProfileResponse `json:"author"`
-	CreatedAt      time.Time       `json:"created_at"`
-	UpdatedAt      *time.Time      `json:"updated_at"`
+	CreatedAt      string          `json:"created_at"`
+	UpdatedAt      *string         `json:"updated_at"`
 }
 
 // ArticlesResponse definition
@@ -56,8 +54,8 @@ type CommentResponse struct {
 	ID        uint            `json:"id"`
 	Body      string          `json:"body"`
 	Author    ProfileResponse `json:"author"`
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt *time.Time      `json:"updated_at"`
+	CreatedAt string          `json:"created_at"`
+	UpdatedAt *string         `json:"updated_at"`
 }
 
 // CommentsResponse definition

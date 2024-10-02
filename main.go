@@ -45,8 +45,7 @@ func main() {
 	}
 
 	l.Info().Str("mode", e.AppMode).Msgf("setting app to %s mode", e.AppMode)
-	l.Info().Str("mode", gin.Mode()).
-		Msgf("gin router is running in %s mode", gin.Mode())
+	l.Info().Str("mode", gin.Mode()).Msgf("gin router is running in %s mode", gin.Mode())
 
 	router := gin.Default()
 	router.Use(gzip.DefaultHandler().Gin)
@@ -60,8 +59,7 @@ func main() {
 	h := handler.New(&l, e, auth, us, as)
 	handler.Route(router, auth, h)
 
-	ctx, stop := signal.NotifyContext(context.Background(),
-		syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	srv := &http.Server{
