@@ -62,13 +62,13 @@ func (s *ArticleStore) IsFavorited(ctx context.Context, a *model.Article, u *mod
 }
 
 // AddFavorite favorites an article
-func (s *ArticleStore) AddFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(u *model.User)) error {
+func (s *ArticleStore) AddFavorite(ctx context.Context, a *model.Article, u *model.User) error {
 	// TODO
 	return nil
 }
 
 // DeleteFavorite unfavorites an article
-func (s *ArticleStore) DeleteFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(u *model.User)) error {
+func (s *ArticleStore) DeleteFavorite(ctx context.Context, a *model.Article, u *model.User) error {
 	// TODO
 	return nil
 }

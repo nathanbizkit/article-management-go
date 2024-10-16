@@ -43,3 +43,22 @@ func (h *Handler) GetParamAsIDOrAbort(ctx *gin.Context, key string) uint {
 
 	return uint(id)
 }
+
+// GetPaginationQuery returns limit and offset queries from url
+func (h *Handler) GetPaginationQuery(ctx *gin.Context, fallbackLimit, fallbackOffset int64) (limit, offset int64) {
+	rawLimit, err := strconv.Atoi(ctx.Query("limit"))
+	if err != nil {
+		limit = fallbackLimit
+	} else {
+		limit = int64(rawLimit)
+	}
+
+	rawOffset, err := strconv.Atoi(ctx.Query("offset"))
+	if err != nil {
+		offset = fallbackOffset
+	} else {
+		offset = int64(rawOffset)
+	}
+
+	return
+}

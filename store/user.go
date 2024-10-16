@@ -20,11 +20,12 @@ func NewUserStore(db *sql.DB) *UserStore {
 // GetByID finds a user by id
 func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 	var m model.User
-	queryString := `SELECT id, email, password, name, bio, image, created_at, updated_at 
+	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users WHERE id = $1`
 	err := s.db.QueryRowContext(ctx, queryString, id).
 		Scan(
 			&m.ID,
+			&m.Username,
 			&m.Email,
 			&m.Password,
 			&m.Name,
@@ -42,11 +43,12 @@ func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 // GetByEmail finds a user by email
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var m model.User
-	queryString := `SELECT id, email, password, name, bio, image, created_at, updated_at 
+	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users WHERE email = $1`
 	err := s.db.QueryRowContext(ctx, queryString, email).
 		Scan(
 			&m.ID,
+			&m.Username,
 			&m.Email,
 			&m.Password,
 			&m.Name,
@@ -62,13 +64,14 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, 
 }
 
 // GetByUsername finds a user by username
-func (s *UserStore) GetByUsername(ctx context.Context, username uint) (*model.User, error) {
+func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.User, error) {
 	var m model.User
-	queryString := `SELECT id, email, password, name, bio, image, created_at, updated_at 
+	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users WHERE username = $1`
 	err := s.db.QueryRowContext(ctx, queryString, username).
 		Scan(
 			&m.ID,
+			&m.Username,
 			&m.Email,
 			&m.Password,
 			&m.Name,

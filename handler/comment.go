@@ -9,6 +9,7 @@ import (
 	"github.com/nathanbizkit/article-management/model"
 )
 
+// CreateComment creates a comment
 func (h *Handler) CreateComment(ctx *gin.Context) {
 	h.logger.Info().Interface("req", ctx.Request).Msg("create comment")
 
@@ -57,6 +58,7 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, createdComment.ResponseComment(false))
 }
 
+// GetComments gets comments of an article
 func (h *Handler) GetComments(ctx *gin.Context) {
 	h.logger.Info().Interface("req", ctx.Request).Msg("get comments")
 
@@ -78,6 +80,7 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 		return
 	}
 
+	// TODO: make better query
 	crs := make([]message.CommentResponse, 0, len(comments))
 	for _, c := range comments {
 		cr := c.ResponseComment(false)
@@ -97,6 +100,7 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, message.CommentsResponse{Comments: crs})
 }
 
+// DeleteComment deletes a comment from an article
 func (h *Handler) DeleteComment(ctx *gin.Context) {
 	h.logger.Info().Interface("req", ctx.Request).Msg("delete comment")
 
