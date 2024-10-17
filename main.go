@@ -69,12 +69,25 @@ func main() {
 
 	l.Info().Str("port", e.AppPort).Msg("starting server...")
 
-	go func() {
-		err := srv.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
-			l.Fatal().Err(err).Msg("failed to listen and serve")
-		}
-	}()
+	if e.TLSCertFile != "" && e.TLSKeyFile != "" {
+		l.Info().Msg("tls is on: running on http")
+
+		go func() {
+			err := srv.ListenAndServeTLS(e.TLSCertFile, e.TLSKeyFile)
+			if err != nil && err != http.ErrServerClosed {
+				l.Fatal().Err(err).Msg("failed to listen and serve")
+			}
+		}()
+	} else {
+		l.Info().Msg("tls is off: running on https")
+
+		go func() {
+			err := srv.ListenAndServe()
+			if err != nil && err != http.ErrServerClosed {
+				l.Fatal().Err(err).Msg("failed to listen and serve")
+			}
+		}()
+	}
 
 	<-ctx.Done()
 

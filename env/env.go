@@ -9,6 +9,8 @@ import (
 type ENV struct {
 	AppMode            string   `mapstructure:"APP_MODE"`
 	AppPort            string   `mapstructure:"APP_PORT"`
+	TLSCertFile        string   `mapstructure:"TLS_CERT_FILE"`
+	TLSKeyFile         string   `mapstructure:"TLS_KEY_FILE"`
 	CORSAllowedOrigins []string `mapstructure:"CORS_ALLOWED_ORIGINS"`
 	AuthJWTSecretKey   string   `mapstructure:"AUTH_JWT_SECRET_KEY"`
 	AuthCookieDomain   string   `mapstructure:"AUTH_COOKIE_DOMAIN"`
@@ -40,6 +42,8 @@ func Parse() (*ENV, error) {
 	// which we can check later
 	viper.SetDefault("APP_MODE", "develop")
 	viper.SetDefault("APP_PORT", "8000")
+	viper.SetDefault("TLS_CERT_FILE", "")
+	viper.SetDefault("TLS_KEY_FILE", "")
 	viper.SetDefault("CORS_ALLOWED_ORIGINS", "*")
 	viper.SetDefault("AUTH_JWT_SECRET_KEY", "")
 	viper.SetDefault("AUTH_COOKIE_DOMAIN", "localhost")
