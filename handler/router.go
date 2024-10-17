@@ -5,9 +5,11 @@ import (
 	"github.com/nathanbizkit/article-management/middleware"
 )
 
+const API_GROUP_PATH = "/api"
+
 // Route links handlers to http api router
 func Route(router *gin.Engine, h *Handler) {
-	root := router.Group("/api")
+	root := router.Group(API_GROUP_PATH)
 	{
 		public := root.Group("")
 
@@ -20,7 +22,7 @@ func Route(router *gin.Engine, h *Handler) {
 		private := root.Group("")
 		private.Use(middleware.Auth(h.logger, h.auth))
 
-		private.GET("/me", h.CurrentUser)
+		private.GET("/me", h.GetCurrentUser)
 		private.PUT("/me", h.UpdateCurrentUser)
 
 		private.GET("/profiles/:username", h.ShowProfile)

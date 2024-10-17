@@ -40,7 +40,8 @@ func (h *Handler) FollowUser(ctx *gin.Context) {
 
 	if currentUser.Username == ctx.Param("username") {
 		msg := "cannot follow yourself"
-		h.logger.Error().Msg(msg)
+		err := fmt.Errorf("user (username: %s) cannot follow yourself", currentUser.Username)
+		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
 	}
@@ -72,7 +73,8 @@ func (h *Handler) UnfollowUser(ctx *gin.Context) {
 
 	if currentUser.Username == ctx.Param("username") {
 		msg := "cannot unfollow yourself"
-		h.logger.Error().Msg(msg)
+		err := fmt.Errorf("user (username: %s) cannot unfollow yourself", currentUser.Username)
+		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
 	}

@@ -45,6 +45,7 @@ type UserReponse struct {
 // ProfileResponse definition
 type ProfileResponse struct {
 	Username  string `json:"username"`
+	Name      string `json:"name"`
 	Bio       string `json:"bio"`
 	Image     string `json:"image"`
 	Following bool   `json:"following"`

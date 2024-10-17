@@ -97,8 +97,15 @@ func (a *Auth) GetContextUserID(ctx *gin.Context) uint {
 }
 
 // GetUserID gets a user id from request context
-func (a *Auth) GetUserID(ctx *gin.Context) (uint, error) {
-	tokenString, err := ctx.Cookie("session")
+func (a *Auth) GetUserID(ctx *gin.Context, refresh bool) (uint, error) {
+	var tokenName string
+	if refresh {
+		tokenName = "refreshToken"
+	} else {
+		tokenName = "session"
+	}
+
+	tokenString, err := ctx.Cookie(tokenName)
 	if err != nil {
 		return 0, err
 	}

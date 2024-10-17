@@ -48,6 +48,7 @@ func (u User) Validate() error {
 		),
 		validation.Field(
 			&u.Name,
+			validation.Required,
 			validation.Length(0, userShortMaxLen),
 		),
 		validation.Field(
@@ -101,7 +102,7 @@ func isStrongPassword(value interface{}) error {
 }
 
 // Overwrite overwrites each field if it's not zero-value
-func (u *User) Overwrite(username, email, password, name, bio, image string) {
+func (u *User) Overwrite(username, email, password, name, bio, image string) (passwordNeedHashing bool) {
 	if username != "" {
 		u.Username = username
 	}
@@ -112,6 +113,7 @@ func (u *User) Overwrite(username, email, password, name, bio, image string) {
 
 	if password != "" {
 		u.Password = password
+		passwordNeedHashing = true
 	}
 
 	if name != "" {
@@ -125,6 +127,8 @@ func (u *User) Overwrite(username, email, password, name, bio, image string) {
 	if image != "" {
 		u.Image = image
 	}
+
+	return
 }
 
 // HashPassword makes password field crypted
@@ -172,6 +176,7 @@ func (u *User) ResponseUser() message.UserReponse {
 func (u *User) ResponseProfile(following bool) message.ProfileResponse {
 	return message.ProfileResponse{
 		Username:  u.Username,
+		Name:      u.Name,
 		Bio:       u.Bio,
 		Image:     u.Image,
 		Following: following,
