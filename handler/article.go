@@ -107,7 +107,7 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 
 	var favoritedBy *model.User
 	favUsername := ctx.Query("favorited")
-	if len(favUsername) == 0 {
+	if favUsername == "" {
 		var err error
 		favoritedBy, err = h.us.GetByUsername(ctx.Request.Context(), favUsername)
 		if err != nil {
@@ -124,17 +124,22 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 		return
 	}
 
-	// TODO make better query
 	ras := make([]message.ArticleResponse, 0, len(articles))
 	for _, article := range articles {
 		favorited, err := h.as.IsFavorited(ctx.Request.Context(), &article, currentUser)
 		if err != nil {
-			// TODO
+			msg := "failed to get favorited status"
+			h.logger.Error().Err(err).Msg(msg)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
 		}
 
 		following, err := h.us.IsFollowing(ctx.Request.Context(), currentUser, &article.Author)
 		if err != nil {
-			// TODO
+			msg := "failed to get following status"
+			h.logger.Error().Err(err).Msg(msg)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
 		}
 
 		author := article.Author.ResponseProfile(following)
@@ -170,12 +175,14 @@ func (h *Handler) GetFeedArticles(ctx *gin.Context) {
 		return
 	}
 
-	// TODO make better query
 	ras := make([]message.ArticleResponse, 0, len(articles))
 	for _, article := range articles {
 		favorited, err := h.as.IsFavorited(ctx.Request.Context(), &article, currentUser)
 		if err != nil {
-			// TODO
+			msg := "failed to get favorited status"
+			h.logger.Error().Err(err).Msg(msg)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
 		}
 
 		author := article.Author.ResponseProfile(true)

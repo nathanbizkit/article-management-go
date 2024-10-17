@@ -24,18 +24,17 @@ type Tag struct {
 
 // Article model
 type Article struct {
-	ID             uint
-	Title          string
-	Description    string
-	Body           string
-	Tags           []Tag
-	UserID         uint
-	Author         User
-	FavoriteCount  int64
-	FavoritedUsers []User
-	Comments       []Comment
-	CreatedAt      time.Time
-	UpdatedAt      *time.Time
+	ID            uint
+	Title         string
+	Description   string
+	Body          string
+	Tags          []Tag
+	UserID        uint
+	Author        User
+	FavoriteCount int64
+	Comments      []Comment
+	CreatedAt     time.Time
+	UpdatedAt     *time.Time
 }
 
 // Validate validates fields of article model
@@ -68,7 +67,7 @@ func (a Article) Validate() error {
 
 func validateTag(value interface{}) error {
 	t, _ := value.(Tag)
-	if len(t.Name) == 0 {
+	if t.Name == "" {
 		return errors.New("must not be empty")
 	}
 	if len(t.Name) > tagMaxLen {

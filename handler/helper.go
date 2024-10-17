@@ -26,7 +26,7 @@ func (h *Handler) GetCurrentUserOrAbort(ctx *gin.Context) *model.User {
 // GetParamIDOrAbort returns param value as uint id from url parameters or abort
 func (h *Handler) GetParamAsIDOrAbort(ctx *gin.Context, key string) uint {
 	value := ctx.Param(key)
-	if len(value) == 0 {
+	if value == "" {
 		err := fmt.Errorf("param (%s) is empty", key)
 		h.logger.Error().Err(err).Msg(err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid %s id", key)})

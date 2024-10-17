@@ -57,7 +57,7 @@ func main() {
 	as := store.NewArticleStore(d)
 
 	h := handler.New(&l, e, auth, us, as)
-	handler.Route(router, auth, h)
+	handler.Route(router, h)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

@@ -80,10 +80,8 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: make better query
 	crs := make([]message.CommentResponse, 0, len(comments))
 	for _, c := range comments {
-		cr := c.ResponseComment(false)
 
 		follwing, err := h.us.IsFollowing(ctx.Request.Context(), currentUser, &c.Author)
 		if err != nil {
@@ -92,8 +90,9 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
 		}
-		cr.Author = c.Author.ResponseProfile(follwing)
 
+		cr := c.ResponseComment(false)
+		cr.Author = c.Author.ResponseProfile(follwing)
 		crs = append(crs, cr)
 	}
 

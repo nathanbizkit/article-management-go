@@ -2,12 +2,11 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/auth"
 	"github.com/nathanbizkit/article-management/middleware"
 )
 
 // Route links handlers to http api router
-func Route(router *gin.Engine, auth *auth.Auth, h *Handler) {
+func Route(router *gin.Engine, h *Handler) {
 	root := router.Group("/api")
 	{
 		public := root.Group("")
@@ -19,7 +18,7 @@ func Route(router *gin.Engine, auth *auth.Auth, h *Handler) {
 
 	{
 		private := root.Group("")
-		private.Use(middleware.Auth(auth))
+		private.Use(middleware.Auth(h.logger, h.auth))
 
 		private.GET("/me", h.CurrentUser)
 		private.PUT("/me", h.UpdateCurrentUser)

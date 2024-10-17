@@ -129,7 +129,7 @@ func (u *User) Overwrite(username, email, password, name, bio, image string) {
 
 // HashPassword makes password field crypted
 func (u *User) HashPassword() error {
-	if len(u.Password) == 0 {
+	if u.Password == "" {
 		return errors.New("password should not be empty")
 	}
 
