@@ -12,7 +12,8 @@ import (
 // Auth guards against unauthenticated incoming request
 func Auth(l *zerolog.Logger, a *auth.Auth) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		id, err := a.GetUserID(ctx, false)
+		refresh := false
+		id, err := a.GetUserID(ctx, refresh)
 		if err != nil {
 			msg := "unauthenticated"
 			err = fmt.Errorf("unauthenticated: %w", err)

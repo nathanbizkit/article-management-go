@@ -21,6 +21,7 @@ func NewUserStore(db *sql.DB) *UserStore {
 // GetByID finds a user by id
 func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 	var m model.User
+
 	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users WHERE id = $1`
 	err := s.db.QueryRowContext(ctx, queryString, id).
@@ -38,12 +39,14 @@ func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &m, nil
 }
 
 // GetByEmail finds a user by email
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var m model.User
+
 	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users WHERE email = $1`
 	err := s.db.QueryRowContext(ctx, queryString, email).
@@ -61,12 +64,14 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, 
 	if err != nil {
 		return nil, err
 	}
+
 	return &m, nil
 }
 
 // GetByUsername finds a user by username
 func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.User, error) {
 	var m model.User
+
 	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users WHERE username = $1`
 	err := s.db.QueryRowContext(ctx, queryString, username).
@@ -84,12 +89,14 @@ func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.
 	if err != nil {
 		return nil, err
 	}
+
 	return &m, nil
 }
 
 // Create creates a user and returns the newly created user
 func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, error) {
 	var u *model.User
+
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `INSERT INTO article_management.users (username, email, password, name, bio, image) 
 			VALUES ($1, $2, $3, $4, $5, $6) 
@@ -107,15 +114,18 @@ func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, err
 				&u.UpdatedAt,
 			)
 	})
+
 	return u, err
 }
 
 // Update updates a user (for username, email, password, name, bio, image)
 func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, error) {
 	var u *model.User
+
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
-		queryString := `UPDATE article_management.users SET username = $1, email = $2, password = $3, name = $4, bio = $5, image = $6 
-			WHERE id = $7 RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
+		queryString := `UPDATE article_management.users 
+			SET username = $1, email = $2, password = $3, name = $4, bio = $5, image = $6 WHERE id = $7 
+			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
 		return tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image, m.ID).
 			Scan(
 				&u.ID,
@@ -129,6 +139,7 @@ func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, err
 				&u.UpdatedAt,
 			)
 	})
+
 	return u, err
 }
 
@@ -139,6 +150,7 @@ func (s *UserStore) IsFollowing(ctx context.Context, a *model.User, b *model.Use
 	}
 
 	var count int
+
 	queryString := `SELECT COUNT(to_user_id) FROM article_management.follows 
 		WHERE from_user_id = $1 AND to_user_id = $2`
 	err := s.db.QueryRowContext(ctx, queryString, a.ID, b.ID).Scan(&count)
@@ -154,10 +166,7 @@ func (s *UserStore) Follow(ctx context.Context, a *model.User, b *model.User) er
 	return db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `INSERT INTO article_management.follows (from_user_id, to_user_id) VALUES ($1, $2)`
 		_, err := tx.ExecContext(ctx, queryString, a.ID, b.ID)
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	})
 }
 
@@ -166,10 +175,7 @@ func (s *UserStore) Unfollow(ctx context.Context, a *model.User, b *model.User) 
 	return db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `DELETE FROM article_management.follows WHERE from_user_id = $1 AND to_user_id = $2`
 		_, err := tx.ExecContext(ctx, queryString, a.ID, b.ID)
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	})
 }
 

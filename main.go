@@ -37,26 +37,24 @@ func main() {
 		l.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
-	l.Info().Str("name", "postgres").Str("database", e.DBName).
-		Msg("succeeded to connect to database")
+	l.Info().Str("name", "postgres").Str("database", e.DBName).Msg("succeeded to connect to database")
 
 	if e.AppMode == "production" || e.AppMode == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	l.Info().Str("mode", e.AppMode).Msgf("setting app to %s mode", e.AppMode)
-	l.Info().Str("mode", gin.Mode()).Msgf("gin router is running in %s mode", gin.Mode())
+	l.Info().Str("mode", gin.Mode()).Msgf("gin is in %s mode", gin.Mode())
 
 	router := gin.Default()
 	router.Use(gzip.DefaultHandler().Gin)
 	router.Use(middleware.CORS(e))
 
 	auth := auth.New(e)
-
 	us := store.NewUserStore(d)
 	as := store.NewArticleStore(d)
-
 	h := handler.New(&l, e, auth, us, as)
+
 	handler.Route(router, h)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

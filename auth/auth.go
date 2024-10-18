@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	tokenTTL   = 72 * time.Hour
-	refreshTTL = 14 * (24 * time.Hour)
+	tokenTTLInHour     = 72 * time.Hour
+	refreshTTLInHour   = 14 * (24 * time.Hour)
+	cookieMaxAgeInHour = (20 * (25 * time.Hour))
 )
 
 type claims struct {
@@ -39,12 +40,12 @@ func New(e *env.ENV) *Auth {
 
 // GenerateToken generates a new auth token
 func (a *Auth) GenerateToken(id uint) (*AuthToken, error) {
-	token, err := generateToken(a.env.AuthJWTSecretKey, id, time.Now(), tokenTTL)
+	token, err := generateToken(a.env.AuthJWTSecretKey, id, time.Now(), tokenTTLInHour)
 	if err != nil {
 		return nil, err
 	}
 
-	rt, err := generateToken(a.env.AuthJWTSecretKey, id, time.Now(), refreshTTL)
+	rt, err := generateToken(a.env.AuthJWTSecretKey, id, time.Now(), refreshTTLInHour)
 	if err != nil {
 		return nil, err
 	}
@@ -55,12 +56,12 @@ func (a *Auth) GenerateToken(id uint) (*AuthToken, error) {
 // GenerateTokenWithTime generates a new auth token with expired date computed with specified time
 func (a *Auth) GenerateTokenWithTime(id uint, t time.Time) (*AuthToken, error) {
 	// for testing purposes
-	token, err := generateToken(a.env.AuthJWTSecretKey, id, t, tokenTTL)
+	token, err := generateToken(a.env.AuthJWTSecretKey, id, t, tokenTTLInHour)
 	if err != nil {
 		return nil, err
 	}
 
-	rt, err := generateToken(a.env.AuthJWTSecretKey, id, t, refreshTTL)
+	rt, err := generateToken(a.env.AuthJWTSecretKey, id, t, refreshTTLInHour)
 	if err != nil {
 		return nil, err
 	}
@@ -98,11 +99,9 @@ func (a *Auth) GetContextUserID(ctx *gin.Context) uint {
 
 // GetUserID gets a user id from request context
 func (a *Auth) GetUserID(ctx *gin.Context, refresh bool) (uint, error) {
-	var tokenName string
+	tokenName := "session"
 	if refresh {
 		tokenName = "refreshToken"
-	} else {
-		tokenName = "session"
 	}
 
 	tokenString, err := ctx.Cookie(tokenName)
@@ -138,10 +137,12 @@ func (a *Auth) GetUserID(ctx *gin.Context, refresh bool) (uint, error) {
 }
 
 // SetCookieToken sets a jwt token cookie in http header
-func (a *Auth) SetCookieToken(ctx *gin.Context, t AuthToken, maxAge int, path string) {
+func (a *Auth) SetCookieToken(ctx *gin.Context, t AuthToken, path string) {
 	ctx.SetSameSite(http.SameSiteStrictMode)
-	ctx.SetCookie("session", t.Token, maxAge, path, a.env.AuthCookieDomain, true, true)
-	ctx.SetCookie("refreshToken", t.RefreshToken, maxAge, path, a.env.AuthCookieDomain, true, true)
+	ctx.SetCookie("session", t.Token, int(cookieMaxAgeInHour.Seconds()),
+		path, a.env.AuthCookieDomain, true, true)
+	ctx.SetCookie("refreshToken", t.RefreshToken, int(cookieMaxAgeInHour.Seconds()),
+		path, a.env.AuthCookieDomain, true, true)
 }
 
 // GetCookieToken returns a jwt token in http cookie

@@ -30,22 +30,22 @@ func (h *Handler) Login(ctx *gin.Context) {
 	}
 
 	if !user.CheckPassword(r.Password) {
+		msg := "invalid password"
 		err := fmt.Errorf("password (%s) is not matched", r.Password)
-		h.logger.Error().Err(err).Msgf("failed to login due to receive wrong password: %s", r.Password)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid email or password"})
+		h.logger.Error().Err(err).Msgf(msg)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
 	}
 
 	token, err := h.auth.GenerateToken(user.ID)
 	if err != nil {
 		msg := "failed to generate token"
-		err = fmt.Errorf("failed to generate token: %w", err)
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, 0, API_GROUP_PATH)
+	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
 
 	ctx.AbortWithStatus(http.StatusOK)
 }
@@ -71,7 +71,6 @@ func (h *Handler) Register(ctx *gin.Context) {
 
 	err = user.Validate()
 	if err != nil {
-		err := fmt.Errorf("validation error: %w", err)
 		h.logger.Error().Err(err).Msg("validation error")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -79,7 +78,6 @@ func (h *Handler) Register(ctx *gin.Context) {
 
 	err = user.HashPassword()
 	if err != nil {
-		err = fmt.Errorf("failed to has password: %w", err)
 		h.logger.Error().Err(err).Msg("failed to hash password")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid password"})
 		return
@@ -96,22 +94,23 @@ func (h *Handler) Register(ctx *gin.Context) {
 	token, err := h.auth.GenerateToken(createdUser.ID)
 	if err != nil {
 		msg := "failed to generate token"
-		err = fmt.Errorf("failed to generate token: %w", err)
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, 0, API_GROUP_PATH)
+	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
 
-	ctx.AbortWithStatusJSON(http.StatusOK, createdUser.ResponseProfile(false))
+	following := false
+	ctx.AbortWithStatusJSON(http.StatusOK, createdUser.ResponseProfile(following))
 }
 
 // RefreshToken verifies and renew tokens to cookie
 func (h *Handler) RefreshToken(ctx *gin.Context) {
 	h.logger.Info().Interface("req", ctx.Request).Msg("refresh token")
 
-	id, err := h.auth.GetUserID(ctx, true)
+	refresh := true
+	id, err := h.auth.GetUserID(ctx, refresh)
 	if err != nil {
 		msg := "failed to extract token from cookie"
 		h.logger.Error().Err(err).Msg(msg)
@@ -122,13 +121,12 @@ func (h *Handler) RefreshToken(ctx *gin.Context) {
 	token, err := h.auth.GenerateToken(id)
 	if err != nil {
 		msg := "failed to generate token"
-		err = fmt.Errorf("failed to generate token: %w", err)
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, 0, API_GROUP_PATH)
+	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
 
 	ctx.AbortWithStatus(http.StatusOK)
 }
@@ -142,15 +140,15 @@ func (h *Handler) GetCurrentUser(ctx *gin.Context) {
 	token, err := h.auth.GenerateToken(currentUser.ID)
 	if err != nil {
 		msg := "failed to generate token"
-		err = fmt.Errorf("failed to generate token: %w", err)
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, 0, API_GROUP_PATH)
+	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
 
-	ctx.AbortWithStatusJSON(http.StatusOK, currentUser.ResponseProfile(false))
+	following := false
+	ctx.AbortWithStatusJSON(http.StatusOK, currentUser.ResponseProfile(following))
 }
 
 // UpdateCurrentUser updates current user's profile
@@ -167,20 +165,18 @@ func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	needHashing := currentUser.Overwrite(r.Username, r.Email, r.Password, r.Name, r.Bio, r.Image)
+	isPlainPassword := currentUser.Overwrite(r.Username, r.Email, r.Password, r.Name, r.Bio, r.Image)
 
 	err = currentUser.Validate()
 	if err != nil {
-		err := fmt.Errorf("validation error: %w", err)
 		h.logger.Error().Err(err).Msg("validation error")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if needHashing {
+	if isPlainPassword {
 		err = currentUser.HashPassword()
 		if err != nil {
-			err = fmt.Errorf("failed to has password: %w", err)
 			h.logger.Error().Err(err).Msg("failed to hash password")
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid password"})
 			return
@@ -198,13 +194,13 @@ func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
 	token, err := h.auth.GenerateToken(updatedUser.ID)
 	if err != nil {
 		msg := "failed to generate token"
-		err = fmt.Errorf("failed to generate token: %w", err)
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, 0, API_GROUP_PATH)
+	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
 
-	ctx.AbortWithStatusJSON(http.StatusOK, updatedUser.ResponseProfile(false))
+	following := false
+	ctx.AbortWithStatusJSON(http.StatusOK, updatedUser.ResponseProfile(following))
 }

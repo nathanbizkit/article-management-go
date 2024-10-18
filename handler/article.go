@@ -9,6 +9,11 @@ import (
 	"github.com/nathanbizkit/article-management/model"
 )
 
+const (
+	defaultLimit  = 20
+	defaultOffset = 0
+)
+
 // CreateArticle creates an article
 func (h *Handler) CreateArticle(ctx *gin.Context) {
 	h.logger.Info().Interface("req", ctx.Request).Msg("create article")
@@ -39,7 +44,6 @@ func (h *Handler) CreateArticle(ctx *gin.Context) {
 
 	err = article.Validate()
 	if err != nil {
-		err := fmt.Errorf("validation error: %w", err)
 		h.logger.Error().Err(err).Msg("validation error")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -56,9 +60,7 @@ func (h *Handler) CreateArticle(ctx *gin.Context) {
 	favorited := false
 	following := false
 	author := currentUser.ResponseProfile(following)
-	ra := createdArticle.ResponseArticle(favorited, author)
-
-	ctx.JSON(http.StatusOK, ra)
+	ctx.JSON(http.StatusOK, createdArticle.ResponseArticle(favorited, author))
 }
 
 // GetArticle gets an article
@@ -92,9 +94,7 @@ func (h *Handler) GetArticle(ctx *gin.Context) {
 	}
 
 	author := article.Author.ResponseProfile(following)
-	ra := article.ResponseArticle(favorited, author)
-
-	ctx.JSON(http.StatusOK, ra)
+	ctx.JSON(http.StatusOK, article.ResponseArticle(favorited, author))
 }
 
 // GetArticles gets recent articles globally
@@ -103,17 +103,18 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	limit, offset := h.GetPaginationQuery(ctx, 20, 0)
-
 	var favoritedBy *model.User
 	favUsername := ctx.Query("favorited")
-	if favUsername == "" {
+	if favUsername != "" {
 		var err error
 		favoritedBy, err = h.us.GetByUsername(ctx.Request.Context(), favUsername)
 		if err != nil {
 			favoritedBy = nil
+			h.logger.Warn().Msg("skipped: cannot find favorited user")
 		}
 	}
+
+	limit, offset := h.GetPaginationQuery(ctx, defaultLimit, defaultOffset)
 
 	articles, err := h.as.GetArticles(ctx.Request.Context(),
 		ctx.Query("tag"), ctx.Query("author"), favoritedBy, limit, offset)
@@ -147,9 +148,7 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 		ras = append(ras, ra)
 	}
 
-	ars := message.ArticlesResponse{Articles: ras, ArticlesCount: int64(len(ras))}
-
-	ctx.JSON(http.StatusOK, ars)
+	ctx.JSON(http.StatusOK, message.ArticlesResponse{Articles: ras, ArticlesCount: int64(len(ras))})
 }
 
 // GetFeedArticles gets recent articles from users that current user follows
@@ -165,7 +164,7 @@ func (h *Handler) GetFeedArticles(ctx *gin.Context) {
 		return
 	}
 
-	limit, offset := h.GetPaginationQuery(ctx, 20, 0)
+	limit, offset := h.GetPaginationQuery(ctx, defaultLimit, defaultOffset)
 
 	articles, err := h.as.GetFeedArticles(ctx.Request.Context(), userIDs, limit, offset)
 	if err != nil {
@@ -175,6 +174,7 @@ func (h *Handler) GetFeedArticles(ctx *gin.Context) {
 		return
 	}
 
+	following := true
 	ras := make([]message.ArticleResponse, 0, len(articles))
 	for _, article := range articles {
 		favorited, err := h.as.IsFavorited(ctx.Request.Context(), &article, currentUser)
@@ -185,14 +185,12 @@ func (h *Handler) GetFeedArticles(ctx *gin.Context) {
 			return
 		}
 
-		author := article.Author.ResponseProfile(true)
+		author := article.Author.ResponseProfile(following)
 		ra := article.ResponseArticle(favorited, author)
 		ras = append(ras, ra)
 	}
 
-	ars := message.ArticlesResponse{Articles: ras, ArticlesCount: int64(len(ras))}
-
-	ctx.JSON(http.StatusOK, ars)
+	ctx.JSON(http.StatusOK, message.ArticlesResponse{Articles: ras, ArticlesCount: int64(len(ras))})
 }
 
 // UpdateArticle updates an article
@@ -210,9 +208,9 @@ func (h *Handler) UpdateArticle(ctx *gin.Context) {
 	}
 
 	if article.Author.ID != currentUser.ID {
+		msg := "forbidden"
 		err := fmt.Errorf("user (id=%d) attempted to update other user's article (id=%d)",
 			currentUser.ID, articleID)
-		msg := "forbidden"
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": msg})
 		return
@@ -230,16 +228,12 @@ func (h *Handler) UpdateArticle(ctx *gin.Context) {
 
 	err = article.Validate()
 	if err != nil {
-		err := fmt.Errorf("validation error: %w", err)
 		h.logger.Error().Err(err).Msg("validation error")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var updatedArticle *model.Article
-	err = h.as.Update(ctx.Request.Context(), article, func(a *model.Article) {
-		updatedArticle = a
-	})
+	updatedArticle, err := h.as.Update(ctx.Request.Context(), article)
 	if err != nil {
 		msg := "failed to update article"
 		h.logger.Error().Err(err).Msg(msg)
@@ -250,9 +244,7 @@ func (h *Handler) UpdateArticle(ctx *gin.Context) {
 	favorited := false
 	following := false
 	author := currentUser.ResponseProfile(following)
-	ra := updatedArticle.ResponseArticle(favorited, author)
-
-	ctx.JSON(http.StatusOK, ra)
+	ctx.JSON(http.StatusOK, updatedArticle.ResponseArticle(favorited, author))
 }
 
 // DeleteArticle deletes an article
@@ -270,9 +262,9 @@ func (h *Handler) DeleteArticle(ctx *gin.Context) {
 	}
 
 	if article.Author.ID != currentUser.ID {
+		msg := "forbidden"
 		err := fmt.Errorf("user (id=%d) attempted to delete other user's article (id=%d)",
 			currentUser.ID, articleID)
-		msg := "forbidden"
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": msg})
 		return
@@ -321,9 +313,7 @@ func (h *Handler) FavoriteArticle(ctx *gin.Context) {
 
 	favorited := true
 	author := article.Author.ResponseProfile(following)
-	ra := article.ResponseArticle(favorited, author)
-
-	ctx.JSON(http.StatusOK, ra)
+	ctx.JSON(http.StatusOK, article.ResponseArticle(favorited, author))
 }
 
 // UnfavoriteArticle removes an article from user's favorites
@@ -358,7 +348,5 @@ func (h *Handler) UnfavoriteArticle(ctx *gin.Context) {
 
 	favorited := false
 	author := article.Author.ResponseProfile(following)
-	ra := article.ResponseArticle(favorited, author)
-
-	ctx.JSON(http.StatusOK, ra)
+	ctx.JSON(http.StatusOK, article.ResponseArticle(favorited, author))
 }

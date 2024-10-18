@@ -27,16 +27,16 @@ func (h *Handler) GetCurrentUserOrAbort(ctx *gin.Context) *model.User {
 func (h *Handler) GetParamAsIDOrAbort(ctx *gin.Context, key string) uint {
 	value := ctx.Param(key)
 	if value == "" {
+		msg := fmt.Sprintf("invalid %s id", key)
 		err := fmt.Errorf("param (%s) is empty", key)
-		h.logger.Error().Err(err).Msg(err.Error())
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid %s id", key)})
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
 		return 0
 	}
 
 	id, err := strconv.Atoi(value)
 	if err != nil {
-		h.logger.Error().Err(err).
-			Msg(fmt.Sprintf("cannot convert %s (%s) into integer", key, value))
+		h.logger.Error().Err(err).Msg(fmt.Sprintf("cannot convert %s (%s) into integer", key, value))
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid %s id", key)})
 		return 0
 	}
@@ -45,19 +45,18 @@ func (h *Handler) GetParamAsIDOrAbort(ctx *gin.Context, key string) uint {
 }
 
 // GetPaginationQuery returns limit and offset queries from url
-func (h *Handler) GetPaginationQuery(ctx *gin.Context, fallbackLimit, fallbackOffset int64) (limit, offset int64) {
-	rawLimit, err := strconv.Atoi(ctx.Query("limit"))
-	if err != nil {
-		limit = fallbackLimit
-	} else {
-		limit = int64(rawLimit)
+func (h *Handler) GetPaginationQuery(ctx *gin.Context, defaultLimit, defaultOffset int64) (limit, offset int64) {
+	limit = defaultLimit
+	offset = defaultOffset
+
+	l, err := strconv.Atoi(ctx.Query("limit"))
+	if err == nil {
+		limit = int64(l)
 	}
 
-	rawOffset, err := strconv.Atoi(ctx.Query("offset"))
-	if err != nil {
-		offset = fallbackOffset
-	} else {
-		offset = int64(rawOffset)
+	o, err := strconv.Atoi(ctx.Query("offset"))
+	if err == nil {
+		offset = int64(o)
 	}
 
 	return

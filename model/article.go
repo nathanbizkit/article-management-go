@@ -67,12 +67,15 @@ func (a Article) Validate() error {
 
 func validateTag(value interface{}) error {
 	t, _ := value.(Tag)
+
 	if t.Name == "" {
 		return errors.New("must not be empty")
 	}
+
 	if len(t.Name) > tagMaxLen {
 		return fmt.Errorf("the length must be no more than %d", tagMaxLen)
 	}
+
 	return nil
 }
 
@@ -113,7 +116,7 @@ func (a *Article) ResponseArticle(favorited bool, author message.ProfileResponse
 	for _, t := range a.Tags {
 		tags = append(tags, t.Name)
 	}
-	ar.Tags = tags
 
+	ar.Tags = tags
 	return ar
 }

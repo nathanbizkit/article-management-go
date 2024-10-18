@@ -62,7 +62,8 @@ func (h *Handler) FollowUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, requestUser.ResponseProfile(true))
+	following := true
+	ctx.JSON(http.StatusOK, requestUser.ResponseProfile(following))
 }
 
 // UnfollowUser unfollows a user
@@ -96,7 +97,8 @@ func (h *Handler) UnfollowUser(ctx *gin.Context) {
 	}
 
 	if !following {
-		err := fmt.Errorf("current user (ID: %d) is not following request user (ID: %d)", currentUser.ID, requestUser.ID)
+		err := fmt.Errorf("current user (ID: %d) is not following request user (ID: %d)",
+			currentUser.ID, requestUser.ID)
 		h.logger.Error().Err(err).Msg("current user is not following request user")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "you are not following the user"})
 		return
@@ -110,5 +112,6 @@ func (h *Handler) UnfollowUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, requestUser.ResponseProfile(false))
+	following = false
+	ctx.JSON(http.StatusOK, requestUser.ResponseProfile(following))
 }

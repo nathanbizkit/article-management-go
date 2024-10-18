@@ -10,12 +10,11 @@ import (
 func CORS(e *env.ENV) gin.HandlerFunc {
 	config := cors.DefaultConfig()
 	config.AllowCredentials = true
+	config.AllowAllOrigins = true
 
 	if len(e.CORSAllowedOrigins) > 0 {
 		config.AllowAllOrigins = false
 		config.AllowOrigins = e.CORSAllowedOrigins
-	} else {
-		config.AllowAllOrigins = true
 	}
 
 	return cors.New(config)

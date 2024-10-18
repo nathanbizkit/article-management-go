@@ -30,9 +30,9 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 }
 
 // Update updates an article
-func (s *ArticleStore) Update(ctx context.Context, m *model.Article, updateFunc func(a *model.Article)) error {
+func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Article, error) {
 	// TODO
-	return nil
+	return nil, nil
 }
 
 // GetArticles gets global articles

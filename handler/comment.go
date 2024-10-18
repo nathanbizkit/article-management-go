@@ -82,7 +82,6 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 
 	crs := make([]message.CommentResponse, 0, len(comments))
 	for _, c := range comments {
-
 		follwing, err := h.us.IsFollowing(ctx.Request.Context(), currentUser, &c.Author)
 		if err != nil {
 			msg := "failed to get following status"
