@@ -187,10 +187,7 @@ func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
 		}
 	}
 
-	var updatedUser *model.User
-	err = h.us.Update(ctx.Request.Context(), currentUser, func(u *model.User) {
-		updatedUser = u
-	})
+	updatedUser, err := h.us.Update(ctx.Request.Context(), currentUser)
 	if err != nil {
 		msg := "failed to update profile"
 		h.logger.Error().Err(err).Msg(msg)
@@ -209,5 +206,5 @@ func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
 
 	h.auth.SetCookieToken(ctx, *token, 0, API_GROUP_PATH)
 
-	ctx.AbortWithStatusJSON(http.StatusOK, currentUser.ResponseProfile(false))
+	ctx.AbortWithStatusJSON(http.StatusOK, updatedUser.ResponseProfile(false))
 }
