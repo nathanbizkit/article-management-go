@@ -1,6 +1,0 @@
-with-expecter: True
-all: True
-inpackage: True
-dir: "mock/{{.PackagePath}}"
-mockname: "{{.InterfaceName}}"
-packages:
