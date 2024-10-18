@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - ./certs:/certs
     env_file:
       - env/local.env
     depends_on:
