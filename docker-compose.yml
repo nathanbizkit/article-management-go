@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./certs:/certs
+      - ~/certs:/certs # change this to CA cert and key files
     env_file:
       - env/local.env
     depends_on:

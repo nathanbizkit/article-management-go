@@ -25,7 +25,6 @@ log/
 db/data/*
 .DS_Store
 .idea/
-certs/
 
 *.env
 *.env.*
