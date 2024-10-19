@@ -59,8 +59,7 @@ func (h *Handler) CreateArticle(ctx *gin.Context) {
 
 	favorited := false
 	following := false
-	author := currentUser.ResponseProfile(following)
-	ctx.JSON(http.StatusOK, createdArticle.ResponseArticle(favorited, author))
+	ctx.JSON(http.StatusOK, createdArticle.ResponseArticle(favorited, following))
 }
 
 // GetArticle gets an article
@@ -93,8 +92,7 @@ func (h *Handler) GetArticle(ctx *gin.Context) {
 		return
 	}
 
-	author := article.Author.ResponseProfile(following)
-	ctx.JSON(http.StatusOK, article.ResponseArticle(favorited, author))
+	ctx.JSON(http.StatusOK, article.ResponseArticle(favorited, following))
 }
 
 // GetArticles gets recent articles globally
@@ -143,9 +141,7 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 			return
 		}
 
-		author := article.Author.ResponseProfile(following)
-		ra := article.ResponseArticle(favorited, author)
-		ras = append(ras, ra)
+		ras = append(ras, article.ResponseArticle(favorited, following))
 	}
 
 	ctx.JSON(http.StatusOK, message.ArticlesResponse{Articles: ras, ArticlesCount: int64(len(ras))})
@@ -185,9 +181,7 @@ func (h *Handler) GetFeedArticles(ctx *gin.Context) {
 			return
 		}
 
-		author := article.Author.ResponseProfile(following)
-		ra := article.ResponseArticle(favorited, author)
-		ras = append(ras, ra)
+		ras = append(ras, article.ResponseArticle(favorited, following))
 	}
 
 	ctx.JSON(http.StatusOK, message.ArticlesResponse{Articles: ras, ArticlesCount: int64(len(ras))})
@@ -200,7 +194,7 @@ func (h *Handler) UpdateArticle(ctx *gin.Context) {
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
 	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), uint(articleID))
+	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
@@ -243,8 +237,7 @@ func (h *Handler) UpdateArticle(ctx *gin.Context) {
 
 	favorited := false
 	following := false
-	author := currentUser.ResponseProfile(following)
-	ctx.JSON(http.StatusOK, updatedArticle.ResponseArticle(favorited, author))
+	ctx.JSON(http.StatusOK, updatedArticle.ResponseArticle(favorited, following))
 }
 
 // DeleteArticle deletes an article
@@ -254,7 +247,7 @@ func (h *Handler) DeleteArticle(ctx *gin.Context) {
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
 	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), uint(articleID))
+	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
@@ -288,14 +281,16 @@ func (h *Handler) FavoriteArticle(ctx *gin.Context) {
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
 	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), uint(articleID))
+	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
 		return
 	}
 
-	err = h.as.AddFavorite(ctx.Request.Context(), article, currentUser)
+	err = h.as.AddFavorite(ctx.Request.Context(), article, currentUser, func(favoritesCount int64) {
+		article.FavoritesCount = favoritesCount
+	})
 	if err != nil {
 		msg := "failed to add favorite"
 		h.logger.Error().Err(err).Msg(msg)
@@ -312,8 +307,7 @@ func (h *Handler) FavoriteArticle(ctx *gin.Context) {
 	}
 
 	favorited := true
-	author := article.Author.ResponseProfile(following)
-	ctx.JSON(http.StatusOK, article.ResponseArticle(favorited, author))
+	ctx.JSON(http.StatusOK, article.ResponseArticle(favorited, following))
 }
 
 // UnfavoriteArticle removes an article from user's favorites
@@ -323,14 +317,16 @@ func (h *Handler) UnfavoriteArticle(ctx *gin.Context) {
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
 	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), uint(articleID))
+	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
 		return
 	}
 
-	err = h.as.DeleteFavorite(ctx.Request.Context(), article, currentUser)
+	err = h.as.DeleteFavorite(ctx.Request.Context(), article, currentUser, func(favoritesCount int64) {
+		article.FavoritesCount = favoritesCount
+	})
 	if err != nil {
 		msg := "failed to remove favorite"
 		h.logger.Error().Err(err).Msg(msg)
@@ -347,6 +343,5 @@ func (h *Handler) UnfavoriteArticle(ctx *gin.Context) {
 	}
 
 	favorited := false
-	author := article.Author.ResponseProfile(following)
-	ctx.JSON(http.StatusOK, article.ResponseArticle(favorited, author))
+	ctx.JSON(http.StatusOK, article.ResponseArticle(favorited, following))
 }

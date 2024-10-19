@@ -17,6 +17,7 @@ const (
 
 // Tag model
 type Tag struct {
+	ID        uint
 	Name      string
 	CreatedAt time.Time
 	UpdatedAt *time.Time
@@ -24,17 +25,16 @@ type Tag struct {
 
 // Article model
 type Article struct {
-	ID            uint
-	Title         string
-	Description   string
-	Body          string
-	Tags          []Tag
-	UserID        uint
-	Author        User
-	FavoriteCount int64
-	Comments      []Comment
-	CreatedAt     time.Time
-	UpdatedAt     *time.Time
+	ID             uint
+	Title          string
+	Description    string
+	Body           string
+	Tags           []Tag
+	UserID         uint
+	Author         User
+	FavoritesCount int64
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
 }
 
 // Validate validates fields of article model
@@ -95,15 +95,15 @@ func (a *Article) Overwrite(title, description, body string) {
 }
 
 // ResponseArticle generates response message from article
-func (a *Article) ResponseArticle(favorited bool, author message.ProfileResponse) message.ArticleResponse {
+func (a *Article) ResponseArticle(favorited, followingAuthor bool) message.ArticleResponse {
 	ar := message.ArticleResponse{
 		ID:             a.ID,
 		Title:          a.Title,
 		Description:    a.Description,
 		Body:           a.Body,
 		Favorited:      favorited,
-		FavoritesCount: a.FavoriteCount,
-		Author:         author,
+		FavoritesCount: a.FavoritesCount,
+		Author:         a.Author.ResponseProfile(followingAuthor),
 		CreatedAt:      a.CreatedAt.Format(time.RFC3339Nano),
 	}
 

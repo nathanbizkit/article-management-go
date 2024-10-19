@@ -28,7 +28,7 @@ type AuthToken struct {
 	RefreshToken string
 }
 
-// Auth is an authentication service
+// Auth definition
 type Auth struct {
 	env *env.ENV
 }

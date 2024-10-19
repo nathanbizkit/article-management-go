@@ -20,82 +20,82 @@ func NewUserStore(db *sql.DB) *UserStore {
 
 // GetByID finds a user by id
 func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
-	var user model.User
+	var u model.User
 
 	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users WHERE id = $1`
 	err := s.db.QueryRowContext(ctx, queryString, id).
 		Scan(
-			&user.ID,
-			&user.Username,
-			&user.Email,
-			&user.Password,
-			&user.Name,
-			&user.Bio,
-			&user.Image,
-			&user.CreatedAt,
-			&user.UpdatedAt,
+			&u.ID,
+			&u.Username,
+			&u.Email,
+			&u.Password,
+			&u.Name,
+			&u.Bio,
+			&u.Image,
+			&u.CreatedAt,
+			&u.UpdatedAt,
 		)
 	if err != nil {
 		return nil, err
 	}
 
-	return &user, nil
+	return &u, nil
 }
 
 // GetByEmail finds a user by email
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, error) {
-	var user model.User
+	var u model.User
 
 	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users WHERE email = $1`
 	err := s.db.QueryRowContext(ctx, queryString, email).
 		Scan(
-			&user.ID,
-			&user.Username,
-			&user.Email,
-			&user.Password,
-			&user.Name,
-			&user.Bio,
-			&user.Image,
-			&user.CreatedAt,
-			&user.UpdatedAt,
+			&u.ID,
+			&u.Username,
+			&u.Email,
+			&u.Password,
+			&u.Name,
+			&u.Bio,
+			&u.Image,
+			&u.CreatedAt,
+			&u.UpdatedAt,
 		)
 	if err != nil {
 		return nil, err
 	}
 
-	return &user, nil
+	return &u, nil
 }
 
 // GetByUsername finds a user by username
 func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.User, error) {
-	var user model.User
+	var u model.User
 
 	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users WHERE username = $1`
 	err := s.db.QueryRowContext(ctx, queryString, username).
 		Scan(
-			&user.ID,
-			&user.Username,
-			&user.Email,
-			&user.Password,
-			&user.Name,
-			&user.Bio,
-			&user.Image,
-			&user.CreatedAt,
-			&user.UpdatedAt,
+			&u.ID,
+			&u.Username,
+			&u.Email,
+			&u.Password,
+			&u.Name,
+			&u.Bio,
+			&u.Image,
+			&u.CreatedAt,
+			&u.UpdatedAt,
 		)
 	if err != nil {
 		return nil, err
 	}
 
-	return &user, nil
+	return &u, nil
 }
 
 // Create creates a user and returns the newly created user
 func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, error) {
-	var user model.User
+	var u model.User
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `INSERT INTO article_management.users (username, email, password, name, bio, image) 
@@ -103,24 +103,24 @@ func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, err
 			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
 		return tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image).
 			Scan(
-				&user.ID,
-				&user.Username,
-				&user.Email,
-				&user.Password,
-				&user.Name,
-				&user.Bio,
-				&user.Image,
-				&user.CreatedAt,
-				&user.UpdatedAt,
+				&u.ID,
+				&u.Username,
+				&u.Email,
+				&u.Password,
+				&u.Name,
+				&u.Bio,
+				&u.Image,
+				&u.CreatedAt,
+				&u.UpdatedAt,
 			)
 	})
 
-	return &user, err
+	return &u, err
 }
 
 // Update updates a user (for username, email, password, name, bio, image)
 func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, error) {
-	var user model.User
+	var u model.User
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `UPDATE article_management.users 
@@ -128,19 +128,19 @@ func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, err
 			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
 		return tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image, m.ID).
 			Scan(
-				&user.ID,
-				&user.Username,
-				&user.Email,
-				&user.Password,
-				&user.Name,
-				&user.Bio,
-				&user.Image,
-				&user.CreatedAt,
-				&user.UpdatedAt,
+				&u.ID,
+				&u.Username,
+				&u.Email,
+				&u.Password,
+				&u.Name,
+				&u.Bio,
+				&u.Image,
+				&u.CreatedAt,
+				&u.UpdatedAt,
 			)
 	})
 
-	return &user, err
+	return &u, err
 }
 
 // IsFollowing returns wheter user A follows user B
@@ -191,7 +191,12 @@ func (s *UserStore) GetFollowingUserIDs(ctx context.Context, m *model.User) ([]u
 	ids := make([]uint, 0)
 	for rows.Next() {
 		var id uint
-		rows.Scan(&id)
+
+		err = rows.Scan(&id)
+		if err != nil {
+			return []uint{}, err
+		}
+
 		ids = append(ids, id)
 	}
 

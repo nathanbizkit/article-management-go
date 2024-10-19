@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// ENV definition
 type ENV struct {
 	AppMode            string   `mapstructure:"APP_MODE"`
 	AppPort            string   `mapstructure:"APP_PORT"`

@@ -14,7 +14,6 @@ type Comment struct {
 	UserID    uint
 	Author    User
 	ArticleID uint
-	Article   Article
 	CreatedAt time.Time
 	UpdatedAt *time.Time
 }
@@ -40,14 +39,9 @@ func (c Comment) Validate() error {
 // ResponseComment generates response message for comment
 func (c *Comment) ResponseComment(followingAuthor bool) message.CommentResponse {
 	cr := message.CommentResponse{
-		ID:   c.ID,
-		Body: c.Body,
-		Author: message.ProfileResponse{
-			Username:  c.Author.Username,
-			Bio:       c.Author.Bio,
-			Image:     c.Author.Image,
-			Following: followingAuthor,
-		},
+		ID:        c.ID,
+		Body:      c.Body,
+		Author:    c.Author.ResponseProfile(followingAuthor),
 		CreatedAt: c.CreatedAt.Format(time.RFC3339Nano),
 	}
 

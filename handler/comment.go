@@ -36,7 +36,6 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 		UserID:    currentUser.ID,
 		Author:    *currentUser,
 		ArticleID: article.ID,
-		Article:   *article,
 	}
 
 	err = comment.Validate()
@@ -82,7 +81,7 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 
 	crs := make([]message.CommentResponse, 0, len(comments))
 	for _, c := range comments {
-		follwing, err := h.us.IsFollowing(ctx.Request.Context(), currentUser, &c.Author)
+		following, err := h.us.IsFollowing(ctx.Request.Context(), currentUser, &c.Author)
 		if err != nil {
 			msg := "failed to get following status"
 			h.logger.Error().Err(err).Msg(msg)
@@ -90,9 +89,7 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 			return
 		}
 
-		cr := c.ResponseComment(false)
-		cr.Author = c.Author.ResponseProfile(follwing)
-		crs = append(crs, cr)
+		crs = append(crs, c.ResponseComment(following))
 	}
 
 	ctx.JSON(http.StatusOK, message.CommentsResponse{Comments: crs})
