@@ -1,10 +1,10 @@
-.PHONY: unittest coveragetest mock
+.PHONY: unittest coveragetest e2etest
 
 unittest:
-	go test ./...
+	go test -v ./... -parallel 4
 
 coveragetest:
-	go test ./... -coverprofile=cover.out && go tool cover -html cover.out
+	go test -v ./... -parallel 4 -coverprofile=cover.out && go tool cover -html cover.out
 
-mock:
-	mockery
+e2etest:
+	bash test/run-api-tests.sh

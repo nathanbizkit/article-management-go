@@ -13,9 +13,11 @@ import (
 )
 
 const (
+	userShortMinLen = 5
 	userShortMaxLen = 100
 	userLongMaxLen  = 255
 	passwordMinLen  = 7
+	passwordMaxLen  = 50
 )
 
 // User model
@@ -37,19 +39,20 @@ func (u User) Validate() error {
 		validation.Field(
 			&u.Username,
 			validation.Required,
-			validation.Length(0, userShortMaxLen),
-			validation.Match(regexp.MustCompile("[a-zA-Z0-9]+")),
+			validation.Length(userShortMinLen, userShortMaxLen),
+			validation.Match(
+				regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9_]+[a-zA-Z0-9]$")),
 		),
 		validation.Field(
 			&u.Email,
 			validation.Required,
-			validation.Length(0, userShortMaxLen),
+			validation.Length(userShortMinLen, userShortMaxLen),
 			is.Email,
 		),
 		validation.Field(
 			&u.Name,
 			validation.Required,
-			validation.Length(0, userShortMaxLen),
+			validation.Length(userShortMinLen, userShortMaxLen),
 		),
 		validation.Field(
 			&u.Bio,
@@ -63,17 +66,14 @@ func (u User) Validate() error {
 		validation.Field(
 			&u.Password,
 			validation.Required,
-			validation.Length(passwordMinLen, 0),
+			validation.Length(passwordMinLen, passwordMaxLen),
 			validation.By(isStrongPassword),
 		),
 	)
 }
 
 func isStrongPassword(value interface{}) error {
-	s, ok := value.(string)
-	if !ok {
-		return errors.New("must be a string")
-	}
+	s, _ := value.(string)
 
 	var (
 		hasUpper   = false
@@ -120,13 +120,8 @@ func (u *User) Overwrite(username, email, password, name, bio, image string) (is
 		u.Name = name
 	}
 
-	if bio != "" {
-		u.Bio = bio
-	}
-
-	if image != "" {
-		u.Image = image
-	}
+	u.Bio = bio
+	u.Image = image
 
 	return
 }
@@ -150,26 +145,6 @@ func (u *User) HashPassword() error {
 func (u *User) CheckPassword(plain string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plain))
 	return err == nil
-}
-
-// ResponseUser generates response message for user
-func (u *User) ResponseUser() message.UserReponse {
-	ur := message.UserReponse{
-		ID:        u.ID,
-		Username:  u.Username,
-		Email:     u.Email,
-		Name:      u.Name,
-		Bio:       u.Bio,
-		Image:     u.Image,
-		CreatedAt: u.CreatedAt.Format(time.RFC3339Nano),
-	}
-
-	if u.UpdatedAt != nil {
-		d := u.UpdatedAt.Format(time.RFC3339Nano)
-		ur.UpdatedAt = &d
-	}
-
-	return ur
 }
 
 // ResponseProfile generates response message for user's profile

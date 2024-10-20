@@ -28,20 +28,6 @@ type UpdateUserRequest struct {
 
 /* Response message */
 
-// UserReponse definition
-type UserReponse struct {
-	ID               uint              `json:"id"`
-	Username         string            `json:"username"`
-	Email            string            `json:"email"`
-	Name             string            `json:"name"`
-	Bio              string            `json:"bio"`
-	Image            string            `json:"image"`
-	Follows          []ProfileResponse `json:"follows"`
-	FavoriteArticles []ArticleResponse `json:"articles"`
-	CreatedAt        string            `json:"created_at"`
-	UpdatedAt        *string           `json:"updated_at"`
-}
-
 // ProfileResponse definition
 type ProfileResponse struct {
 	Username  string `json:"username"`
