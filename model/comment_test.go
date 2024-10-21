@@ -88,6 +88,7 @@ func TestCommentModel_ResponseComment(t *testing.T) {
 		UpdatedAt: &updatedAt,
 	}
 
+	following := false
 	expected := message.CommentResponse{
 		ID:   1,
 		Body: "This is my comment.",
@@ -96,12 +97,12 @@ func TestCommentModel_ResponseComment(t *testing.T) {
 			Name:      "FooUser",
 			Bio:       "This is my bio.",
 			Image:     "https://imgur.com/image.jpeg",
-			Following: false,
+			Following: following,
 		},
 		CreatedAt: createdAt.Format(time.RFC3339Nano),
 		UpdatedAt: &updatedAtString,
 	}
 
-	cr := c.ResponseComment(false)
+	cr := c.ResponseComment(following)
 	assert.Equal(t, expected, cr)
 }
