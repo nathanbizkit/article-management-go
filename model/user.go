@@ -50,6 +50,12 @@ func (u User) Validate() error {
 			is.Email,
 		),
 		validation.Field(
+			&u.Password,
+			validation.Required,
+			validation.Length(passwordMinLen, passwordMaxLen),
+			validation.By(isStrongPassword),
+		),
+		validation.Field(
 			&u.Name,
 			validation.Required,
 			validation.Length(userShortMinLen, userShortMaxLen),
@@ -62,12 +68,6 @@ func (u User) Validate() error {
 			&u.Image,
 			validation.Length(0, userLongMaxLen),
 			is.URL,
-		),
-		validation.Field(
-			&u.Password,
-			validation.Required,
-			validation.Length(passwordMinLen, passwordMaxLen),
-			validation.By(isStrongPassword),
 		),
 	)
 }

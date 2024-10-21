@@ -13,10 +13,11 @@ import (
 
 func TestUserModel_Validate(t *testing.T) {
 	longString := strings.Repeat("a", 101)
+	longerString := strings.Repeat("a", 256)
 
 	tests := []struct {
 		title    string
-		in       *User
+		u        *User
 		hasError bool
 	}{
 		{
@@ -24,8 +25,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			false,
 		},
@@ -34,8 +37,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -44,8 +49,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -54,8 +61,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: longString,
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -64,8 +73,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "_fooname",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -74,8 +85,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "fooname_",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -84,8 +97,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_name-@-",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -94,8 +109,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -104,8 +121,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "email.com",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -114,8 +133,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo",
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -124,8 +145,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    longString,
-				Name:     "FooUser",
 				Password: "pA55w0Rd!",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -134,8 +157,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo@example.com",
-				Name:     "",
 				Password: "pA55w0Rd!",
+				Name:     "",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -144,8 +169,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo@example.com",
-				Name:     "Foo",
 				Password: "pA55w0Rd!",
+				Name:     "Foo",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -154,8 +181,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo@example.com",
-				Name:     longString,
 				Password: "pA55w0Rd!",
+				Name:     longString,
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -164,8 +193,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -174,8 +205,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "pass",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -184,8 +217,10 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: strings.Repeat("a", 51),
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
 		},
@@ -194,15 +229,53 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo@example.com",
-				Name:     "FooUser",
 				Password: "password",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "https://imgur.com/image.jpeg",
+			},
+			true,
+		},
+		{
+			"validate user: bio is too long",
+			&User{
+				Username: "foo_user",
+				Email:    "foo@example.com",
+				Password: "password",
+				Name:     "FooUser",
+				Bio:      longerString,
+				Image:    "https://imgur.com/image.jpeg",
+			},
+			true,
+		},
+		{
+			"validate user: image is too long",
+			&User{
+				Username: "foo_user",
+				Email:    "foo@example.com",
+				Password: "password",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    longerString,
+			},
+			true,
+		},
+		{
+			"validate user: invalid type image (url)",
+			&User{
+				Username: "foo_user",
+				Email:    "foo@example.com",
+				Password: "password",
+				Name:     "FooUser",
+				Bio:      "This is my bio.",
+				Image:    "invalid_image_url",
 			},
 			true,
 		},
 	}
 
 	for _, tt := range tests {
-		err := tt.in.Validate()
+		err := tt.u.Validate()
 		if tt.hasError {
 			assert.Error(t, err, fmt.Sprintf("%s: expect an error", tt.title))
 		} else {
