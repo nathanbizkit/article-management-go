@@ -277,6 +277,7 @@ func TestUserModel_Validate(t *testing.T) {
 
 	for _, tt := range tests {
 		err := tt.u.Validate()
+
 		if tt.hasError {
 			assert.Error(t, err, fmt.Sprintf("%s: expect an error", tt.title))
 		} else {
@@ -286,6 +287,8 @@ func TestUserModel_Validate(t *testing.T) {
 }
 
 func TestUserModel_Overwrite(t *testing.T) {
+	now := time.Now()
+
 	tests := []struct {
 		title          string
 		u              *User
@@ -303,7 +306,7 @@ func TestUserModel_Overwrite(t *testing.T) {
 				Name:      "FooUser",
 				Bio:       "This is my bio.",
 				Image:     "https://imgur.com/image.jpeg",
-				CreatedAt: time.Now(),
+				CreatedAt: now,
 				UpdatedAt: nil,
 			},
 			&User{
@@ -322,7 +325,7 @@ func TestUserModel_Overwrite(t *testing.T) {
 				Name:      "NewFooUser",
 				Bio:       "This is my new bio.",
 				Image:     "https://imgur.com/new_image.jpeg",
-				CreatedAt: time.Now(),
+				CreatedAt: now,
 				UpdatedAt: nil,
 			},
 			true,
@@ -337,7 +340,7 @@ func TestUserModel_Overwrite(t *testing.T) {
 				Name:      "FooUser",
 				Bio:       "This is my bio.",
 				Image:     "https://imgur.com/image.jpeg",
-				CreatedAt: time.Now(),
+				CreatedAt: now,
 				UpdatedAt: nil,
 			},
 			&User{
@@ -352,7 +355,7 @@ func TestUserModel_Overwrite(t *testing.T) {
 				Name:      "FooUser",
 				Bio:       "",
 				Image:     "",
-				CreatedAt: time.Now(),
+				CreatedAt: now,
 				UpdatedAt: nil,
 			},
 			false,
@@ -367,25 +370,8 @@ func TestUserModel_Overwrite(t *testing.T) {
 		assert.Equal(t, tt.expectedReturn, isPlainPassword, tt.title,
 			fmt.Sprintf("%s: expect return isPlainPassword (%v)=%v",
 				tt.title, isPlainPassword, tt.expectedReturn))
-
-		assert.Equal(t, tt.expectedUser.Username, tt.u.Username,
-			fmt.Sprintf("%s: expect username (%s)=%s",
-				tt.title, tt.u.Username, tt.expectedUser.Username))
-		assert.Equal(t, tt.expectedUser.Email, tt.u.Email,
-			fmt.Sprintf("%s: expect email (%s)=%s",
-				tt.title, tt.u.Email, tt.expectedUser.Email))
-		assert.Equal(t, tt.expectedUser.Password, tt.u.Password,
-			fmt.Sprintf("%s: expect password (%s)=%s",
-				tt.title, tt.u.Password, tt.expectedUser.Password))
-		assert.Equal(t, tt.expectedUser.Name, tt.u.Name,
-			fmt.Sprintf("%s: expect name (%s)=%s",
-				tt.title, tt.u.Name, tt.expectedUser.Name))
-		assert.Equal(t, tt.expectedUser.Bio, tt.u.Bio,
-			fmt.Sprintf("%s: expect bio (%s)=%s",
-				tt.title, tt.u.Bio, tt.expectedUser.Bio))
-		assert.Equal(t, tt.expectedUser.Image, tt.u.Image,
-			fmt.Sprintf("%s: expect image (%s)=%s",
-				tt.title, tt.u.Image, tt.expectedUser.Image))
+		assert.Equal(t, tt.expectedUser, tt.u,
+			fmt.Sprintf("%s: expect user (%#v)=%#v", tt.title, tt.u, tt.expectedUser))
 	}
 }
 
@@ -474,14 +460,16 @@ func TestUserModel_ResponseProfile(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: nil,
 	}
+
+	following := false
 	expected := message.ProfileResponse{
 		Username:  "foo_user",
 		Name:      "FooUser",
 		Bio:       "This is my bio.",
 		Image:     "https://imgur.com/image.jpeg",
-		Following: false,
+		Following: following,
 	}
 
-	profile := u.ResponseProfile(false)
+	profile := u.ResponseProfile(following)
 	assert.Equal(t, expected, profile)
 }
