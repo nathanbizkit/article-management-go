@@ -10,8 +10,9 @@ import (
 )
 
 const (
+	articleShortMinLen = 5
 	articleShortMaxLen = 100
-	articleLongMaxLen  = 255
+	tagMinLen          = 3
 	tagMaxLen          = 50
 )
 
@@ -43,11 +44,11 @@ func (a Article) Validate() error {
 		validation.Field(
 			&a.Title,
 			validation.Required,
-			validation.Length(0, articleShortMaxLen),
+			validation.Length(articleShortMinLen, articleShortMaxLen),
 		),
 		validation.Field(
 			&a.Description,
-			validation.Length(0, articleShortMaxLen),
+			validation.Length(articleShortMinLen, articleShortMaxLen),
 		),
 		validation.Field(
 			&a.Body,
@@ -72,6 +73,10 @@ func validateTag(value interface{}) error {
 		return errors.New("must not be empty")
 	}
 
+	if len(t.Name) < tagMinLen {
+		return fmt.Errorf("the length must be more than %d", tagMinLen)
+	}
+
 	if len(t.Name) > tagMaxLen {
 		return fmt.Errorf("the length must be no more than %d", tagMaxLen)
 	}
@@ -85,13 +90,11 @@ func (a *Article) Overwrite(title, description, body string) {
 		a.Title = title
 	}
 
-	if description != "" {
-		a.Description = description
-	}
-
 	if body != "" {
 		a.Body = body
 	}
+
+	a.Description = description
 }
 
 // ResponseArticle generates response message from article
