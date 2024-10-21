@@ -12,8 +12,9 @@ import (
 )
 
 func TestUserModel_Validate(t *testing.T) {
-	longString := strings.Repeat("a", 101)
-	longerString := strings.Repeat("a", 256)
+	shortMaxLenString := strings.Repeat("a", 101)
+	longMaxLenString := strings.Repeat("a", 256)
+	passwordMaxLenString := strings.Repeat("a", 51)
 
 	tests := []struct {
 		title    string
@@ -59,7 +60,7 @@ func TestUserModel_Validate(t *testing.T) {
 		{
 			"validate user: username is too long",
 			&User{
-				Username: longString,
+				Username: shortMaxLenString,
 				Email:    "foo@example.com",
 				Password: "pA55w0Rd!",
 				Name:     "FooUser",
@@ -144,7 +145,7 @@ func TestUserModel_Validate(t *testing.T) {
 			"validate user: email is too long",
 			&User{
 				Username: "foo_user",
-				Email:    longString,
+				Email:    shortMaxLenString,
 				Password: "pA55w0Rd!",
 				Name:     "FooUser",
 				Bio:      "This is my bio.",
@@ -182,7 +183,7 @@ func TestUserModel_Validate(t *testing.T) {
 				Username: "foo_user",
 				Email:    "foo@example.com",
 				Password: "pA55w0Rd!",
-				Name:     longString,
+				Name:     shortMaxLenString,
 				Bio:      "This is my bio.",
 				Image:    "https://imgur.com/image.jpeg",
 			},
@@ -217,7 +218,7 @@ func TestUserModel_Validate(t *testing.T) {
 			&User{
 				Username: "foo_user",
 				Email:    "foo@example.com",
-				Password: strings.Repeat("a", 51),
+				Password: passwordMaxLenString,
 				Name:     "FooUser",
 				Bio:      "This is my bio.",
 				Image:    "https://imgur.com/image.jpeg",
@@ -243,7 +244,7 @@ func TestUserModel_Validate(t *testing.T) {
 				Email:    "foo@example.com",
 				Password: "password",
 				Name:     "FooUser",
-				Bio:      longerString,
+				Bio:      longMaxLenString,
 				Image:    "https://imgur.com/image.jpeg",
 			},
 			true,
@@ -256,7 +257,7 @@ func TestUserModel_Validate(t *testing.T) {
 				Password: "password",
 				Name:     "FooUser",
 				Bio:      "This is my bio.",
-				Image:    longerString,
+				Image:    longMaxLenString,
 			},
 			true,
 		},
@@ -365,24 +366,24 @@ func TestUserModel_Overwrite(t *testing.T) {
 
 		assert.Equal(t, tt.expectedReturn, isPlainPassword, tt.title,
 			fmt.Sprintf("%s: expect return isPlainPassword (%v)=%v",
-				tt.title, tt.expectedReturn, isPlainPassword))
+				tt.title, isPlainPassword, tt.expectedReturn))
 
-		assert.Equal(t, tt.u.Username, tt.expectedUser.Username,
+		assert.Equal(t, tt.expectedUser.Username, tt.u.Username,
 			fmt.Sprintf("%s: expect username (%s)=%s",
 				tt.title, tt.u.Username, tt.expectedUser.Username))
-		assert.Equal(t, tt.u.Email, tt.expectedUser.Email,
+		assert.Equal(t, tt.expectedUser.Email, tt.u.Email,
 			fmt.Sprintf("%s: expect email (%s)=%s",
 				tt.title, tt.u.Email, tt.expectedUser.Email))
-		assert.Equal(t, tt.u.Password, tt.expectedUser.Password,
+		assert.Equal(t, tt.expectedUser.Password, tt.u.Password,
 			fmt.Sprintf("%s: expect password (%s)=%s",
 				tt.title, tt.u.Password, tt.expectedUser.Password))
-		assert.Equal(t, tt.u.Name, tt.expectedUser.Name,
+		assert.Equal(t, tt.expectedUser.Name, tt.u.Name,
 			fmt.Sprintf("%s: expect name (%s)=%s",
 				tt.title, tt.u.Name, tt.expectedUser.Name))
-		assert.Equal(t, tt.u.Bio, tt.expectedUser.Bio,
+		assert.Equal(t, tt.expectedUser.Bio, tt.u.Bio,
 			fmt.Sprintf("%s: expect bio (%s)=%s",
 				tt.title, tt.u.Bio, tt.expectedUser.Bio))
-		assert.Equal(t, tt.u.Image, tt.expectedUser.Image,
+		assert.Equal(t, tt.expectedUser.Image, tt.u.Image,
 			fmt.Sprintf("%s: expect image (%s)=%s",
 				tt.title, tt.u.Image, tt.expectedUser.Image))
 	}
@@ -421,6 +422,8 @@ func TestUserModel_HashPassword(t *testing.T) {
 				fmt.Sprintf("%s: expect no hashing", tt.title))
 		} else {
 			assert.NoError(t, err, fmt.Sprintf("%s: expect no error", tt.title))
+			assert.NotEqual(t, tempPassword, tt.u.Password,
+				fmt.Sprintf("%s: expect password to change", tt.title))
 
 			err = bcrypt.CompareHashAndPassword([]byte(tt.u.Password), []byte(tempPassword))
 			assert.NoError(t, err, fmt.Sprintf("%s: expect hashing", tt.title))
@@ -429,8 +432,8 @@ func TestUserModel_HashPassword(t *testing.T) {
 }
 
 func TestUserModel_CheckPassword(t *testing.T) {
-	plainPassword := "pA55w0Rd!"
-	h, _ := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
+	plain := "pA55w0Rd!"
+	h, _ := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
 
 	tests := []struct {
 		title          string
@@ -441,7 +444,7 @@ func TestUserModel_CheckPassword(t *testing.T) {
 		{
 			"check password user: success",
 			&User{Password: string(h)},
-			plainPassword,
+			plain,
 			true,
 		},
 		{
@@ -455,8 +458,7 @@ func TestUserModel_CheckPassword(t *testing.T) {
 	for _, tt := range tests {
 		pass := tt.u.CheckPassword(tt.in)
 		assert.Equal(t, tt.expectedReturn, pass,
-			fmt.Sprintf("%s: expect return (%v)=%v",
-				tt.title, pass, tt.expectedReturn))
+			fmt.Sprintf("%s: expect return (%v)=%v", tt.title, pass, tt.expectedReturn))
 	}
 }
 
