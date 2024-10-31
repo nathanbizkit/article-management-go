@@ -10,278 +10,284 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestArticleModel_Validate(t *testing.T) {
-	shortMaxLenString := strings.Repeat("a", 101)
-	tagMaxLenString := strings.Repeat("a", 51)
-
-	tests := []struct {
-		title    string
-		a        *Article
-		hasError bool
-	}{
-		{
-			"validate article: success",
-			&Article{
-				Title:       "Article 1",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-			},
-			false,
-		},
-		{
-			"validate article: no title",
-			&Article{
-				Title:       "",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-			},
-			true,
-		},
-		{
-			"validate article: title is too short",
-			&Article{
-				Title:       "Art",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-			},
-			true,
-		},
-		{
-			"validate article: title is too long",
-			&Article{
-				Title:       shortMaxLenString,
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-			},
-			true,
-		},
-		{
-			"validate article: description is too short",
-			&Article{
-				Title:       "Article 1",
-				Description: "This",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-			},
-			true,
-		},
-		{
-			"validate article: description is too long",
-			&Article{
-				Title:       "Article 1",
-				Description: shortMaxLenString,
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-			},
-			true,
-		},
-		{
-			"validate article: no body",
-			&Article{
-				Title:       "Article 1",
-				Description: "This is a description.",
-				Body:        "",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-			},
-			true,
-		},
-		{
-			"validate article: no user id",
-			&Article{
-				Title:       "Article 1",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      0,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-			},
-			true,
-		},
-		{
-			"validate article: no tags",
-			&Article{
-				Title:       "Article 1",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{},
-			},
-			true,
-		},
-		{
-			"validate article: empty tag name",
-			&Article{
-				Title:       "Article 1",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: ""}},
-			},
-			true,
-		},
-		{
-			"validate article: tag name is too short",
-			&Article{
-				Title:       "Article 1",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "a"}, {Name: "b"}},
-			},
-			true,
-		},
-		{
-			"validate article: tag name is too long",
-			&Article{
-				Title:       "Article 1",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: tagMaxLenString}},
-			},
-			true,
-		},
+func TestUnit_ArticleModel(t *testing.T) {
+	if !testing.Short() {
+		t.Skip("skipping unit tests.")
 	}
 
-	for _, tt := range tests {
-		err := tt.a.Validate()
+	t.Run("Validate", func(t *testing.T) {
+		shortMaxLenString := strings.Repeat("a", 101)
+		tagMaxLenString := strings.Repeat("a", 51)
 
-		if tt.hasError {
-			assert.Error(t, err, fmt.Sprintf("%s: expect an error", tt.title))
-		} else {
-			assert.NoError(t, err, fmt.Sprintf("%s: expect no error", tt.title))
+		tests := []struct {
+			title    string
+			a        *Article
+			hasError bool
+		}{
+			{
+				"validate article: success",
+				&Article{
+					Title:       "Article 1",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+				},
+				false,
+			},
+			{
+				"validate article: no title",
+				&Article{
+					Title:       "",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+				},
+				true,
+			},
+			{
+				"validate article: title is too short",
+				&Article{
+					Title:       "Art",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+				},
+				true,
+			},
+			{
+				"validate article: title is too long",
+				&Article{
+					Title:       shortMaxLenString,
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+				},
+				true,
+			},
+			{
+				"validate article: description is too short",
+				&Article{
+					Title:       "Article 1",
+					Description: "This",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+				},
+				true,
+			},
+			{
+				"validate article: description is too long",
+				&Article{
+					Title:       "Article 1",
+					Description: shortMaxLenString,
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+				},
+				true,
+			},
+			{
+				"validate article: no body",
+				&Article{
+					Title:       "Article 1",
+					Description: "This is a description.",
+					Body:        "",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+				},
+				true,
+			},
+			{
+				"validate article: no user id",
+				&Article{
+					Title:       "Article 1",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      0,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+				},
+				true,
+			},
+			{
+				"validate article: no tags",
+				&Article{
+					Title:       "Article 1",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{},
+				},
+				true,
+			},
+			{
+				"validate article: empty tag name",
+				&Article{
+					Title:       "Article 1",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: ""}},
+				},
+				true,
+			},
+			{
+				"validate article: tag name is too short",
+				&Article{
+					Title:       "Article 1",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "a"}, {Name: "b"}},
+				},
+				true,
+			},
+			{
+				"validate article: tag name is too long",
+				&Article{
+					Title:       "Article 1",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: tagMaxLenString}},
+				},
+				true,
+			},
 		}
-	}
-}
 
-func TestArticleModel_Overwrite(t *testing.T) {
-	now := time.Now()
+		for _, tt := range tests {
+			err := tt.a.Validate()
 
-	tests := []struct {
-		title           string
-		a               *Article
-		in              *Article
-		expectedArticle *Article
-	}{
-		{
-			"overwrite article: success",
-			&Article{
-				ID:          1,
-				Title:       "Article 1",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-				CreatedAt:   now,
+			if tt.hasError {
+				assert.Error(t, err, fmt.Sprintf("%s: expect an error", tt.title))
+			} else {
+				assert.NoError(t, err, fmt.Sprintf("%s: expect no error", tt.title))
+			}
+		}
+	})
+
+	t.Run("Overwrite", func(t *testing.T) {
+		now := time.Now()
+
+		tests := []struct {
+			title           string
+			a               *Article
+			in              *Article
+			expectedArticle *Article
+		}{
+			{
+				"overwrite article: success",
+				&Article{
+					ID:          1,
+					Title:       "Article 1",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+					CreatedAt:   now,
+				},
+				&Article{
+					Title:       "New Article 1",
+					Description: "This is a new description.",
+					Body:        "This is a new text body.",
+				},
+				&Article{
+					ID:          1,
+					Title:       "New Article 1",
+					Description: "This is a new description.",
+					Body:        "This is a new text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+					CreatedAt:   now,
+				},
 			},
-			&Article{
-				Title:       "New Article 1",
-				Description: "This is a new description.",
-				Body:        "This is a new text body.",
+			{
+				"overwrite article: empty description and no changes for other fields",
+				&Article{
+					ID:          1,
+					Title:       "Article 1",
+					Description: "This is a description.",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+					CreatedAt:   now,
+				},
+				&Article{
+					Description: "",
+				},
+				&Article{
+					ID:          1,
+					Title:       "Article 1",
+					Description: "",
+					Body:        "This is a text body.",
+					UserID:      1,
+					Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+					CreatedAt:   now,
+				},
 			},
-			&Article{
-				ID:          1,
-				Title:       "New Article 1",
-				Description: "This is a new description.",
-				Body:        "This is a new text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-				CreatedAt:   now,
+		}
+
+		for _, tt := range tests {
+			tt.a.Overwrite(tt.in.Title, tt.in.Description, tt.in.Body)
+
+			assert.Equal(t, tt.expectedArticle, tt.a,
+				fmt.Sprintf("%s: expect article (%#v)=%#v", tt.title, tt.a, tt.expectedArticle))
+		}
+	})
+
+	t.Run("ResponseArticle", func(t *testing.T) {
+		createdAt := time.Now()
+		updatedAt := time.Now().Add(10 * time.Hour)
+		updatedAtString := updatedAt.Format(time.RFC3339Nano)
+
+		a := Article{
+			ID:          1,
+			Title:       "Article 1",
+			Description: "This is a description.",
+			Body:        "This is a text body.",
+			UserID:      1,
+			Author: User{
+				ID:        1,
+				Username:  "foo_user",
+				Email:     "foo@example.com",
+				Password:  "encrypted_password",
+				Name:      "FooUser",
+				Bio:       "This is my bio.",
+				Image:     "https://imgur.com/image.jpeg",
+				CreatedAt: createdAt,
+				UpdatedAt: nil,
 			},
-		},
-		{
-			"overwrite article: empty description and no changes for other fields",
-			&Article{
-				ID:          1,
-				Title:       "Article 1",
-				Description: "This is a description.",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-				CreatedAt:   now,
+			FavoritesCount: 10,
+			Tags:           []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
+			CreatedAt:      createdAt,
+			UpdatedAt:      &updatedAt,
+		}
+
+		favorited := false
+		following := false
+		expected := message.ArticleResponse{
+			ID:          1,
+			Title:       "Article 1",
+			Description: "This is a description.",
+			Body:        "This is a text body.",
+			Author: message.ProfileResponse{
+				Username:  "foo_user",
+				Name:      "FooUser",
+				Bio:       "This is my bio.",
+				Image:     "https://imgur.com/image.jpeg",
+				Following: following,
 			},
-			&Article{
-				Description: "",
-			},
-			&Article{
-				ID:          1,
-				Title:       "Article 1",
-				Description: "",
-				Body:        "This is a text body.",
-				UserID:      1,
-				Tags:        []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-				CreatedAt:   now,
-			},
-		},
-	}
+			Favorited:      favorited,
+			FavoritesCount: 10,
+			CreatedAt:      createdAt.Format(time.RFC3339Nano),
+			UpdatedAt:      &updatedAtString,
+			Tags:           []string{"tag-1", "tag-2"},
+		}
 
-	for _, tt := range tests {
-		tt.a.Overwrite(tt.in.Title, tt.in.Description, tt.in.Body)
-
-		assert.Equal(t, tt.expectedArticle, tt.a,
-			fmt.Sprintf("%s: expect article (%#v)=%#v", tt.title, tt.a, tt.expectedArticle))
-	}
-}
-
-func TestArticleModel_ResponseArticle(t *testing.T) {
-	createdAt := time.Now()
-	updatedAt := time.Now().Add(10 * time.Hour)
-	updatedAtString := updatedAt.Format(time.RFC3339Nano)
-
-	a := Article{
-		ID:          1,
-		Title:       "Article 1",
-		Description: "This is a description.",
-		Body:        "This is a text body.",
-		UserID:      1,
-		Author: User{
-			ID:        1,
-			Username:  "foo_user",
-			Email:     "foo@example.com",
-			Password:  "encrypted_password",
-			Name:      "FooUser",
-			Bio:       "This is my bio.",
-			Image:     "https://imgur.com/image.jpeg",
-			CreatedAt: createdAt,
-			UpdatedAt: nil,
-		},
-		FavoritesCount: 10,
-		Tags:           []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-		CreatedAt:      createdAt,
-		UpdatedAt:      &updatedAt,
-	}
-
-	favorited := false
-	following := false
-	expected := message.ArticleResponse{
-		ID:          1,
-		Title:       "Article 1",
-		Description: "This is a description.",
-		Body:        "This is a text body.",
-		Author: message.ProfileResponse{
-			Username:  "foo_user",
-			Name:      "FooUser",
-			Bio:       "This is my bio.",
-			Image:     "https://imgur.com/image.jpeg",
-			Following: following,
-		},
-		Favorited:      favorited,
-		FavoritesCount: 10,
-		CreatedAt:      createdAt.Format(time.RFC3339Nano),
-		UpdatedAt:      &updatedAtString,
-		Tags:           []string{"tag-1", "tag-2"},
-	}
-
-	ar := a.ResponseArticle(favorited, following)
-	assert.Equal(t, expected, ar)
+		ar := a.ResponseArticle(favorited, following)
+		assert.Equal(t, expected, ar)
+	})
 }
