@@ -102,7 +102,7 @@ func isStrongPassword(value interface{}) error {
 }
 
 // Overwrite overwrites each field if it's not zero-value
-func (u *User) Overwrite(username, email, password, name, bio, image string) (isPlainPassword bool) {
+func (u *User) Overwrite(username, email, password, name, bio, image string) (requirePasswordHashing bool) {
 	if username != "" {
 		u.Username = username
 	}
@@ -113,7 +113,7 @@ func (u *User) Overwrite(username, email, password, name, bio, image string) (is
 
 	if password != "" {
 		u.Password = password
-		isPlainPassword = true
+		requirePasswordHashing = true
 	}
 
 	if name != "" {

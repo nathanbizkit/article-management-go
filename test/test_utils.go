@@ -1,11 +1,11 @@
 package test
 
 import (
-	"log"
 	"math/rand"
 	"testing"
 	"time"
 
+	"github.com/nathanbizkit/article-management/env"
 	"github.com/nathanbizkit/article-management/test/container"
 )
 
@@ -15,8 +15,25 @@ const englishCharset = "abcdefghijklmnopqrstuvwxyz" +
 var ltc *container.LocalTestContainer
 var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-// GetLocalTestContainer returns a local test container
-func GetLocalTestContainer(t *testing.T) *container.LocalTestContainer {
+// NewTestENV returns an env for testing
+func NewTestENV(t *testing.T) *env.ENV {
+	t.Helper()
+
+	return &env.ENV{
+		AppMode:          "testing",
+		AppPort:          "8000",
+		AuthJWTSecretKey: "secretkey",
+		AuthCookieDomain: "localhost",
+		DBUser:           "root",
+		DBPass:           "password",
+		DBHost:           "db_test",
+		DBPort:           "5432",
+		DBName:           "app_test",
+	}
+}
+
+// NewLocalTestContainer returns a local test container
+func NewLocalTestContainer(t *testing.T) *container.LocalTestContainer {
 	t.Helper()
 
 	if testing.Short() {
@@ -25,7 +42,7 @@ func GetLocalTestContainer(t *testing.T) *container.LocalTestContainer {
 
 	ltc, err := container.NewLocalTestContainer()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	t.Cleanup(func() {

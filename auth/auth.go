@@ -18,7 +18,7 @@ const (
 )
 
 type claims struct {
-	UserID uint `json:"user_id"`
+	UserID *uint `json:"user_id,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -71,7 +71,7 @@ func (a *Auth) GenerateTokenWithTime(id uint, t time.Time) (*AuthToken, error) {
 
 func generateToken(key string, id uint, now time.Time, fromNow time.Duration) (string, error) {
 	claims := &claims{
-		id,
+		&id,
 		jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(fromNow)),
@@ -124,16 +124,12 @@ func (a *Auth) GetUserID(ctx *gin.Context, refresh bool) (uint, error) {
 		return 0, err
 	}
 
-	if !token.Valid {
-		return 0, errors.New("invalid token")
-	}
-
 	c, ok := token.Claims.(*claims)
-	if !ok {
-		return 0, errors.New("invalid: cannot map token to claims")
+	if !ok || c.UserID == nil {
+		return 0, errors.New("invalid token claims")
 	}
 
-	return c.UserID, nil
+	return *c.UserID, nil
 }
 
 // SetCookieToken sets a jwt token cookie in http header
@@ -152,9 +148,17 @@ func (a *Auth) GetCookieToken(ctx *gin.Context) (*AuthToken, error) {
 		return nil, err
 	}
 
+	if t == "" {
+		return nil, errors.New("session token is empty")
+	}
+
 	rt, err := ctx.Cookie("refreshToken")
 	if err != nil {
 		return nil, err
+	}
+
+	if rt == "" {
+		return nil, errors.New("refresh token is empty")
 	}
 
 	return &AuthToken{Token: t, RefreshToken: rt}, nil

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -162,9 +161,9 @@ func TestUnit_ArticleModel(t *testing.T) {
 			err := tt.a.Validate()
 
 			if tt.hasError {
-				assert.Error(t, err, fmt.Sprintf("%s: expect an error", tt.title))
+				assert.Error(t, err, tt.title)
 			} else {
-				assert.NoError(t, err, fmt.Sprintf("%s: expect no error", tt.title))
+				assert.NoError(t, err, tt.title)
 			}
 		}
 	})
@@ -173,10 +172,10 @@ func TestUnit_ArticleModel(t *testing.T) {
 		now := time.Now()
 
 		tests := []struct {
-			title           string
-			a               *Article
-			in              *Article
-			expectedArticle *Article
+			title    string
+			a        *Article
+			in       *Article
+			expected *Article
 		}{
 			{
 				"overwrite article: success",
@@ -232,9 +231,7 @@ func TestUnit_ArticleModel(t *testing.T) {
 
 		for _, tt := range tests {
 			tt.a.Overwrite(tt.in.Title, tt.in.Description, tt.in.Body)
-
-			assert.Equal(t, tt.expectedArticle, tt.a,
-				fmt.Sprintf("%s: expect article (%#v)=%#v", tt.title, tt.a, tt.expectedArticle))
+			assert.Equal(t, tt.expected, tt.a, tt.title)
 		}
 	})
 
@@ -287,7 +284,7 @@ func TestUnit_ArticleModel(t *testing.T) {
 			Tags:           []string{"tag-1", "tag-2"},
 		}
 
-		ar := a.ResponseArticle(favorited, following)
-		assert.Equal(t, expected, ar)
+		actual := a.ResponseArticle(favorited, following)
+		assert.Equal(t, expected, actual)
 	})
 }

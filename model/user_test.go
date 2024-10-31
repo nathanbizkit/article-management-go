@@ -284,9 +284,9 @@ func TestUnit_UserModel(t *testing.T) {
 			err := tt.u.Validate()
 
 			if tt.hasError {
-				assert.Error(t, err, fmt.Sprintf("%s: expect an error", tt.title))
+				assert.Error(t, err, tt.title)
 			} else {
-				assert.NoError(t, err, fmt.Sprintf("%s: expect no error", tt.title))
+				assert.NoError(t, err, tt.title)
 			}
 		}
 	})
@@ -295,11 +295,11 @@ func TestUnit_UserModel(t *testing.T) {
 		now := time.Now()
 
 		tests := []struct {
-			title          string
-			u              *User
-			in             *User
-			expectedUser   *User
-			expectedReturn bool
+			title        string
+			u            *User
+			in           *User
+			expectedUser *User
+			expected     bool
 		}{
 			{
 				"overwrite user: success",
@@ -368,15 +368,12 @@ func TestUnit_UserModel(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			isPlainPassword := tt.u.Overwrite(
+			actual := tt.u.Overwrite(
 				tt.in.Username, tt.in.Email, tt.in.Password,
 				tt.in.Name, tt.in.Bio, tt.in.Image)
 
-			assert.Equal(t, tt.expectedReturn, isPlainPassword, tt.title,
-				fmt.Sprintf("%s: expect return isPlainPassword (%v)=%v",
-					tt.title, isPlainPassword, tt.expectedReturn))
-			assert.Equal(t, tt.expectedUser, tt.u,
-				fmt.Sprintf("%s: expect user (%#v)=%#v", tt.title, tt.u, tt.expectedUser))
+			assert.Equal(t, tt.expected, actual, tt.title)
+			assert.Equal(t, tt.expectedUser, tt.u, tt.title)
 		}
 	})
 
@@ -408,16 +405,14 @@ func TestUnit_UserModel(t *testing.T) {
 			err := tt.u.HashPassword()
 
 			if tt.hasError {
-				assert.Error(t, err, fmt.Sprintf("%s: expect an error", tt.title))
-				assert.Equal(t, tempPassword, tt.u.Password,
-					fmt.Sprintf("%s: expect no hashing", tt.title))
+				assert.Error(t, err, tt.title)
+				assert.Equal(t, tempPassword, tt.u.Password, tt.title)
 			} else {
-				assert.NoError(t, err, fmt.Sprintf("%s: expect no error", tt.title))
-				assert.NotEqual(t, tempPassword, tt.u.Password,
-					fmt.Sprintf("%s: expect password to change", tt.title))
+				assert.NoError(t, err, tt.title)
+				assert.NotEqual(t, tempPassword, tt.u.Password, tt.title)
 
 				err = bcrypt.CompareHashAndPassword([]byte(tt.u.Password), []byte(tempPassword))
-				assert.NoError(t, err, fmt.Sprintf("%s: expect hashing", tt.title))
+				assert.NoError(t, err, fmt.Sprintf("%s: expect password to be hashed", tt.title))
 			}
 		}
 	})
@@ -427,10 +422,10 @@ func TestUnit_UserModel(t *testing.T) {
 		h, _ := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
 
 		tests := []struct {
-			title          string
-			u              *User
-			in             string
-			expectedReturn bool
+			title    string
+			u        *User
+			in       string
+			expected bool
 		}{
 			{
 				"check password user: success",
@@ -447,9 +442,8 @@ func TestUnit_UserModel(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			pass := tt.u.CheckPassword(tt.in)
-			assert.Equal(t, tt.expectedReturn, pass,
-				fmt.Sprintf("%s: expect return (%v)=%v", tt.title, pass, tt.expectedReturn))
+			actual := tt.u.CheckPassword(tt.in)
+			assert.Equal(t, tt.expected, actual, tt.title)
 		}
 	})
 
@@ -475,7 +469,7 @@ func TestUnit_UserModel(t *testing.T) {
 			Following: following,
 		}
 
-		profile := u.ResponseProfile(following)
-		assert.Equal(t, expected, profile)
+		actual := u.ResponseProfile(following)
+		assert.Equal(t, expected, actual)
 	})
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"strings"
 	"testing"
 
 	"github.com/nathanbizkit/article-management/model"
@@ -17,16 +17,16 @@ func TestIntegration_UserStore(t *testing.T) {
 		t.Skip("skipping integration tests.")
 	}
 
-	lct := test.GetLocalTestContainer(t)
+	lct := test.NewLocalTestContainer(t)
 	us := NewUserStore(lct.DB())
 	u := createUser(t, lct.DB())
 
 	t.Run("GetByID", func(t *testing.T) {
 		tests := []struct {
-			title      string
-			in         uint
-			expectUser *model.User
-			hasError   bool
+			title    string
+			in       uint
+			expected *model.User
+			hasError bool
 		}{
 			{
 				"get by id user: success",
@@ -43,15 +43,15 @@ func TestIntegration_UserStore(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			u, err := us.GetByID(context.Background(), tt.in)
+			actual, err := us.GetByID(context.Background(), tt.in)
 
 			if tt.hasError {
-				assert.Error(t, err, fmt.Sprintf("%s: expect an error", tt.title))
-				assert.Nil(t, u, fmt.Sprintf("%s: expect no user", tt.title))
+				assert.Error(t, err, tt.title)
 			} else {
-				assert.NoError(t, err, fmt.Sprintf("%s: expect no error", tt.title))
-				assert.Equal(t, tt.expectUser, u, tt.title)
+				assert.NoError(t, err, tt.title)
 			}
+
+			assert.Equal(t, tt.expected, actual, tt.title)
 		}
 	})
 }
@@ -64,7 +64,7 @@ func createUser(t *testing.T, db *sql.DB) *model.User {
 		Username: fmt.Sprintf("user_%s", s),
 		Email:    fmt.Sprintf("%s@example.com", s),
 		Password: "P@55w0rD!",
-		Name:     fmt.Sprintf("User %s", s),
+		Name:     fmt.Sprintf("USER %s", strings.ToUpper(s)),
 		Bio:      "This is my bio.",
 		Image:    "https://imgur.com/image.jpeg",
 	}
@@ -87,7 +87,7 @@ func createUser(t *testing.T, db *sql.DB) *model.User {
 			&u.UpdatedAt,
 		)
 	if err != nil {
-		log.Fatalf("failed to create test user: %s", err)
+		t.Fatalf("failed to create test user: %s", err)
 	}
 
 	t.Cleanup(func() {
@@ -103,6 +103,6 @@ func deleteUser(t *testing.T, db *sql.DB, id uint) {
 	queryString := `DELETE FROM article_management.users WHERE id = $1`
 	_, err := db.Exec(queryString, id)
 	if err != nil {
-		log.Fatalf("failed to delete test user: %s", err)
+		t.Fatalf("failed to delete test user: %s", err)
 	}
 }

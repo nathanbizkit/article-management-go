@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -60,10 +59,11 @@ func TestUnit_CommentModel(t *testing.T) {
 
 		for _, tt := range tests {
 			err := tt.c.Validate()
+
 			if tt.hasError {
-				assert.Error(t, err, fmt.Sprintf("%s: expect an error", tt.title))
+				assert.Error(t, err, tt.title)
 			} else {
-				assert.NoError(t, err, fmt.Sprintf("%s: expect no error", tt.title))
+				assert.NoError(t, err, tt.title)
 			}
 		}
 	})
@@ -108,7 +108,7 @@ func TestUnit_CommentModel(t *testing.T) {
 			UpdatedAt: &updatedAtString,
 		}
 
-		cr := c.ResponseComment(following)
-		assert.Equal(t, expected, cr)
+		actual := c.ResponseComment(following)
+		assert.Equal(t, expected, actual)
 	})
 }
