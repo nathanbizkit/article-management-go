@@ -87,5 +87,19 @@ func Parse() (*ENV, error) {
 		),
 	)
 
+	if len(e.CORSAllowedOrigins) > 0 {
+		var all bool
+		for _, s := range e.CORSAllowedOrigins {
+			if s == "*" {
+				all = true
+				break
+			}
+		}
+
+		if all {
+			e.CORSAllowedOrigins = make([]string, 0)
+		}
+	}
+
 	return e, err
 }
