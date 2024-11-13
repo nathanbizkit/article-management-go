@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS article_management.articles (
 
 DO $$
 BEGIN
-    CREATE TRIGGER update_articles_trigger BEFORE UPDATE ON article_management.articles
+    CREATE OR REPLACE TRIGGER update_articles_trigger BEFORE UPDATE ON article_management.articles
     FOR EACH ROW EXECUTE PROCEDURE article_management.update_updated_at_column();
 
     EXCEPTION

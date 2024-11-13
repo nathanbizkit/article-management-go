@@ -1,6 +1,6 @@
 DO $$
 BEGIN
-    CREATE FUNCTION article_management.update_updated_at_column()
+    CREATE OR REPLACE FUNCTION article_management.update_updated_at_column()
     RETURNS trigger LANGUAGE plpgsql AS $func_body$
     BEGIN
         NEW.updated_at = NOW();

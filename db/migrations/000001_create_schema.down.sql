@@ -1,0 +1,1 @@
+DROP SCHEMA if EXISTS article_management CASCADE;

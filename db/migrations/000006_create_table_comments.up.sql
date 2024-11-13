@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS article_management.comments (
 
 DO $$
 BEGIN
-    CREATE TRIGGER update_comments_trigger BEFORE UPDATE ON article_management.comments
+    CREATE OR REPLACE TRIGGER update_comments_trigger BEFORE UPDATE ON article_management.comments
     FOR EACH ROW EXECUTE PROCEDURE article_management.update_updated_at_column();
 
     EXCEPTION
