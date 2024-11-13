@@ -23,17 +23,19 @@ type ENV struct {
 }
 
 // Parse loads environment variables either from .env or environment directly and returns a new env
-func Parse() (*ENV, error) {
-	viper.SetConfigName(".env")
+func Parse(envFile string) (*ENV, error) {
 	viper.SetConfigType("env")
-	viper.AddConfigPath("./env")
-	viper.AddConfigPath(".")
-	viper.AutomaticEnv()
 
-	err := viper.ReadInConfig()
-	if err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return nil, err
+	if envFile == "" {
+		viper.AutomaticEnv()
+	} else {
+		viper.SetConfigFile(envFile)
+
+		err := viper.ReadInConfig()
+		if err != nil {
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+				return nil, err
+			}
 		}
 	}
 
@@ -55,7 +57,7 @@ func Parse() (*ENV, error) {
 	viper.SetDefault("DB_NAME", "")
 
 	e := &ENV{}
-	err = viper.Unmarshal(e)
+	err := viper.Unmarshal(e)
 	if err != nil {
 		return nil, err
 	}

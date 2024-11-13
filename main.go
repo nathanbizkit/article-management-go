@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -25,7 +26,12 @@ func main() {
 	w := zerolog.ConsoleWriter{Out: os.Stderr}
 	l := zerolog.New(w).With().Timestamp().Caller().Logger()
 
-	e, err := env.Parse()
+	var envFile string
+	flag.StringVar(&envFile, "env", "", "an env file location")
+
+	flag.Parse()
+
+	e, err := env.Parse(envFile)
 	if err != nil {
 		l.Fatal().Err(err).Msg("failed to load env")
 	}
