@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -55,6 +56,10 @@ func (s *ArticleStore) GetByID(ctx context.Context, id uint) (*model.Article, er
 			&u.UpdatedAt,
 		)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = fmt.Errorf("article not found :%w", err)
+		}
+
 		return nil, err
 	}
 
@@ -90,6 +95,10 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 				&a.UpdatedAt,
 			)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				err = fmt.Errorf("article not found :%w", err)
+			}
+
 			return err
 		}
 
@@ -102,7 +111,7 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 
 		if len(m.Tags) > 0 {
 			// create temporary tags table
-			queryString = `CREATE TEMPORARY TABLE article_management.tags_staging 
+			queryString = `CREATE TEMPORARY TABLE tags_staging 
 				(LIKE article_management.tags INCLUDING ALL) ON COMMIT DROP`
 			_, err := tx.ExecContext(ctx, queryString)
 			if err != nil {
@@ -111,11 +120,10 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 
 			// copy into temporary table
 			stmtTags, err := tx.PrepareContext(ctx,
-				pq.CopyIn("article_management.tags_staging", "name"))
+				pq.CopyIn("tags_staging", "name"))
 			if err != nil {
 				return err
 			}
-			defer stmtTags.Close()
 
 			for _, tag := range m.Tags {
 				_, err := stmtTags.ExecContext(ctx, tag.Name)
@@ -124,9 +132,11 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 				}
 			}
 
+			stmtTags.Close()
+
 			// insert into tags (on conflict do update)
 			queryString = `INSERT INTO article_management.tags (name)
-				SELECT name FROM article_management.tags_staging 
+				SELECT name FROM tags_staging 
 				ON CONFLICT (name) DO UPDATE SET updated_at = NOW() 
 				RETURNING id, name, created_at, updated_at`
 			rows, err := tx.QueryContext(ctx, queryString)
@@ -148,18 +158,28 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 			}
 
 			// insert into article_tags
-			stmtArticleTags, err := tx.PrepareContext(ctx,
-				pq.CopyIn("article_management.article_tags", "article_id", "tag_id"))
+			valueCount := 1
+			valueStrings := make([]string, 0, len(tags))
+			valueArgs := make([]interface{}, 0, len(tags)*2)
+			for _, tag := range tags {
+				str := fmt.Sprintf("($%d, $%d)", valueCount, valueCount+1)
+				valueStrings = append(valueStrings, str)
+				valueArgs = append(valueArgs, a.ID, tag.ID)
+				valueCount += 2
+			}
+
+			queryString = fmt.Sprintf(
+				`INSERT INTO article_management.article_tags (article_id, tag_id) VALUES %s`,
+				strings.Join(valueStrings, ", "))
+			stmtArticleTags, err := tx.PrepareContext(ctx, queryString)
 			if err != nil {
 				return err
 			}
 			defer stmtArticleTags.Close()
 
-			for _, tag := range m.Tags {
-				_, err := stmtArticleTags.ExecContext(ctx, a.ID, tag.ID)
-				if err != nil {
-					return err
-				}
+			_, err = stmtArticleTags.ExecContext(ctx, valueArgs...)
+			if err != nil {
+				return err
 			}
 
 			a.Tags = tags
@@ -192,6 +212,10 @@ func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Art
 				&a.UpdatedAt,
 			)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				err = fmt.Errorf("article not found :%w", err)
+			}
+
 			return err
 		}
 
@@ -396,7 +420,7 @@ func (s *ArticleStore) IsFavorited(ctx context.Context, a *model.Article, u *mod
 		FROM article_management.favorite_articles 
 		WHERE article_id = $1 AND user_id = $2`
 	err := s.db.QueryRowContext(ctx, queryString, a.ID, u.ID).Scan(&count)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return false, err
 	}
 
@@ -486,6 +510,10 @@ func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*mo
 		err := tx.QueryRowContext(ctx, queryString, m.Body, m.UserID, m.ArticleID).
 			Scan(&c.ID, &c.Body, &c.UserID, &c.ArticleID, &c.CreatedAt, &c.UpdatedAt)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				err = fmt.Errorf("comment not found :%w", err)
+			}
+
 			return err
 		}
 
@@ -506,6 +534,10 @@ func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*mo
 				&u.UpdatedAt,
 			)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				err = fmt.Errorf("user not found :%w", err)
+			}
+
 			return err
 		}
 
@@ -595,6 +627,10 @@ func (s *ArticleStore) GetCommentByID(ctx context.Context, id uint) (*model.Comm
 			&u.UpdatedAt,
 		)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = fmt.Errorf("comment not found :%w", err)
+		}
+
 		return nil, err
 	}
 
@@ -614,12 +650,9 @@ func (s *ArticleStore) DeleteComment(ctx context.Context, m *model.Comment) erro
 func getArticleAuthor(db *sql.DB, ctx context.Context, a *model.Article) (*model.User, error) {
 	var u model.User
 
-	queryString := `SELECT 
-		u.id, u.username, u.email, u.password, u.name, u.bio, u.image, u.created_at, u.updated_at 
-		FROM article_management.users u 
-		INNER JOIN article_management.articles a ON a.user_id = u.id 
-		WHERE a.id = $1`
-	err := db.QueryRowContext(ctx, queryString, a.ID).
+	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
+		FROM article_management.users WHERE id = $1`
+	err := db.QueryRowContext(ctx, queryString, a.UserID).
 		Scan(
 			&u.ID,
 			&u.Username,
@@ -632,6 +665,10 @@ func getArticleAuthor(db *sql.DB, ctx context.Context, a *model.Article) (*model
 			&u.UpdatedAt,
 		)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = fmt.Errorf("user not found :%w", err)
+		}
+
 		return nil, err
 	}
 

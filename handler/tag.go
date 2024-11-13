@@ -11,6 +11,8 @@ import (
 func (h *Handler) GetTags(ctx *gin.Context) {
 	h.logger.Info().Interface("req", ctx.Request).Msg("get tags")
 
+	_ = h.GetCurrentUserOrAbort(ctx)
+
 	tags, err := h.as.GetTags(ctx.Request.Context())
 	if err != nil {
 		msg := "failed to get tags"

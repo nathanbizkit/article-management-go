@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 
 	"github.com/nathanbizkit/article-management/db"
 	"github.com/nathanbizkit/article-management/model"
@@ -37,6 +39,10 @@ func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 			&u.UpdatedAt,
 		)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = fmt.Errorf("user not found :%w", err)
+		}
+
 		return nil, err
 	}
 
@@ -62,6 +68,10 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, 
 			&u.UpdatedAt,
 		)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = fmt.Errorf("user not found :%w", err)
+		}
+
 		return nil, err
 	}
 
@@ -87,6 +97,10 @@ func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.
 			&u.UpdatedAt,
 		)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = fmt.Errorf("user not found :%w", err)
+		}
+
 		return nil, err
 	}
 
@@ -101,7 +115,7 @@ func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, err
 		queryString := `INSERT INTO article_management.users (username, email, password, name, bio, image) 
 			VALUES ($1, $2, $3, $4, $5, $6) 
 			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
-		return tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image).
+		err := tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image).
 			Scan(
 				&u.ID,
 				&u.Username,
@@ -113,6 +127,15 @@ func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, err
 				&u.CreatedAt,
 				&u.UpdatedAt,
 			)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				err = fmt.Errorf("user not found :%w", err)
+			}
+
+			return err
+		}
+
+		return nil
 	})
 
 	return &u, err
@@ -126,7 +149,7 @@ func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, err
 		queryString := `UPDATE article_management.users 
 			SET username = $1, email = $2, password = $3, name = $4, bio = $5, image = $6 WHERE id = $7 
 			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
-		return tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image, m.ID).
+		err := tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image, m.ID).
 			Scan(
 				&u.ID,
 				&u.Username,
@@ -138,6 +161,15 @@ func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, err
 				&u.CreatedAt,
 				&u.UpdatedAt,
 			)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				err = fmt.Errorf("user not found :%w", err)
+			}
+
+			return err
+		}
+
+		return nil
 	})
 
 	return &u, err
@@ -154,7 +186,7 @@ func (s *UserStore) IsFollowing(ctx context.Context, a *model.User, b *model.Use
 	queryString := `SELECT COUNT(to_user_id) FROM article_management.follows 
 		WHERE from_user_id = $1 AND to_user_id = $2`
 	err := s.db.QueryRowContext(ctx, queryString, a.ID, b.ID).Scan(&count)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return false, err
 	}
 

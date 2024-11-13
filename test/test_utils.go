@@ -1,12 +1,14 @@
 package test
 
 import (
+	"io/ioutil"
 	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/nathanbizkit/article-management/env"
 	"github.com/nathanbizkit/article-management/test/container"
+	"github.com/rs/zerolog"
 )
 
 const englishCharset = "abcdefghijklmnopqrstuvwxyz" +
@@ -30,6 +32,14 @@ func NewTestENV(t *testing.T) *env.ENV {
 		DBPort:           "5432",
 		DBName:           "app_test",
 	}
+}
+
+// NewTestLogger returns a logger for testing
+func NewTestLogger(t *testing.T) zerolog.Logger {
+	t.Helper()
+
+	w := zerolog.ConsoleWriter{Out: ioutil.Discard}
+	return zerolog.New(w).With().Timestamp().Logger()
 }
 
 // NewLocalTestContainer returns a local test container
