@@ -41,7 +41,8 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest("POST", "/api/login", bytes.NewReader(body))
+		c.Request = httptest.NewRequest(http.MethodPost,
+			"/api/login", bytes.NewReader(body))
 
 		h.Login(c)
 
@@ -89,7 +90,8 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest("POST", "/api/register", bytes.NewReader(body))
+		c.Request = httptest.NewRequest(http.MethodPost,
+			"/api/register", bytes.NewReader(body))
 
 		h.Register(c)
 
@@ -123,7 +125,8 @@ func TestIntegration_UserHandler(t *testing.T) {
 	t.Run("RefreshToken", func(t *testing.T) {
 		tokenTime := time.Now().Add(-5 * time.Hour)
 		w := httptest.NewRecorder()
-		c, token := ctxWithToken(t, w, fooUser.ID, tokenTime)
+		req := httptest.NewRequest(http.MethodPost, "/api/refresh_token", nil)
+		c, token := ctxWithToken(t, w, req, fooUser.ID, tokenTime)
 
 		h.RefreshToken(c)
 
@@ -159,7 +162,8 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 		tokenTime := time.Now().Add(-5 * time.Hour)
 		w := httptest.NewRecorder()
-		c, token := ctxWithToken(t, w, fooUser.ID, tokenTime)
+		req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
+		c, token := ctxWithToken(t, w, req, fooUser.ID, tokenTime)
 
 		h.GetCurrentUser(c)
 
@@ -228,8 +232,8 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 		tokenTime := time.Now().Add(-5 * time.Hour)
 		w := httptest.NewRecorder()
-		c, token := ctxWithToken(t, w, fooUser.ID, tokenTime)
-		c.Request = httptest.NewRequest("POST", "/api/update", bytes.NewReader(body))
+		req := httptest.NewRequest(http.MethodPut, "/api/me", bytes.NewReader(body))
+		c, token := ctxWithToken(t, w, req, fooUser.ID, tokenTime)
 
 		h.UpdateCurrentUser(c)
 

@@ -60,9 +60,10 @@ func TestIntegration_TagHandler(t *testing.T) {
 		expected := message.TagsResponse{Tags: tags}
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, fooUser.ID, time.Now())
+		req := httptest.NewRequest(http.MethodGet, "/api/tags", nil)
+		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
 
-		h.GetTags(ctx)
+		h.GetTags(c)
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -32,7 +33,7 @@ func setUp(t *testing.T) (*Handler, *container.LocalTestContainer) {
 	return New(&l, e, auth, us, as), lct
 }
 
-func ctxWithToken(t *testing.T, w http.ResponseWriter, id uint, tokenTime time.Time) (*gin.Context, *auth.AuthToken) {
+func ctxWithToken(t *testing.T, w http.ResponseWriter, req *http.Request, id uint, tokenTime time.Time) (*gin.Context, *auth.AuthToken) {
 	t.Helper()
 
 	e := test.NewTestENV(t)
@@ -44,9 +45,7 @@ func ctxWithToken(t *testing.T, w http.ResponseWriter, id uint, tokenTime time.T
 	}
 
 	c, _ := gin.CreateTestContext(w)
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
+	c.Request = req.Clone(context.Background())
 
 	a.SetContextUserID(c, id)
 
