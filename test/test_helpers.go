@@ -1,8 +1,10 @@
 package test
 
 import (
-	"io/ioutil"
+	"io"
 	"math/rand"
+	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -38,8 +40,8 @@ func NewTestENV(t *testing.T) *env.ENV {
 func NewTestLogger(t *testing.T) zerolog.Logger {
 	t.Helper()
 
-	w := zerolog.ConsoleWriter{Out: ioutil.Discard}
-	return zerolog.New(w).With().Timestamp().Logger()
+	w := zerolog.ConsoleWriter{Out: io.Discard}
+	return zerolog.New(w).With().Timestamp().Caller().Logger()
 }
 
 // NewLocalTestContainer returns a local test container
@@ -72,4 +74,44 @@ func RandomString(t *testing.T, length int) string {
 	}
 
 	return string(b)
+}
+
+// AddCookieToRequest attaches a api-related cookie to request header
+func AddCookieToRequest(t *testing.T, req *http.Request, name, value, domain string) {
+	t.Helper()
+
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    url.QueryEscape(value),
+		MaxAge:   int((20 * (25 * time.Hour)).Seconds()),
+		Path:     "/api",
+		Domain:   domain,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+		HttpOnly: true,
+	}
+
+	if v := cookie.String(); v != "" {
+		req.Header.Add("Cookie", v)
+	}
+}
+
+// AddCookieToResponse attaches a api-related cookie to response header
+func AddCookieToResponse(t *testing.T, w http.ResponseWriter, name, value, domain string) {
+	t.Helper()
+
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    url.QueryEscape(value),
+		MaxAge:   int((20 * (25 * time.Hour)).Seconds()),
+		Path:     "/api",
+		Domain:   domain,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+		HttpOnly: true,
+	}
+
+	if v := cookie.String(); v != "" {
+		w.Header().Add("Set-Cookie", v)
+	}
 }

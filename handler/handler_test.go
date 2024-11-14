@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +15,8 @@ import (
 	"github.com/nathanbizkit/article-management/test"
 	"github.com/nathanbizkit/article-management/test/container"
 )
+
+const userPassword = "P@55w0rD!"
 
 func setUp(t *testing.T) (*Handler, *container.LocalTestContainer) {
 	t.Helper()
@@ -31,13 +32,13 @@ func setUp(t *testing.T) (*Handler, *container.LocalTestContainer) {
 	return New(&l, e, auth, us, as), lct
 }
 
-func ctxWithToken(t *testing.T, w http.ResponseWriter, id uint) (*gin.Context, *auth.AuthToken) {
+func ctxWithToken(t *testing.T, w http.ResponseWriter, id uint, tokenTime time.Time) (*gin.Context, *auth.AuthToken) {
 	t.Helper()
 
 	e := test.NewTestENV(t)
 	a := auth.New(e)
 
-	token, err := a.GenerateToken(id)
+	token, err := a.GenerateTokenWithTime(id, tokenTime)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,31 +50,12 @@ func ctxWithToken(t *testing.T, w http.ResponseWriter, id uint) (*gin.Context, *
 
 	a.SetContextUserID(c, id)
 
-	addCookieToRequest(t, c.Request, "session",
+	test.AddCookieToRequest(t, c.Request, "session",
 		token.Token, "localhost")
-	addCookieToRequest(t, c.Request, "refreshToken",
+	test.AddCookieToRequest(t, c.Request, "refreshToken",
 		token.RefreshToken, "localhost")
 
 	return c, token
-}
-
-func addCookieToRequest(t *testing.T, req *http.Request, name, value, domain string) {
-	t.Helper()
-
-	cookie := &http.Cookie{
-		Name:     name,
-		Value:    url.QueryEscape(value),
-		MaxAge:   int((20 * (25 * time.Hour)).Seconds()),
-		Path:     "/api",
-		Domain:   domain,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-		HttpOnly: true,
-	}
-
-	if v := cookie.String(); v != "" {
-		req.Header.Add("Cookie", v)
-	}
 }
 
 func createUser(t *testing.T, db *sql.DB) *model.User {
@@ -83,7 +65,7 @@ func createUser(t *testing.T, db *sql.DB) *model.User {
 	m := model.User{
 		Username: fmt.Sprintf("user_%s", s),
 		Email:    fmt.Sprintf("%s@example.com", s),
-		Password: "P@55w0rD!",
+		Password: userPassword,
 		Name:     fmt.Sprintf("USER %s", strings.ToUpper(s)),
 		Bio:      "This is my bio.",
 		Image:    "https://imgur.com/image.jpeg",

@@ -73,6 +73,21 @@ func TestUnit_CommentModel(t *testing.T) {
 		updatedAt := time.Now().Add(10 * time.Hour)
 		updatedAtString := updatedAt.Format(time.RFC3339Nano)
 
+		following := false
+		expected := message.CommentResponse{
+			ID:   1,
+			Body: "This is my comment.",
+			Author: message.ProfileResponse{
+				Username:  "foo_user",
+				Name:      "FooUser",
+				Bio:       "This is my bio.",
+				Image:     "https://imgur.com/image.jpeg",
+				Following: following,
+			},
+			CreatedAt: createdAt.Format(time.RFC3339Nano),
+			UpdatedAt: &updatedAtString,
+		}
+
 		c := Comment{
 			ID:     1,
 			Body:   "This is my comment.",
@@ -91,21 +106,6 @@ func TestUnit_CommentModel(t *testing.T) {
 			ArticleID: 1,
 			CreatedAt: createdAt,
 			UpdatedAt: &updatedAt,
-		}
-
-		following := false
-		expected := message.CommentResponse{
-			ID:   1,
-			Body: "This is my comment.",
-			Author: message.ProfileResponse{
-				Username:  "foo_user",
-				Name:      "FooUser",
-				Bio:       "This is my bio.",
-				Image:     "https://imgur.com/image.jpeg",
-				Following: following,
-			},
-			CreatedAt: createdAt.Format(time.RFC3339Nano),
-			UpdatedAt: &updatedAtString,
 		}
 
 		actual := c.ResponseComment(following)

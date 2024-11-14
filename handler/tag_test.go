@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nathanbizkit/article-management/message"
@@ -59,7 +60,7 @@ func TestIntegration_TagHandler(t *testing.T) {
 		expected := message.TagsResponse{Tags: tags}
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, fooUser.ID)
+		ctx, _ := ctxWithToken(t, w, fooUser.ID, time.Now())
 
 		h.GetTags(ctx)
 
@@ -70,7 +71,6 @@ func TestIntegration_TagHandler(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		w.Result().Body.Close()
 
 		assert.Equal(t, expected, actual)

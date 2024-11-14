@@ -25,6 +25,8 @@ make integrationcoverage
 make coverage
 
 # e2e
+# Set --ssl-client-cert in e2e/run-api-tests.sh first
+docker-compose up -d
 make e2etest
 ```
 

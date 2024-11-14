@@ -11,7 +11,7 @@ import (
 
 // Login logs an existing user in and attaches tokens to cookie
 func (h *Handler) Login(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("login")
+	h.logger.Info().Msg("login")
 
 	var r message.LoginUserRequest
 	err := ctx.ShouldBindJSON(&r)
@@ -52,7 +52,7 @@ func (h *Handler) Login(ctx *gin.Context) {
 
 // Register creates a new user and attaches tokens to cookie
 func (h *Handler) Register(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("register")
+	h.logger.Info().Msg("register")
 
 	var r message.CreateUserRequest
 	err := ctx.ShouldBindJSON(&r)
@@ -107,7 +107,7 @@ func (h *Handler) Register(ctx *gin.Context) {
 
 // RefreshToken verifies and renew tokens to cookie
 func (h *Handler) RefreshToken(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("refresh token")
+	h.logger.Info().Msg("refresh token")
 
 	refresh := true
 	id, err := h.auth.GetUserID(ctx, refresh)
@@ -133,7 +133,7 @@ func (h *Handler) RefreshToken(ctx *gin.Context) {
 
 // GetCurrentUser gets current user's profile
 func (h *Handler) GetCurrentUser(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("get current user")
+	h.logger.Info().Msg("get current user")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -153,7 +153,7 @@ func (h *Handler) GetCurrentUser(ctx *gin.Context) {
 
 // UpdateCurrentUser updates current user's profile
 func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("update current user")
+	h.logger.Info().Msg("update current user")
 
 	var r message.UpdateUserRequest
 	err := ctx.ShouldBindJSON(&r)

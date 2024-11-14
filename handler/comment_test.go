@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"log"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -14,8 +13,8 @@ func TestIntegration_CommentHandler(t *testing.T) {
 
 	gin.SetMode("test")
 
-	h, lct := setUp(t)
-	log.Println(h, lct)
+	// h, lct := setUp(t)
+	// log.Println(h, lct)
 
 	t.Run("CreateComment", func(t *testing.T) {})
 

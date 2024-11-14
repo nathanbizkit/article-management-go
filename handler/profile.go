@@ -9,7 +9,7 @@ import (
 
 // ShowProfile gets a user profile
 func (h *Handler) ShowProfile(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("show profile")
+	h.logger.Info().Msg("show profile")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -34,7 +34,7 @@ func (h *Handler) ShowProfile(ctx *gin.Context) {
 
 // FollowUser follows a user
 func (h *Handler) FollowUser(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("follow user")
+	h.logger.Info().Msg("follow user")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -68,7 +68,7 @@ func (h *Handler) FollowUser(ctx *gin.Context) {
 
 // UnfollowUser unfollows a user
 func (h *Handler) UnfollowUser(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("unfollow user")
+	h.logger.Info().Msg("unfollow user")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 

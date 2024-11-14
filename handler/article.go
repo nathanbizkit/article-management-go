@@ -16,7 +16,7 @@ const (
 
 // CreateArticle creates an article
 func (h *Handler) CreateArticle(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("create article")
+	h.logger.Info().Msg("create article")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -64,7 +64,7 @@ func (h *Handler) CreateArticle(ctx *gin.Context) {
 
 // GetArticle gets an article
 func (h *Handler) GetArticle(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("get article")
+	h.logger.Info().Msg("get article")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -97,7 +97,7 @@ func (h *Handler) GetArticle(ctx *gin.Context) {
 
 // GetArticles gets recent articles globally
 func (h *Handler) GetArticles(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("get articles")
+	h.logger.Info().Msg("get articles")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -149,7 +149,7 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 
 // GetFeedArticles gets recent articles from users that current user follows
 func (h *Handler) GetFeedArticles(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("get feed articles")
+	h.logger.Info().Msg("get feed articles")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -189,7 +189,7 @@ func (h *Handler) GetFeedArticles(ctx *gin.Context) {
 
 // UpdateArticle updates an article
 func (h *Handler) UpdateArticle(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("update article")
+	h.logger.Info().Msg("update article")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -242,7 +242,7 @@ func (h *Handler) UpdateArticle(ctx *gin.Context) {
 
 // DeleteArticle deletes an article
 func (h *Handler) DeleteArticle(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("delete article")
+	h.logger.Info().Msg("delete article")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -276,7 +276,7 @@ func (h *Handler) DeleteArticle(ctx *gin.Context) {
 
 // FavoriteArticle adds an article to user's favorites
 func (h *Handler) FavoriteArticle(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("favorite article")
+	h.logger.Info().Msg("favorite article")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -312,7 +312,7 @@ func (h *Handler) FavoriteArticle(ctx *gin.Context) {
 
 // UnfavoriteArticle removes an article from user's favorites
 func (h *Handler) UnfavoriteArticle(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("unfavorite article")
+	h.logger.Info().Msg("unfavorite article")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 

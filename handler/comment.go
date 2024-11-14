@@ -11,7 +11,7 @@ import (
 
 // CreateComment creates a comment
 func (h *Handler) CreateComment(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("create comment")
+	h.logger.Info().Msg("create comment")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -59,7 +59,7 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 
 // GetComments gets comments of an article
 func (h *Handler) GetComments(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("get comments")
+	h.logger.Info().Msg("get comments")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
@@ -97,7 +97,7 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 
 // DeleteComment deletes a comment from an article
 func (h *Handler) DeleteComment(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("delete comment")
+	h.logger.Info().Msg("delete comment")
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 

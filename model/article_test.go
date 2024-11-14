@@ -240,6 +240,27 @@ func TestUnit_ArticleModel(t *testing.T) {
 		updatedAt := time.Now().Add(10 * time.Hour)
 		updatedAtString := updatedAt.Format(time.RFC3339Nano)
 
+		favorited := false
+		following := false
+		expected := message.ArticleResponse{
+			ID:          1,
+			Title:       "Article 1",
+			Description: "This is a description.",
+			Body:        "This is a text body.",
+			Author: message.ProfileResponse{
+				Username:  "foo_user",
+				Name:      "FooUser",
+				Bio:       "This is my bio.",
+				Image:     "https://imgur.com/image.jpeg",
+				Following: following,
+			},
+			Favorited:      favorited,
+			FavoritesCount: 10,
+			CreatedAt:      createdAt.Format(time.RFC3339Nano),
+			UpdatedAt:      &updatedAtString,
+			Tags:           []string{"tag-1", "tag-2"},
+		}
+
 		a := Article{
 			ID:          1,
 			Title:       "Article 1",
@@ -261,27 +282,6 @@ func TestUnit_ArticleModel(t *testing.T) {
 			Tags:           []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
 			CreatedAt:      createdAt,
 			UpdatedAt:      &updatedAt,
-		}
-
-		favorited := false
-		following := false
-		expected := message.ArticleResponse{
-			ID:          1,
-			Title:       "Article 1",
-			Description: "This is a description.",
-			Body:        "This is a text body.",
-			Author: message.ProfileResponse{
-				Username:  "foo_user",
-				Name:      "FooUser",
-				Bio:       "This is my bio.",
-				Image:     "https://imgur.com/image.jpeg",
-				Following: following,
-			},
-			Favorited:      favorited,
-			FavoritesCount: 10,
-			CreatedAt:      createdAt.Format(time.RFC3339Nano),
-			UpdatedAt:      &updatedAtString,
-			Tags:           []string{"tag-1", "tag-2"},
 		}
 
 		actual := a.ResponseArticle(favorited, following)

@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 	"time"
 
@@ -90,9 +89,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						token.Token, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						token.RefreshToken, e.AuthCookieDomain)
 					return c
 				},
@@ -107,9 +106,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						token.Token, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						token.RefreshToken, e.AuthCookieDomain)
 					return c
 				},
@@ -150,9 +149,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						"", e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						"", e.AuthCookieDomain)
 					return c
 				},
@@ -167,9 +166,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						"", e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						"", e.AuthCookieDomain)
 					return c
 				},
@@ -184,9 +183,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						expiredToken.Token, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						expiredToken.RefreshToken, e.AuthCookieDomain)
 					return c
 				},
@@ -201,9 +200,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						expiredToken.Token, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						expiredToken.RefreshToken, e.AuthCookieDomain)
 					return c
 				},
@@ -218,9 +217,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						rsaToken, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						rsaToken, e.AuthCookieDomain)
 					return c
 				},
@@ -235,9 +234,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						rsaToken, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						rsaToken, e.AuthCookieDomain)
 					return c
 				},
@@ -252,9 +251,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						emptyToken, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						emptyToken, e.AuthCookieDomain)
 					return c
 				},
@@ -269,9 +268,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						emptyToken, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						emptyToken, e.AuthCookieDomain)
 					return c
 				},
@@ -301,9 +300,9 @@ func TestUnit_Auth(t *testing.T) {
 		}
 
 		mockWriter := httptest.NewRecorder()
-		addCookieToWriter(t, mockWriter, "session",
+		test.AddCookieToResponse(t, mockWriter, "session",
 			token.Token, e.AuthCookieDomain)
-		addCookieToWriter(t, mockWriter, "refreshToken",
+		test.AddCookieToResponse(t, mockWriter, "refreshToken",
 			token.RefreshToken, e.AuthCookieDomain)
 		expected := mockWriter.Header().Get("Set-Cookie")
 
@@ -336,9 +335,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						token.Token, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						token.RefreshToken, e.AuthCookieDomain)
 					return c
 				},
@@ -364,7 +363,7 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						token.Token, e.AuthCookieDomain)
 					return c
 				},
@@ -378,9 +377,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						"", e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						token.RefreshToken, e.AuthCookieDomain)
 					return c
 				},
@@ -394,9 +393,9 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					addCookieToRequest(t, c.Request, "session",
+					test.AddCookieToRequest(t, c.Request, "session",
 						token.Token, e.AuthCookieDomain)
-					addCookieToRequest(t, c.Request, "refreshToken",
+					test.AddCookieToRequest(t, c.Request, "refreshToken",
 						"", e.AuthCookieDomain)
 					return c
 				},
@@ -444,42 +443,4 @@ func parseToken(t *testing.T, token, secretKey string) uint {
 	}
 
 	return *c.UserID
-}
-
-func addCookieToRequest(t *testing.T, req *http.Request, name, value, domain string) {
-	t.Helper()
-
-	cookie := &http.Cookie{
-		Name:     name,
-		Value:    url.QueryEscape(value),
-		MaxAge:   int(cookieMaxAgeInHour.Seconds()),
-		Path:     "/api",
-		Domain:   domain,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-		HttpOnly: true,
-	}
-
-	if v := cookie.String(); v != "" {
-		req.Header.Add("Cookie", v)
-	}
-}
-
-func addCookieToWriter(t *testing.T, w http.ResponseWriter, name, value, domain string) {
-	t.Helper()
-
-	cookie := &http.Cookie{
-		Name:     name,
-		Value:    url.QueryEscape(value),
-		MaxAge:   int(cookieMaxAgeInHour.Seconds()),
-		Path:     "/api",
-		Domain:   domain,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-		HttpOnly: true,
-	}
-
-	if v := cookie.String(); v != "" {
-		w.Header().Add("Set-Cookie", v)
-	}
 }

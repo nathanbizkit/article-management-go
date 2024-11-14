@@ -9,7 +9,7 @@ import (
 
 // GetTags returns all of tags
 func (h *Handler) GetTags(ctx *gin.Context) {
-	h.logger.Info().Interface("req", ctx.Request).Msg("get tags")
+	h.logger.Info().Msg("get tags")
 
 	_ = h.GetCurrentUserOrAbort(ctx)
 
