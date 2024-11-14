@@ -1,23 +1,29 @@
 .PHONY: unittest integrationtest unitcoverage integrationcoverage coverage e2etest
 
 unittest:
-	go test -v ./... -short -parallel 4
+	go test -v ./... -short
 
 integrationtest:
-	go test -v ./... -parallel 4
+	go test -v ./...
 
 unitcoverage:
-	go test -v ./... -short -parallel 4 -coverprofile=cover.out && go tool cover -html cover.out
+	{ \
+	go test -v ./... -short -coverprofile="$$PWD/coverage/profile_unit.out" ;\
+	go tool cover -html coverage/profile_unit.out ;\
+	}
 
 integrationcoverage:
-	go test -v ./... -parallel 4 -coverprofile=cover.out && go tool cover -html cover.out
+	{ \
+	go test -v ./... -coverprofile="$$PWD/coverage/profile_integration.out" ;\
+	go tool cover -html coverage/profile_integration.out ;\
+	}
 
 coverage:
 	{ \
 	mkdir -p coverage/unit ;\
 	mkdir -p coverage/integration ;\
-	go test -v ./... -short -parallel 4 -cover -args -test.gocoverdir="$$PWD/coverage/unit" ;\
-	go test -v ./... -parallel 4 -cover -args -test.gocoverdir="$$PWD/coverage/integration" ;\
+	go test -v ./... -short -cover -args -test.gocoverdir="$$PWD/coverage/unit" ;\
+	go test -v ./... -cover -args -test.gocoverdir="$$PWD/coverage/integration" ;\
 	go tool covdata textfmt -i=./coverage/unit,./coverage/integration -o coverage/profile.out ;\
 	go tool cover -html coverage/profile.out ;\
 	}
