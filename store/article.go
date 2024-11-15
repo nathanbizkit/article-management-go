@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/lib/pq"
 	"github.com/nathanbizkit/article-management/db"
@@ -194,7 +195,7 @@ func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Art
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `UPDATE article_management.articles 
-			SET title = $1, description = $2, body = $3 
+			SET title = $1, description = $2, body = $3, updated_at = DEFAULT 
 			WHERE id = $4 
 			RETURNING id, title, description, body, user_id, favorites_count, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Title, m.Description, m.Body, m.ID).
@@ -235,7 +236,7 @@ func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Art
 }
 
 // GetArticles gets global articles
-func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, favoritedBy *model.User, limit, offset int64) ([]model.Article, error) {
+func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, favoritedAuthor *model.User, limit, offset int64) ([]model.Article, error) {
 	var q bytes.Buffer
 	q.WriteString(`SELECT 
 		a.id, a.title, a.description, a.body, a.user_id, a.favorites_count, a.created_at, a.updated_at 
@@ -254,7 +255,7 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 	}
 
 	if tag != "" {
-		q.WriteString(`INNER JOIN article_management.article_tags at ON at.article_id = a.id 
+		q.WriteString(` INNER JOIN article_management.article_tags at ON at.article_id = a.id 
 			INNER JOIN article_management.tags t ON t.id = at.tag_id `)
 
 		condStrings = append(condStrings, fmt.Sprintf("t.name = $%d", condCount))
@@ -262,12 +263,11 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		condCount += 1
 	}
 
-	if favoritedBy != nil {
+	if favoritedAuthor != nil {
 		queryString := `SELECT article_id 
 			FROM article_management.favorite_articles 
-			WHERE user_id = $1 
-			OFFSET $2 LIMIT $3`
-		rows, err := s.db.QueryContext(ctx, queryString, favoritedBy.ID, offset, limit)
+			WHERE user_id = $1`
+		rows, err := s.db.QueryContext(ctx, queryString, favoritedAuthor.ID)
 		if err != nil {
 			return []model.Article{}, err
 		}
@@ -285,12 +285,19 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 			ids = append(ids, id)
 		}
 
-		condStrings = append(condStrings, fmt.Sprintf("a.id in ($%d)", condCount))
+		condStrings = append(condStrings, fmt.Sprintf("a.id IN ($%d)", condCount))
 		condArgs = append(condArgs, pq.Array(ids))
 		condCount += 1
 	}
 
-	q.WriteString(strings.Join(condStrings, " AND "))
+	if len(condStrings) > 0 {
+		q.WriteString(" WHERE ")
+		q.WriteString(strings.Join(condStrings, " AND "))
+	}
+
+	q.WriteString(fmt.Sprintf(" OFFSET $%d LIMIT $%d", condCount, condCount+1))
+	condArgs = append(condArgs, offset, limit)
+	condCount += 2
 
 	rows, err := s.db.QueryContext(ctx, q.String(), condArgs...)
 	if err != nil {
@@ -423,7 +430,7 @@ func (s *ArticleStore) IsFavorited(ctx context.Context, a *model.Article, u *mod
 }
 
 // AddFavorite favorites an article
-func (s *ArticleStore) AddFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(favoritesCount int64)) error {
+func (s *ArticleStore) AddFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(favoritesCount int64, updatedAt time.Time)) error {
 	return db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `INSERT INTO article_management.favorite_articles 
 			(article_id, user_id) VALUES ($1, $2)`
@@ -432,21 +439,25 @@ func (s *ArticleStore) AddFavorite(ctx context.Context, a *model.Article, u *mod
 			return err
 		}
 
+		var favoritesCount int64
+		var updatedAt time.Time
+
 		queryString = `UPDATE article_management.articles 
-			SET favorites_count = favorites_count + $1 
-			WHERE id = $2`
-		_, err = tx.ExecContext(ctx, queryString, 1, a.ID)
+			SET favorites_count = favorites_count + $1, updated_at = DEFAULT 
+			WHERE id = $2 
+			RETURNING favorites_count, updated_at`
+		err = tx.QueryRowContext(ctx, queryString, 1, a.ID).Scan(&favoritesCount, &updatedAt)
 		if err != nil {
 			return err
 		}
 
-		updateFunc(a.FavoritesCount + 1)
+		updateFunc(favoritesCount, updatedAt)
 		return nil
 	})
 }
 
 // DeleteFavorite unfavorites an article
-func (s *ArticleStore) DeleteFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(favoritesCount int64)) error {
+func (s *ArticleStore) DeleteFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(favoritesCount int64, updatedAt time.Time)) error {
 	return db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `DELETE FROM article_management.favorite_articles 
 			WHERE article_id = $1 AND user_id = $2`
@@ -455,20 +466,19 @@ func (s *ArticleStore) DeleteFavorite(ctx context.Context, a *model.Article, u *
 			return err
 		}
 
+		var favoritesCount int64
+		var updatedAt time.Time
+
 		queryString = `UPDATE article_management.articles 
-			SET favorites_count = favorites_count - $1 
-			WHERE id = $2`
-		_, err = tx.ExecContext(ctx, queryString, 1, a.ID)
+			SET favorites_count = GREATEST(0, favorites_count - $1), updated_at = DEFAULT 
+			WHERE id = $2 
+			RETURNING favorites_count, updated_at`
+		err = tx.QueryRowContext(ctx, queryString, 1, a.ID).Scan(&favoritesCount, &updatedAt)
 		if err != nil {
 			return err
 		}
 
-		if a.FavoritesCount == 0 {
-			updateFunc(0)
-		} else {
-			updateFunc(a.FavoritesCount - 1)
-		}
-
+		updateFunc(favoritesCount, updatedAt)
 		return nil
 	})
 }

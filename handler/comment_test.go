@@ -75,7 +75,8 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		assert.Equal(t, expected.Body, actual.Body)
 		assert.Equal(t, expected.Author, actual.Author)
 		assert.NotEmpty(t, actual.CreatedAt)
-		assert.Nil(t, actual.UpdatedAt)
+		assert.NotEmpty(t, actual.UpdatedAt)
+		assert.Equal(t, actual.CreatedAt, actual.UpdatedAt)
 	})
 
 	t.Run("GetComments", func(t *testing.T) {

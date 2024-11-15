@@ -35,7 +35,7 @@ type Article struct {
 	Author         User
 	FavoritesCount int64
 	CreatedAt      time.Time
-	UpdatedAt      *time.Time
+	UpdatedAt      time.Time
 }
 
 // Validate validates fields of article model
@@ -108,11 +108,7 @@ func (a *Article) ResponseArticle(favorited, followingAuthor bool) message.Artic
 		FavoritesCount: a.FavoritesCount,
 		Author:         a.Author.ResponseProfile(followingAuthor),
 		CreatedAt:      a.CreatedAt.Format(time.RFC3339Nano),
-	}
-
-	if a.UpdatedAt != nil {
-		d := a.UpdatedAt.Format(time.RFC3339Nano)
-		ar.UpdatedAt = &d
+		UpdatedAt:      a.UpdatedAt.Format(time.RFC3339Nano),
 	}
 
 	tags := make([]string, 0, len(a.Tags))

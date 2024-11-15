@@ -35,7 +35,7 @@ type ArticleResponse struct {
 	FavoritesCount int64           `json:"favorites_count"`
 	Author         ProfileResponse `json:"author"`
 	CreatedAt      string          `json:"created_at"`
-	UpdatedAt      *string         `json:"updated_at"`
+	UpdatedAt      string          `json:"updated_at"`
 }
 
 // ArticlesResponse definition
@@ -55,7 +55,7 @@ type CommentResponse struct {
 	Body      string          `json:"body"`
 	Author    ProfileResponse `json:"author"`
 	CreatedAt string          `json:"created_at"`
-	UpdatedAt *string         `json:"updated_at"`
+	UpdatedAt string          `json:"updated_at"`
 }
 
 // CommentsResponse definition

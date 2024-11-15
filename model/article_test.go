@@ -236,9 +236,8 @@ func TestUnit_ArticleModel(t *testing.T) {
 	})
 
 	t.Run("ResponseArticle", func(t *testing.T) {
-		createdAt := time.Now()
-		updatedAt := time.Now().Add(10 * time.Hour)
-		updatedAtString := updatedAt.Format(time.RFC3339Nano)
+		now := time.Now()
+		nowString := now.Format(time.RFC3339Nano)
 
 		favorited := false
 		following := false
@@ -256,8 +255,8 @@ func TestUnit_ArticleModel(t *testing.T) {
 			},
 			Favorited:      favorited,
 			FavoritesCount: 10,
-			CreatedAt:      createdAt.Format(time.RFC3339Nano),
-			UpdatedAt:      &updatedAtString,
+			CreatedAt:      nowString,
+			UpdatedAt:      nowString,
 			Tags:           []string{"tag-1", "tag-2"},
 		}
 
@@ -275,13 +274,13 @@ func TestUnit_ArticleModel(t *testing.T) {
 				Name:      "FooUser",
 				Bio:       "This is my bio.",
 				Image:     "https://imgur.com/image.jpeg",
-				CreatedAt: createdAt,
-				UpdatedAt: nil,
+				CreatedAt: now,
+				UpdatedAt: now,
 			},
 			FavoritesCount: 10,
 			Tags:           []Tag{{Name: "tag-1"}, {Name: "tag-2"}},
-			CreatedAt:      createdAt,
-			UpdatedAt:      &updatedAt,
+			CreatedAt:      now,
+			UpdatedAt:      now,
 		}
 
 		actual := a.ResponseArticle(favorited, following)

@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nathanbizkit/article-management/message"
@@ -101,21 +102,22 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	var favoritedBy *model.User
+	var favoritedAuthor *model.User
 	favUsername := ctx.Query("favorited")
 	if favUsername != "" {
 		var err error
-		favoritedBy, err = h.us.GetByUsername(ctx.Request.Context(), favUsername)
+		favoritedAuthor, err = h.us.GetByUsername(ctx.Request.Context(), favUsername)
 		if err != nil {
-			favoritedBy = nil
-			h.logger.Warn().Msg("skipped: cannot find favorited user")
+			favoritedAuthor = nil
+			h.logger.Warn().Msg("skipped: cannot find favorited author")
 		}
 	}
 
+	tagName := ctx.Query("tag")
+	author := ctx.Query("username")
 	limit, offset := h.GetPaginationQuery(ctx, defaultLimit, defaultOffset)
 
-	articles, err := h.as.GetArticles(ctx.Request.Context(),
-		ctx.Query("tag"), ctx.Query("author"), favoritedBy, limit, offset)
+	articles, err := h.as.GetArticles(ctx.Request.Context(), tagName, author, favoritedAuthor, limit, offset)
 	if err != nil {
 		msg := "failed to search articles"
 		h.logger.Error().Err(err).Msg(msg)
@@ -203,8 +205,7 @@ func (h *Handler) UpdateArticle(ctx *gin.Context) {
 
 	if article.Author.ID != currentUser.ID {
 		msg := "forbidden"
-		err := fmt.Errorf("user (id=%d) attempted to update other user's article (id=%d)",
-			currentUser.ID, articleID)
+		err := fmt.Errorf("user (id=%d) attempted to update user's article (id=%d)", currentUser.ID, articleID)
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": msg})
 		return
@@ -256,8 +257,7 @@ func (h *Handler) DeleteArticle(ctx *gin.Context) {
 
 	if article.Author.ID != currentUser.ID {
 		msg := "forbidden"
-		err := fmt.Errorf("user (id=%d) attempted to delete other user's article (id=%d)",
-			currentUser.ID, articleID)
+		err := fmt.Errorf("user (id=%d) attempted to delete user's article (id=%d)", currentUser.ID, articleID)
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": msg})
 		return
@@ -288,11 +288,13 @@ func (h *Handler) FavoriteArticle(ctx *gin.Context) {
 		return
 	}
 
-	err = h.as.AddFavorite(ctx.Request.Context(), article, currentUser, func(favoritesCount int64) {
-		article.FavoritesCount = favoritesCount
-	})
+	err = h.as.AddFavorite(ctx.Request.Context(), article, currentUser,
+		func(favoritesCount int64, updatedAt time.Time) {
+			article.FavoritesCount = favoritesCount
+			article.UpdatedAt = updatedAt
+		})
 	if err != nil {
-		msg := "failed to add favorite"
+		msg := "failed to favorite the article"
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
@@ -324,11 +326,13 @@ func (h *Handler) UnfavoriteArticle(ctx *gin.Context) {
 		return
 	}
 
-	err = h.as.DeleteFavorite(ctx.Request.Context(), article, currentUser, func(favoritesCount int64) {
-		article.FavoritesCount = favoritesCount
-	})
+	err = h.as.DeleteFavorite(ctx.Request.Context(), article, currentUser,
+		func(favoritesCount int64, updatedAt time.Time) {
+			article.FavoritesCount = favoritesCount
+			article.UpdatedAt = updatedAt
+		})
 	if err != nil {
-		msg := "failed to remove favorite"
+		msg := "failed to unfavorite the article"
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return

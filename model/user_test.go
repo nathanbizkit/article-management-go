@@ -312,7 +312,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:       "This is my bio.",
 					Image:     "https://imgur.com/image.jpeg",
 					CreatedAt: now,
-					UpdatedAt: nil,
+					UpdatedAt: now,
 				},
 				&User{
 					Username: "new_foo_user",
@@ -331,7 +331,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:       "This is my new bio.",
 					Image:     "https://imgur.com/new_image.jpeg",
 					CreatedAt: now,
-					UpdatedAt: nil,
+					UpdatedAt: now,
 				},
 				true,
 			},
@@ -346,7 +346,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:       "This is my bio.",
 					Image:     "https://imgur.com/image.jpeg",
 					CreatedAt: now,
-					UpdatedAt: nil,
+					UpdatedAt: now,
 				},
 				&User{
 					Bio:   "",
@@ -361,7 +361,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:       "",
 					Image:     "",
 					CreatedAt: now,
-					UpdatedAt: nil,
+					UpdatedAt: now,
 				},
 				false,
 			},
@@ -448,6 +448,7 @@ func TestUnit_UserModel(t *testing.T) {
 	})
 
 	t.Run("ResponseProfile", func(t *testing.T) {
+		now := time.Now()
 		u := User{
 			ID:        1,
 			Username:  "foo_user",
@@ -456,8 +457,8 @@ func TestUnit_UserModel(t *testing.T) {
 			Name:      "FooUser",
 			Bio:       "This is my bio.",
 			Image:     "https://imgur.com/image.jpeg",
-			CreatedAt: time.Now(),
-			UpdatedAt: nil,
+			CreatedAt: now,
+			UpdatedAt: now,
 		}
 
 		following := false

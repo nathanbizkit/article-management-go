@@ -69,9 +69,8 @@ func TestUnit_CommentModel(t *testing.T) {
 	})
 
 	t.Run("ResponseComment", func(t *testing.T) {
-		createdAt := time.Now()
-		updatedAt := time.Now().Add(10 * time.Hour)
-		updatedAtString := updatedAt.Format(time.RFC3339Nano)
+		now := time.Now()
+		nowString := now.Format(time.RFC3339Nano)
 
 		following := false
 		expected := message.CommentResponse{
@@ -84,8 +83,8 @@ func TestUnit_CommentModel(t *testing.T) {
 				Image:     "https://imgur.com/image.jpeg",
 				Following: following,
 			},
-			CreatedAt: createdAt.Format(time.RFC3339Nano),
-			UpdatedAt: &updatedAtString,
+			CreatedAt: nowString,
+			UpdatedAt: nowString,
 		}
 
 		c := Comment{
@@ -100,12 +99,12 @@ func TestUnit_CommentModel(t *testing.T) {
 				Name:      "FooUser",
 				Bio:       "This is my bio.",
 				Image:     "https://imgur.com/image.jpeg",
-				CreatedAt: time.Now(),
-				UpdatedAt: nil,
+				CreatedAt: now,
+				UpdatedAt: now,
 			},
 			ArticleID: 1,
-			CreatedAt: createdAt,
-			UpdatedAt: &updatedAt,
+			CreatedAt: now,
+			UpdatedAt: now,
 		}
 
 		actual := c.ResponseComment(following)

@@ -149,7 +149,7 @@ func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, err
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `UPDATE article_management.users 
-			SET username = $1, email = $2, password = $3, name = $4, bio = $5, image = $6 
+			SET username = $1, email = $2, password = $3, name = $4, bio = $5, image = $6, updated_at = DEFAULT 
 			WHERE id = $7 
 			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image, m.ID).

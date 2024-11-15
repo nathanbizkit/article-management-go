@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS article_management.articles (
+	id SERIAL PRIMARY KEY,
+	title VARCHAR(100) NOT NULL,
+	description VARCHAR(255) NOT NULL,
+	body TEXT NOT NULL,
+	user_id INTEGER REFERENCES article_management.users (id) ON DELETE cascade,
+	favorites_count INTEGER NOT NULL DEFAULT 0,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
