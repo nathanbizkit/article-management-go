@@ -140,3 +140,36 @@ func deleteArticle(t *testing.T, db *sql.DB, id uint) {
 		t.Fatal(err)
 	}
 }
+
+func createRandomComment(t *testing.T, db *sql.DB, articleID uint, userID uint) *model.Comment {
+	t.Helper()
+
+	randStr := test.RandomString(t, 20)
+	m := model.Comment{
+		Body:      randStr,
+		ArticleID: articleID,
+		UserID:    userID,
+	}
+
+	as := store.NewArticleStore(db)
+	cm, err := as.CreateComment(context.Background(), &m)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		deleteComment(t, db, cm.ID)
+	})
+
+	return cm
+}
+
+func deleteComment(t *testing.T, db *sql.DB, id uint) {
+	t.Helper()
+
+	as := store.NewArticleStore(db)
+	err := as.DeleteComment(context.Background(), &model.Comment{ID: id})
+	if err != nil {
+		t.Fatal(err)
+	}
+}

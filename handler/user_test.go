@@ -25,9 +25,9 @@ func TestIntegration_UserHandler(t *testing.T) {
 	gin.SetMode("test")
 	h, lct := setup(t)
 
-	fooUser := createRandomUser(t, lct.DB())
-
 	t.Run("Login", func(t *testing.T) {
+		fooUser := createRandomUser(t, lct.DB())
+
 		r := message.LoginUserRequest{
 			Email:    fooUser.Email,
 			Password: userPassword,
@@ -121,6 +121,8 @@ func TestIntegration_UserHandler(t *testing.T) {
 	})
 
 	t.Run("RefreshToken", func(t *testing.T) {
+		fooUser := createRandomUser(t, lct.DB())
+
 		req := httptest.NewRequest(http.MethodPost, "/api/refresh_token", nil)
 		w := httptest.NewRecorder()
 		c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
@@ -154,6 +156,8 @@ func TestIntegration_UserHandler(t *testing.T) {
 	})
 
 	t.Run("GetCurrentUser", func(t *testing.T) {
+		fooUser := createRandomUser(t, lct.DB())
+
 		following := false
 		expected := fooUser.ResponseProfile(following)
 
@@ -198,6 +202,8 @@ func TestIntegration_UserHandler(t *testing.T) {
 	})
 
 	t.Run("UpdateCurrentUser", func(t *testing.T) {
+		fooUser := createRandomUser(t, lct.DB())
+
 		randStr := test.RandomString(t, 15)
 		u := model.User{
 			Username: randStr,

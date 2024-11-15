@@ -23,10 +23,10 @@ func TestIntegration_TagHandler(t *testing.T) {
 	gin.SetMode("test")
 	h, lct := setup(t)
 
-	fooUser := createRandomUser(t, lct.DB())
-	barUser := createRandomUser(t, lct.DB())
-
 	t.Run("GetTags", func(t *testing.T) {
+		fooUser := createRandomUser(t, lct.DB())
+		barUser := createRandomUser(t, lct.DB())
+
 		tags := make([]string, 0, 20)
 		for i := 0; i < 10; i++ {
 			randStr := test.RandomString(t, 10)

@@ -16,7 +16,7 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
 	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), uint(articleID))
+	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
@@ -64,7 +64,7 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
 	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), uint(articleID))
+	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})

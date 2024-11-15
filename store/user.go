@@ -24,8 +24,10 @@ func NewUserStore(db *sql.DB) *UserStore {
 func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 	var u model.User
 
-	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
-		FROM article_management.users WHERE id = $1`
+	queryString := `SELECT 
+		id, username, email, password, name, bio, image, created_at, updated_at 
+		FROM article_management.users 
+		WHERE id = $1`
 	err := s.db.QueryRowContext(ctx, queryString, id).
 		Scan(
 			&u.ID,
@@ -52,8 +54,10 @@ func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var u model.User
 
-	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
-		FROM article_management.users WHERE email = $1`
+	queryString := `SELECT 
+		id, username, email, password, name, bio, image, created_at, updated_at 
+		FROM article_management.users 
+		WHERE email = $1`
 	err := s.db.QueryRowContext(ctx, queryString, email).
 		Scan(
 			&u.ID,
@@ -80,8 +84,10 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, 
 func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.User, error) {
 	var u model.User
 
-	queryString := `SELECT id, username, email, password, name, bio, image, created_at, updated_at 
-		FROM article_management.users WHERE username = $1`
+	queryString := `SELECT 
+		id, username, email, password, name, bio, image, created_at, updated_at 
+		FROM article_management.users 
+		WHERE username = $1`
 	err := s.db.QueryRowContext(ctx, queryString, username).
 		Scan(
 			&u.ID,
@@ -109,8 +115,8 @@ func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, err
 	var u model.User
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
-		queryString := `INSERT INTO article_management.users (username, email, password, name, bio, image) 
-			VALUES ($1, $2, $3, $4, $5, $6) 
+		queryString := `INSERT INTO article_management.users 
+			(username, email, password, name, bio, image) VALUES ($1, $2, $3, $4, $5, $6) 
 			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image).
 			Scan(
@@ -143,7 +149,8 @@ func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, err
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `UPDATE article_management.users 
-			SET username = $1, email = $2, password = $3, name = $4, bio = $5, image = $6 WHERE id = $7 
+			SET username = $1, email = $2, password = $3, name = $4, bio = $5, image = $6 
+			WHERE id = $7 
 			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image, m.ID).
 			Scan(
@@ -178,7 +185,8 @@ func (s *UserStore) IsFollowing(ctx context.Context, a *model.User, b *model.Use
 
 	var count int
 
-	queryString := `SELECT COUNT(to_user_id) FROM article_management.follows 
+	queryString := `SELECT COUNT(to_user_id) 
+		FROM article_management.follows 
 		WHERE from_user_id = $1 AND to_user_id = $2`
 	err := s.db.QueryRowContext(ctx, queryString, a.ID, b.ID).Scan(&count)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -191,7 +199,8 @@ func (s *UserStore) IsFollowing(ctx context.Context, a *model.User, b *model.Use
 // Follow creates a follow relationship from user A to user B
 func (s *UserStore) Follow(ctx context.Context, a *model.User, b *model.User) error {
 	return db.RunInTx(s.db, func(tx *sql.Tx) error {
-		queryString := `INSERT INTO article_management.follows (from_user_id, to_user_id) VALUES ($1, $2)`
+		queryString := `INSERT INTO article_management.follows 
+			(from_user_id, to_user_id) VALUES ($1, $2)`
 		_, err := tx.ExecContext(ctx, queryString, a.ID, b.ID)
 		return err
 	})
@@ -200,7 +209,8 @@ func (s *UserStore) Follow(ctx context.Context, a *model.User, b *model.User) er
 // Unfollow deletes a follow relationship from user A to user B
 func (s *UserStore) Unfollow(ctx context.Context, a *model.User, b *model.User) error {
 	return db.RunInTx(s.db, func(tx *sql.Tx) error {
-		queryString := `DELETE FROM article_management.follows WHERE from_user_id = $1 AND to_user_id = $2`
+		queryString := `DELETE FROM article_management.follows 
+			WHERE from_user_id = $1 AND to_user_id = $2`
 		_, err := tx.ExecContext(ctx, queryString, a.ID, b.ID)
 		return err
 	})
@@ -208,7 +218,9 @@ func (s *UserStore) Unfollow(ctx context.Context, a *model.User, b *model.User) 
 
 // GetFollowingUserIDs returns user ids that current user follows
 func (s *UserStore) GetFollowingUserIDs(ctx context.Context, m *model.User) ([]uint, error) {
-	queryString := `SELECT to_user_id FROM article_management.follows WHERE from_user_id = $1`
+	queryString := `SELECT to_user_id 
+		FROM article_management.follows 
+		WHERE from_user_id = $1`
 	rows, err := s.db.QueryContext(ctx, queryString, m.ID)
 	if err != nil {
 		return []uint{}, err

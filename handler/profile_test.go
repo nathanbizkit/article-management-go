@@ -22,10 +22,10 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 	gin.SetMode("test")
 	h, lct := setup(t)
 
-	fooUser := createRandomUser(t, lct.DB())
-	barUser := createRandomUser(t, lct.DB())
-
 	t.Run("ShowProfile", func(t *testing.T) {
+		fooUser := createRandomUser(t, lct.DB())
+		barUser := createRandomUser(t, lct.DB())
+
 		following := false
 		expected := barUser.ResponseProfile(following)
 
@@ -50,10 +50,8 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 	})
 
 	t.Run("FollowUser", func(t *testing.T) {
-		err := h.us.Unfollow(context.Background(), fooUser, barUser)
-		if err != nil {
-			t.Fatal(err)
-		}
+		fooUser := createRandomUser(t, lct.DB())
+		barUser := createRandomUser(t, lct.DB())
 
 		following := true
 		expected := barUser.ResponseProfile(following)
@@ -68,17 +66,26 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		h.FollowUser(c)
 
 		var actual message.ProfileResponse
-		err = json.NewDecoder(w.Result().Body).Decode(&actual)
+		err := json.NewDecoder(w.Result().Body).Decode(&actual)
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer w.Result().Body.Close()
 
+		actualFollowing, err := h.us.IsFollowing(context.Background(), fooUser, barUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, expected, actual)
+		assert.Equal(t, following, actualFollowing)
 	})
 
 	t.Run("UnfollowUser", func(t *testing.T) {
+		fooUser := createRandomUser(t, lct.DB())
+		barUser := createRandomUser(t, lct.DB())
+
 		err := h.us.Follow(context.Background(), fooUser, barUser)
 		if err != nil {
 			t.Fatal(err)
@@ -103,7 +110,13 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		}
 		defer w.Result().Body.Close()
 
+		actualFollowing, err := h.us.IsFollowing(context.Background(), fooUser, barUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, expected, actual)
+		assert.Equal(t, following, actualFollowing)
 	})
 }
