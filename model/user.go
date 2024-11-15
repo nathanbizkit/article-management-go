@@ -122,14 +122,13 @@ func (u *User) Overwrite(username, email, password, name, bio, image string) (re
 
 	u.Bio = bio
 	u.Image = image
-
 	return
 }
 
 // HashPassword makes password field crypted
 func (u *User) HashPassword() error {
 	if u.Password == "" {
-		return errors.New("password should not be empty")
+		return errors.New("password is empty")
 	}
 
 	h, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)

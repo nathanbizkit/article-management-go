@@ -24,7 +24,7 @@ func NewTestENV(t *testing.T) *env.ENV {
 	t.Helper()
 
 	return &env.ENV{
-		AppMode:          "testing",
+		AppMode:          "test",
 		AppPort:          "8000",
 		AuthJWTSecretKey: "secretkey",
 		AuthCookieDomain: "localhost",
@@ -41,6 +41,7 @@ func NewTestLogger(t *testing.T) zerolog.Logger {
 	t.Helper()
 
 	w := zerolog.ConsoleWriter{Out: io.Discard}
+	// w := zerolog.ConsoleWriter{Out: os.Stderr}
 	return zerolog.New(w).With().Timestamp().Caller().Logger()
 }
 
@@ -83,7 +84,7 @@ func AddCookieToRequest(t *testing.T, req *http.Request, name, value, domain str
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    url.QueryEscape(value),
-		MaxAge:   int((20 * (25 * time.Hour)).Seconds()),
+		MaxAge:   int((20 * (24 * time.Hour)).Seconds()),
 		Path:     "/api",
 		Domain:   domain,
 		SameSite: http.SameSiteStrictMode,
@@ -103,7 +104,7 @@ func AddCookieToResponse(t *testing.T, w http.ResponseWriter, name, value, domai
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    url.QueryEscape(value),
-		MaxAge:   int((20 * (25 * time.Hour)).Seconds()),
+		MaxAge:   int((20 * (24 * time.Hour)).Seconds()),
 		Path:     "/api",
 		Domain:   domain,
 		SameSite: http.SameSiteStrictMode,

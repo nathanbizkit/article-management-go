@@ -12,8 +12,10 @@ import (
 
 // New returns a database pool connection
 func New(e *env.ENV) (*sql.DB, error) {
-	psqlInfo := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
-		e.DBUser, e.DBPass, e.DBHost, e.DBPort, e.DBName)
+	psqlInfo := fmt.Sprintf(
+		"user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+		e.DBUser, e.DBPass, e.DBHost, e.DBPort, e.DBName,
+	)
 
 	var d *sql.DB
 	var err error

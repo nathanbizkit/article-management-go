@@ -40,9 +40,8 @@ func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = fmt.Errorf("user not found :%w", err)
+			err = fmt.Errorf("failed to get user :%w", err)
 		}
-
 		return nil, err
 	}
 
@@ -69,9 +68,8 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, 
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = fmt.Errorf("user not found :%w", err)
+			err = fmt.Errorf("failed to get user :%w", err)
 		}
-
 		return nil, err
 	}
 
@@ -98,9 +96,8 @@ func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = fmt.Errorf("user not found :%w", err)
+			err = fmt.Errorf("failed to get user :%w", err)
 		}
-
 		return nil, err
 	}
 
@@ -129,9 +126,8 @@ func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, err
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				err = fmt.Errorf("user not found :%w", err)
+				err = fmt.Errorf("failed to retrieve newly created user :%w", err)
 			}
-
 			return err
 		}
 
@@ -163,9 +159,8 @@ func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, err
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				err = fmt.Errorf("user not found :%w", err)
+				err = fmt.Errorf("failed to retrieve newly updated user :%w", err)
 			}
-
 			return err
 		}
 

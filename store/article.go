@@ -57,9 +57,8 @@ func (s *ArticleStore) GetByID(ctx context.Context, id uint) (*model.Article, er
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = fmt.Errorf("article not found :%w", err)
+			err = fmt.Errorf("failed to get article :%w", err)
 		}
-
 		return nil, err
 	}
 
@@ -71,7 +70,6 @@ func (s *ArticleStore) GetByID(ctx context.Context, id uint) (*model.Article, er
 	}
 
 	a.Tags = tags
-
 	return &a, nil
 }
 
@@ -96,9 +94,8 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				err = fmt.Errorf("article not found :%w", err)
+				err = fmt.Errorf("failed to retrieve newly created article :%w", err)
 			}
-
 			return err
 		}
 
@@ -119,8 +116,7 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 			}
 
 			// copy into temporary table
-			stmtTags, err := tx.PrepareContext(ctx,
-				pq.CopyIn("tags_staging", "name"))
+			stmtTags, err := tx.PrepareContext(ctx, pq.CopyIn("tags_staging", "name"))
 			if err != nil {
 				return err
 			}
@@ -162,15 +158,16 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 			valueStrings := make([]string, 0, len(tags))
 			valueArgs := make([]interface{}, 0, len(tags)*2)
 			for _, tag := range tags {
-				str := fmt.Sprintf("($%d, $%d)", valueCount, valueCount+1)
-				valueStrings = append(valueStrings, str)
+				valueStr := fmt.Sprintf("($%d, $%d)", valueCount, valueCount+1)
+				valueStrings = append(valueStrings, valueStr)
 				valueArgs = append(valueArgs, a.ID, tag.ID)
 				valueCount += 2
 			}
 
 			queryString = fmt.Sprintf(
 				`INSERT INTO article_management.article_tags (article_id, tag_id) VALUES %s`,
-				strings.Join(valueStrings, ", "))
+				strings.Join(valueStrings, ", "),
+			)
 			stmtArticleTags, err := tx.PrepareContext(ctx, queryString)
 			if err != nil {
 				return err
@@ -213,9 +210,8 @@ func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Art
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				err = fmt.Errorf("article not found :%w", err)
+				err = fmt.Errorf("failed to retrieve newly updated article :%w", err)
 			}
-
 			return err
 		}
 
@@ -232,7 +228,6 @@ func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Art
 		}
 
 		a.Tags = tags
-
 		return nil
 	})
 
@@ -248,23 +243,23 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		FROM article_management.articles a 
 		INNER JOIN article_management_users u ON u.id = a.user_id `)
 
-	conds := make([]string, 0)
-	condNumber := 1
-	condItems := make([]interface{}, 0)
+	condCount := 1
+	condStrings := make([]string, 0)
+	condArgs := make([]interface{}, 0)
 
 	if username != "" {
-		conds = append(conds, fmt.Sprintf("u.username = $%d", condNumber))
-		condItems = append(condItems, username)
-		condNumber += 1
+		condStrings = append(condStrings, fmt.Sprintf("u.username = $%d", condCount))
+		condArgs = append(condArgs, username)
+		condCount += 1
 	}
 
 	if tag != "" {
 		q.WriteString(`INNER JOIN article_management.article_tags at ON at.article_id = a.id 
 			INNER JOIN article_management.tags t ON t.id = at.tag_id `)
 
-		conds = append(conds, fmt.Sprintf("t.name = $%d", condNumber))
-		condItems = append(condItems, tag)
-		condNumber += 1
+		condStrings = append(condStrings, fmt.Sprintf("t.name = $%d", condCount))
+		condArgs = append(condArgs, tag)
+		condCount += 1
 	}
 
 	if favoritedBy != nil {
@@ -290,14 +285,14 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 			ids = append(ids, id)
 		}
 
-		conds = append(conds, fmt.Sprintf("a.id in ($%d)", condNumber))
-		condItems = append(condItems, pq.Array(ids))
-		condNumber += 1
+		condStrings = append(condStrings, fmt.Sprintf("a.id in ($%d)", condCount))
+		condArgs = append(condArgs, pq.Array(ids))
+		condCount += 1
 	}
 
-	q.WriteString(strings.Join(conds, " AND "))
+	q.WriteString(strings.Join(condStrings, " AND "))
 
-	rows, err := s.db.QueryContext(ctx, q.String(), condItems...)
+	rows, err := s.db.QueryContext(ctx, q.String(), condArgs...)
 	if err != nil {
 		return []model.Article{}, err
 	}
@@ -444,7 +439,6 @@ func (s *ArticleStore) AddFavorite(ctx context.Context, a *model.Article, u *mod
 		}
 
 		updateFunc(a.FavoritesCount + 1)
-
 		return nil
 	})
 }
@@ -508,12 +502,18 @@ func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*mo
 			VALUES ($1, $2, $3) 
 			RETURNING id, body, user_id, article_id, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Body, m.UserID, m.ArticleID).
-			Scan(&c.ID, &c.Body, &c.UserID, &c.ArticleID, &c.CreatedAt, &c.UpdatedAt)
+			Scan(
+				&c.ID,
+				&c.Body,
+				&c.UserID,
+				&c.ArticleID,
+				&c.CreatedAt,
+				&c.UpdatedAt,
+			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				err = fmt.Errorf("comment not found :%w", err)
+				err = fmt.Errorf("failed to get comment :%w", err)
 			}
-
 			return err
 		}
 
@@ -535,14 +535,12 @@ func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*mo
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				err = fmt.Errorf("user not found :%w", err)
+				err = fmt.Errorf("failed to get comment author :%w", err)
 			}
-
 			return err
 		}
 
 		c.Author = u
-
 		return nil
 	})
 
@@ -628,9 +626,8 @@ func (s *ArticleStore) GetCommentByID(ctx context.Context, id uint) (*model.Comm
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = fmt.Errorf("comment not found :%w", err)
+			err = fmt.Errorf("failed to get comment :%w", err)
 		}
-
 		return nil, err
 	}
 
@@ -666,9 +663,8 @@ func getArticleAuthor(db *sql.DB, ctx context.Context, a *model.Article) (*model
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = fmt.Errorf("user not found :%w", err)
+			err = fmt.Errorf("failed to get article author :%w", err)
 		}
-
 		return nil, err
 	}
 

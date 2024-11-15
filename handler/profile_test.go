@@ -20,34 +20,32 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 	}
 
 	gin.SetMode("test")
+	h, lct := setup(t)
 
-	h, lct := setUp(t)
-
-	fooUser := createUser(t, lct.DB())
-	barUser := createUser(t, lct.DB())
+	fooUser := createRandomUser(t, lct.DB())
+	barUser := createRandomUser(t, lct.DB())
 
 	t.Run("ShowProfile", func(t *testing.T) {
 		following := false
 		expected := barUser.ResponseProfile(following)
 
-		tokenTime := time.Now().Add(-5 * time.Hour)
+		apiUrl := fmt.Sprintf("/api/profiles/%s", barUser.Username)
+		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
+
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet,
-			fmt.Sprintf("/api/profiles/%s", barUser.Username), nil)
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, tokenTime)
+		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
 		c.AddParam("username", barUser.Username)
 
 		h.ShowProfile(c)
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 		var actual message.ProfileResponse
 		err := json.NewDecoder(w.Result().Body).Decode(&actual)
 		if err != nil {
 			t.Fatal(err)
 		}
-		w.Result().Body.Close()
+		defer w.Result().Body.Close()
 
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, expected, actual)
 	})
 
@@ -60,24 +58,23 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		following := true
 		expected := barUser.ResponseProfile(following)
 
-		tokenTime := time.Now().Add(-5 * time.Hour)
+		apiUrl := fmt.Sprintf("/api/profiles/%s/follow", barUser.Username)
+		req := httptest.NewRequest(http.MethodPost, apiUrl, nil)
+
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet,
-			fmt.Sprintf("/api/profiles/%s/follow", barUser.Username), nil)
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, tokenTime)
+		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
 		c.AddParam("username", barUser.Username)
 
 		h.FollowUser(c)
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 		var actual message.ProfileResponse
 		err = json.NewDecoder(w.Result().Body).Decode(&actual)
 		if err != nil {
 			t.Fatal(err)
 		}
-		w.Result().Body.Close()
+		defer w.Result().Body.Close()
 
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, expected, actual)
 	})
 
@@ -90,24 +87,23 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		following := false
 		expected := barUser.ResponseProfile(following)
 
-		tokenTime := time.Now().Add(-5 * time.Hour)
+		apiUrl := fmt.Sprintf("/api/profiles/%s/follow", barUser.Username)
+		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
+
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet,
-			fmt.Sprintf("/api/profiles/%s/unfollow", barUser.Username), nil)
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, tokenTime)
+		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
 		c.AddParam("username", barUser.Username)
 
 		h.UnfollowUser(c)
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 		var actual message.ProfileResponse
 		err = json.NewDecoder(w.Result().Body).Decode(&actual)
 		if err != nil {
 			t.Fatal(err)
 		}
-		w.Result().Body.Close()
+		defer w.Result().Body.Close()
 
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, expected, actual)
 	})
 }

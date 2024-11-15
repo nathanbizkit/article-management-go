@@ -21,13 +21,12 @@ func TestIntegration_TagHandler(t *testing.T) {
 	}
 
 	gin.SetMode("test")
+	h, lct := setup(t)
 
-	h, lct := setUp(t)
+	fooUser := createRandomUser(t, lct.DB())
+	barUser := createRandomUser(t, lct.DB())
 
 	t.Run("GetTags", func(t *testing.T) {
-		fooUser := createUser(t, lct.DB())
-		barUser := createUser(t, lct.DB())
-
 		tags := make([]string, 0, 20)
 		for i := 0; i < 10; i++ {
 			randStr := test.RandomString(t, 10)
@@ -59,21 +58,20 @@ func TestIntegration_TagHandler(t *testing.T) {
 
 		expected := message.TagsResponse{Tags: tags}
 
-		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/api/tags", nil)
+		w := httptest.NewRecorder()
 		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
 
 		h.GetTags(c)
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 		var actual message.TagsResponse
 		err := json.NewDecoder(w.Result().Body).Decode(&actual)
 		if err != nil {
 			t.Fatal(err)
 		}
-		w.Result().Body.Close()
+		defer w.Result().Body.Close()
 
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, expected, actual)
 	})
 }

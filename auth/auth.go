@@ -14,7 +14,7 @@ import (
 const (
 	tokenTTLInHour     = 72 * time.Hour
 	refreshTTLInHour   = 14 * (24 * time.Hour)
-	cookieMaxAgeInHour = (20 * (25 * time.Hour))
+	cookieMaxAgeInHour = (20 * (24 * time.Hour))
 )
 
 type claims struct {
@@ -135,10 +135,16 @@ func (a *Auth) GetUserID(ctx *gin.Context, refresh bool) (uint, error) {
 // SetCookieToken sets a jwt token cookie in http header
 func (a *Auth) SetCookieToken(ctx *gin.Context, t AuthToken, path string) {
 	ctx.SetSameSite(http.SameSiteStrictMode)
-	ctx.SetCookie("session", t.Token, int(cookieMaxAgeInHour.Seconds()),
-		path, a.env.AuthCookieDomain, true, true)
-	ctx.SetCookie("refreshToken", t.RefreshToken, int(cookieMaxAgeInHour.Seconds()),
-		path, a.env.AuthCookieDomain, true, true)
+	ctx.SetCookie(
+		"session", t.Token,
+		int(cookieMaxAgeInHour.Seconds()),
+		path, a.env.AuthCookieDomain, true, true,
+	)
+	ctx.SetCookie(
+		"refreshToken", t.RefreshToken,
+		int(cookieMaxAgeInHour.Seconds()),
+		path, a.env.AuthCookieDomain, true, true,
+	)
 }
 
 // GetCookieToken returns a jwt token in http cookie

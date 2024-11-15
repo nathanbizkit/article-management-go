@@ -46,33 +46,117 @@ func TestUnit_Auth(t *testing.T) {
 		id := uint(10)
 		token, err := a.GenerateToken(id)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		zeroTime := time.Date(0, 0, 0, 0, 0, 0, 0, time.Local)
 		expiredToken, err := a.GenerateTokenWithTime(id, zeroTime)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		rsaToken, err := jwt.NewWithClaims(jwt.SigningMethodRS512, &jwt.RegisteredClaims{}).
 			SignedString(privateKey)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
-		emptyToken, err := jwt.NewWithClaims(jwt.SigningMethodHS512, &jwt.RegisteredClaims{
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-		}).
+		emptyClaimToken, err := jwt.NewWithClaims(
+			jwt.SigningMethodHS512,
+			&jwt.RegisteredClaims{
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			}).
 			SignedString([]byte(e.AuthJWTSecretKey))
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
+		}
+
+		normalCtx := func() *gin.Context {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = &http.Request{
+				Header: make(http.Header),
+			}
+			test.AddCookieToRequest(
+				t, c.Request,
+				"session", token.Token, e.AuthCookieDomain,
+			)
+			test.AddCookieToRequest(
+				t, c.Request,
+				"refreshToken", token.RefreshToken, e.AuthCookieDomain,
+			)
+			return c
+		}
+
+		noCookieCtx := func() *gin.Context {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = &http.Request{
+				Header: make(http.Header),
+			}
+			return c
+		}
+
+		emptyTokenCtx := func() *gin.Context {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = &http.Request{
+				Header: make(http.Header),
+			}
+			test.AddCookieToRequest(t, c.Request, "session", "", e.AuthCookieDomain)
+			test.AddCookieToRequest(t, c.Request, "refreshToken", "", e.AuthCookieDomain)
+			return c
+		}
+
+		expiredTokenCtx := func() *gin.Context {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = &http.Request{
+				Header: make(http.Header),
+			}
+			test.AddCookieToRequest(
+				t, c.Request,
+				"session", expiredToken.Token, e.AuthCookieDomain,
+			)
+			test.AddCookieToRequest(
+				t, c.Request, "refreshToken",
+				expiredToken.RefreshToken, e.AuthCookieDomain,
+			)
+			return c
+		}
+
+		rsaTokenCtx := func() *gin.Context {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = &http.Request{
+				Header: make(http.Header),
+			}
+			test.AddCookieToRequest(
+				t, c.Request,
+				"session", rsaToken, e.AuthCookieDomain,
+			)
+			test.AddCookieToRequest(
+				t, c.Request,
+				"refreshToken", rsaToken, e.AuthCookieDomain,
+			)
+			return c
+		}
+
+		emptyClaimTokenCtx := func() *gin.Context {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = &http.Request{
+				Header: make(http.Header),
+			}
+			test.AddCookieToRequest(
+				t, c.Request,
+				"session", emptyClaimToken, e.AuthCookieDomain,
+			)
+			test.AddCookieToRequest(
+				t, c.Request,
+				"refreshToken", emptyClaimToken, e.AuthCookieDomain,
+			)
+			return c
 		}
 
 		tests := []struct {
@@ -84,196 +168,84 @@ func TestUnit_Auth(t *testing.T) {
 		}{
 			{
 				"get user id (session): success",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						token.Token, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						token.RefreshToken, e.AuthCookieDomain)
-					return c
-				},
+				normalCtx,
 				false,
 				id,
 				false,
 			},
 			{
 				"get user id (refresh): success",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						token.Token, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						token.RefreshToken, e.AuthCookieDomain)
-					return c
-				},
+				normalCtx,
 				true,
 				id,
 				false,
 			},
 			{
 				"get user id (session): no token in cookie",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					return c
-				},
+				noCookieCtx,
 				false,
 				0,
 				true,
 			},
 			{
 				"get user id (refresh): no token in cookie",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					return c
-				},
+				noCookieCtx,
 				true,
 				0,
 				true,
 			},
 			{
 				"get user id (session): empty token",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						"", e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						"", e.AuthCookieDomain)
-					return c
-				},
+				emptyTokenCtx,
 				false,
 				0,
 				true,
 			},
 			{
 				"get user id (refresh): empty token",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						"", e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						"", e.AuthCookieDomain)
-					return c
-				},
+				emptyTokenCtx,
 				true,
 				0,
 				true,
 			},
 			{
 				"get user id (session): expired token",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						expiredToken.Token, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						expiredToken.RefreshToken, e.AuthCookieDomain)
-					return c
-				},
+				expiredTokenCtx,
 				false,
 				0,
 				true,
 			},
 			{
 				"get user id (refresh): expired token",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						expiredToken.Token, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						expiredToken.RefreshToken, e.AuthCookieDomain)
-					return c
-				},
+				expiredTokenCtx,
 				true,
 				0,
 				true,
 			},
 			{
 				"get user id (session): wrong jwt signing method",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						rsaToken, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						rsaToken, e.AuthCookieDomain)
-					return c
-				},
+				rsaTokenCtx,
 				false,
 				0,
 				true,
 			},
 			{
 				"get user id (refresh): wrong jwt signing method",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						rsaToken, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						rsaToken, e.AuthCookieDomain)
-					return c
-				},
+				rsaTokenCtx,
 				true,
 				0,
 				true,
 			},
 			{
 				"get user id (session): empty token claims",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						emptyToken, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						emptyToken, e.AuthCookieDomain)
-					return c
-				},
+				emptyClaimTokenCtx,
 				false,
 				0,
 				true,
 			},
 			{
 				"get user id (refresh): empty token claims",
-				func() *gin.Context {
-					c, _ := gin.CreateTestContext(httptest.NewRecorder())
-					c.Request = &http.Request{
-						Header: make(http.Header),
-					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						emptyToken, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						emptyToken, e.AuthCookieDomain)
-					return c
-				},
+				emptyClaimTokenCtx,
 				true,
 				0,
 				true,
@@ -296,22 +268,20 @@ func TestUnit_Auth(t *testing.T) {
 	t.Run("SetCookieToken", func(t *testing.T) {
 		token, err := a.GenerateToken(10)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
-		mockWriter := httptest.NewRecorder()
-		test.AddCookieToResponse(t, mockWriter, "session",
-			token.Token, e.AuthCookieDomain)
-		test.AddCookieToResponse(t, mockWriter, "refreshToken",
-			token.RefreshToken, e.AuthCookieDomain)
-		expected := mockWriter.Header().Get("Set-Cookie")
+		w1 := httptest.NewRecorder()
+		test.AddCookieToResponse(t, w1, "session", token.Token, e.AuthCookieDomain)
+		test.AddCookieToResponse(t, w1, "refreshToken", token.RefreshToken, e.AuthCookieDomain)
+		expected := w1.Header().Get("Set-Cookie")
 
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
+		w2 := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w2)
 
 		a.SetCookieToken(c, *token, "/api")
 
-		actual := w.Header().Get("Set-Cookie")
+		actual := w2.Header().Get("Set-Cookie")
 		assert.Equal(t, expected, actual)
 	})
 
@@ -319,7 +289,7 @@ func TestUnit_Auth(t *testing.T) {
 		id := uint(10)
 		token, err := a.GenerateToken(id)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		tests := []struct {
@@ -335,10 +305,14 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						token.Token, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						token.RefreshToken, e.AuthCookieDomain)
+					test.AddCookieToRequest(
+						t, c.Request,
+						"session", token.Token, e.AuthCookieDomain,
+					)
+					test.AddCookieToRequest(
+						t, c.Request,
+						"refreshToken", token.RefreshToken, e.AuthCookieDomain,
+					)
 					return c
 				},
 				token,
@@ -363,8 +337,10 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						token.Token, e.AuthCookieDomain)
+					test.AddCookieToRequest(
+						t, c.Request,
+						"session", token.Token, e.AuthCookieDomain,
+					)
 					return c
 				},
 				nil,
@@ -377,10 +353,14 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						"", e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						token.RefreshToken, e.AuthCookieDomain)
+					test.AddCookieToRequest(
+						t, c.Request,
+						"session", "", e.AuthCookieDomain,
+					)
+					test.AddCookieToRequest(
+						t, c.Request,
+						"refreshToken", token.RefreshToken, e.AuthCookieDomain,
+					)
 					return c
 				},
 				nil,
@@ -393,10 +373,14 @@ func TestUnit_Auth(t *testing.T) {
 					c.Request = &http.Request{
 						Header: make(http.Header),
 					}
-					test.AddCookieToRequest(t, c.Request, "session",
-						token.Token, e.AuthCookieDomain)
-					test.AddCookieToRequest(t, c.Request, "refreshToken",
-						"", e.AuthCookieDomain)
+					test.AddCookieToRequest(
+						t, c.Request,
+						"session", token.Token, e.AuthCookieDomain,
+					)
+					test.AddCookieToRequest(
+						t, c.Request,
+						"refreshToken", "", e.AuthCookieDomain,
+					)
 					return c
 				},
 				nil,

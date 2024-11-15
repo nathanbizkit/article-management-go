@@ -19,7 +19,7 @@ import (
 
 const userPassword = "P@55w0rD!"
 
-func setUp(t *testing.T) (*Handler, *container.LocalTestContainer) {
+func setup(t *testing.T) (*Handler, *container.LocalTestContainer) {
 	t.Helper()
 
 	l := test.NewTestLogger(t)
@@ -33,13 +33,13 @@ func setUp(t *testing.T) (*Handler, *container.LocalTestContainer) {
 	return New(&l, e, auth, us, as), lct
 }
 
-func ctxWithToken(t *testing.T, w http.ResponseWriter, req *http.Request, id uint, tokenTime time.Time) (*gin.Context, *auth.AuthToken) {
+func ctxWithToken(t *testing.T, w http.ResponseWriter, req *http.Request, id uint, timeNow time.Time) (*gin.Context, *auth.AuthToken) {
 	t.Helper()
 
 	e := test.NewTestENV(t)
 	a := auth.New(e)
 
-	token, err := a.GenerateTokenWithTime(id, tokenTime)
+	token, err := a.GenerateTokenWithTime(id, timeNow)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,53 +49,43 @@ func ctxWithToken(t *testing.T, w http.ResponseWriter, req *http.Request, id uin
 
 	a.SetContextUserID(c, id)
 
-	test.AddCookieToRequest(t, c.Request, "session",
-		token.Token, "localhost")
-	test.AddCookieToRequest(t, c.Request, "refreshToken",
-		token.RefreshToken, "localhost")
+	test.AddCookieToRequest(
+		t, c.Request,
+		"session", token.Token, "localhost",
+	)
+	test.AddCookieToRequest(
+		t, c.Request,
+		"refreshToken", token.RefreshToken, "localhost",
+	)
 
 	return c, token
 }
 
-func createUser(t *testing.T, db *sql.DB) *model.User {
+func createRandomUser(t *testing.T, db *sql.DB) *model.User {
 	t.Helper()
 
-	s := test.RandomString(t, 10)
+	randStr := test.RandomString(t, 10)
 	m := model.User{
-		Username: fmt.Sprintf("user_%s", s),
-		Email:    fmt.Sprintf("%s@example.com", s),
+		Username: fmt.Sprintf("user_%s", randStr),
+		Email:    fmt.Sprintf("%s@example.com", randStr),
 		Password: userPassword,
-		Name:     fmt.Sprintf("USER %s", strings.ToUpper(s)),
+		Name:     fmt.Sprintf("USER %s", strings.ToUpper(randStr)),
 		Bio:      "This is my bio.",
-		Image:    "https://imgur.com/image.jpeg",
+		Image:    "https://imgur.com/image.jpg",
 	}
 	m.HashPassword()
 
-	var u model.User
-	queryString := `INSERT INTO article_management.users (username, email, password, name, bio, image) 
-			VALUES ($1, $2, $3, $4, $5, $6) 
-			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
-	err := db.QueryRow(queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image).
-		Scan(
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
-		)
+	us := store.NewUserStore(db)
+	u, err := us.Create(context.Background(), &m)
 	if err != nil {
-		t.Fatalf("failed to create test user: %s", err)
+		t.Fatal(err)
 	}
 
 	t.Cleanup(func() {
 		deleteUser(t, db, u.ID)
 	})
 
-	return &u
+	return u
 }
 
 func deleteUser(t *testing.T, db *sql.DB, id uint) {
@@ -104,6 +94,49 @@ func deleteUser(t *testing.T, db *sql.DB, id uint) {
 	queryString := `DELETE FROM article_management.users WHERE id = $1`
 	_, err := db.Exec(queryString, id)
 	if err != nil {
-		t.Fatalf("failed to delete test user: %s", err)
+		t.Fatal(err)
+	}
+}
+
+func createRandomArticle(t *testing.T, db *sql.DB, userID uint, tagNames []string) *model.Article {
+	t.Helper()
+
+	randStr := test.RandomString(t, 15)
+	m := model.Article{
+		Title:       randStr,
+		Description: randStr,
+		Body:        randStr,
+		UserID:      userID,
+	}
+
+	if len(tagNames) > 0 {
+		tags := make([]model.Tag, 0, len(tagNames))
+		for _, name := range tagNames {
+			tags = append(tags, model.Tag{Name: name})
+		}
+
+		m.Tags = tags
+	}
+
+	as := store.NewArticleStore(db)
+	a, err := as.Create(context.Background(), &m)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		deleteArticle(t, db, a.ID)
+	})
+
+	return a
+}
+
+func deleteArticle(t *testing.T, db *sql.DB, id uint) {
+	t.Helper()
+
+	as := store.NewArticleStore(db)
+	err := as.Delete(context.Background(), &model.Article{ID: id})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

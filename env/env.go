@@ -33,9 +33,7 @@ func Parse(envFile string) (*ENV, error) {
 
 		err := viper.ReadInConfig()
 		if err != nil {
-			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-				return nil, err
-			}
+			return nil, err
 		}
 	}
 
@@ -56,13 +54,13 @@ func Parse(envFile string) (*ENV, error) {
 	viper.SetDefault("DB_PORT", "5432")
 	viper.SetDefault("DB_NAME", "")
 
-	e := &ENV{}
-	err := viper.Unmarshal(e)
+	e := ENV{}
+	err := viper.Unmarshal(&e)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validation.ValidateStruct(e,
+	err = validation.ValidateStruct(&e,
 		validation.Field(
 			&e.AppMode,
 			validation.In("dev", "develop", "prod", "production"),
@@ -90,18 +88,18 @@ func Parse(envFile string) (*ENV, error) {
 	)
 
 	if len(e.CORSAllowedOrigins) > 0 {
-		var all bool
-		for _, s := range e.CORSAllowedOrigins {
-			if s == "*" {
-				all = true
+		var allowAllOrigins bool
+		for _, origin := range e.CORSAllowedOrigins {
+			if origin == "*" {
+				allowAllOrigins = true
 				break
 			}
 		}
 
-		if all {
+		if allowAllOrigins {
 			e.CORSAllowedOrigins = make([]string, 0)
 		}
 	}
 
-	return e, err
+	return &e, err
 }

@@ -29,7 +29,7 @@ type LocalTestContainer struct {
 func NewLocalTestContainer() (*LocalTestContainer, error) {
 	pool, err := dockertest.NewPool("")
 	if err != nil {
-		err = fmt.Errorf("could not construct pool: %w", err)
+		err = fmt.Errorf("failed to construct pool: %w", err)
 		return nil, err
 	}
 
@@ -37,7 +37,7 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	networkName := "article-management-app"
 	network, err := createNetwork(networkName, pool)
 	if err != nil {
-		err = fmt.Errorf("could not create network: %w", err)
+		err = fmt.Errorf("failed to create network: %w", err)
 		return nil, err
 	}
 
@@ -45,7 +45,7 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	dbResource, err := createPostgresDB(pool, network)
 	if err != nil {
 		pool.Client.RemoveNetwork(networkName)
-		err = fmt.Errorf("could not create db container: %w", err)
+		err = fmt.Errorf("failed to create db container: %w", err)
 		return nil, err
 	}
 
@@ -57,29 +57,35 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	err = pool.Client.Ping()
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("could not connect to Docker: %w", err)
+		err = fmt.Errorf("failed to connect to Docker: %w", err)
 		return nil, err
 	}
 
-	testDB, err := testDBConnectivity(pool,
-		fmt.Sprintf("postgres://root:password@%s/app_test?sslmode=disable", dbResource.GetHostPort("5432/tcp")))
+	db, err := getDBConnectionPool(
+		pool,
+		fmt.Sprintf(
+			"postgres://root:password@%s/app_test?sslmode=disable",
+			dbResource.GetHostPort("5432/tcp"),
+		),
+	)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("could not connect to database: %w", err)
+		err = fmt.Errorf("failed to connect to database: %w", err)
 		return nil, err
 	}
 
-	migrateDBUrl := fmt.Sprintf("postgres://root:password@%s:%s/app_test?sslmode=disable",
-		strings.Trim(dbResource.Container.Name, "/"), "5432")
-
-	log.Println("connecting to database on url: ", migrateDBUrl)
 	log.Printf("db container: %s\n", dbResource.Container.Name)
 
 	// db migration
+	dbUrl := fmt.Sprintf(
+		"postgres://root:password@%s:%s/app_test?sslmode=disable",
+		strings.Trim(dbResource.Container.Name, "/"), "5432",
+	)
+
 	tempDir, err := os.MkdirTemp("", "migrations")
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("could not create temp dir: %w", err)
+		err = fmt.Errorf("failed to create temp dir: %w", err)
 		return nil, err
 	}
 	defer os.RemoveAll(tempDir)
@@ -87,38 +93,38 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	err = copyDir(filepath.Join(util.Root, "./db/migrations"), tempDir)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("could not copy files to migrations folder: %w", err)
+		err = fmt.Errorf("failed to copy files to migrations folder: %w", err)
 		return nil, err
 	}
 
-	migrationResource, err := createMigration(pool, network, migrateDBUrl, tempDir)
+	migrationResource, err := createMigration(pool, network, dbUrl, tempDir)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("could not create db migration container: %w", err)
+		err = fmt.Errorf("failed to create db migration container: %w", err)
 		return nil, err
 	}
 
-	err = migrateDB(pool, migrateDBUrl, migrationResource)
+	err = migrateDB(pool, migrationResource, dbUrl)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("could not create migrate: %w", err)
+		err = fmt.Errorf("failed to migrate db: %w", err)
 		return nil, err
 	}
 
 	log.Printf("migration container: %s\n", migrationResource.Container.Name)
 
 	// set db schema
-	_, err = testDB.Exec(`SET search_path TO article_management`)
+	_, err = db.Exec(`SET search_path TO article_management`)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("could not set database schema: %w", err)
+		err = fmt.Errorf("failed to set db schema: %w", err)
 		return nil, err
 	}
 
 	return &LocalTestContainer{
 		network:              networkName,
 		pool:                 pool,
-		db:                   testDB,
+		db:                   db,
 		dbName:               dbResource.Container.Name,
 		dbContainer:          dbResource,
 		dbMigrationContainer: migrationResource,
@@ -134,13 +140,13 @@ func (l *LocalTestContainer) DB() *sql.DB {
 func (l *LocalTestContainer) Close() error {
 	err := l.dbContainer.Close()
 	if err != nil {
-		err = fmt.Errorf("could not purge db resource from test, please remove manually")
+		err = fmt.Errorf("failed to purge db resource, please remove container manually")
 		return err
 	}
 
 	err = l.pool.Client.RemoveNetwork(l.network)
 	if err != nil {
-		err = fmt.Errorf("Could not remove network: %s", err)
+		err = fmt.Errorf("failed to remove network: %s", err)
 		return err
 	}
 
@@ -167,50 +173,6 @@ func createNetwork(name string, pool *dockertest.Pool) (*docker.Network, error) 
 	return network, err
 }
 
-func createPostgresDB(pool *dockertest.Pool, network *docker.Network) (*dockertest.Resource, error) {
-	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "postgres",
-		Tag:        "16",
-		Env: []string{
-			"POSTGRES_USER=root",
-			"POSTGRES_PASSWORD=password",
-			"POSTGRES_DB=app_test",
-			"TZ=UTC",
-			"PGTZ=UTC",
-			"listen_addresses = '*'",
-		},
-		NetworkID: network.ID,
-	}, func(config *docker.HostConfig) {
-		config.NetworkMode = "bridge"
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{Name: "no"}
-	})
-
-	return resource, err
-}
-
-func createMigration(pool *dockertest.Pool, network *docker.Network, dbUrl string, tempDir string) (*dockertest.Resource, error) {
-	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "migrate/migrate",
-		Tag:        "latest",
-		NetworkID:  network.ID,
-		Cmd:        []string{"-database", dbUrl, "-path", "/migrations", "up"},
-	}, func(config *docker.HostConfig) {
-		config.Mounts = []docker.HostMount{
-			{
-				Target: "/migrations",
-				Source: tempDir,
-				Type:   "bind",
-			},
-		}
-		config.NetworkMode = "bridge"
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{Name: "no"}
-	})
-
-	return resource, err
-}
-
 func findNetwork(name string, pool *dockertest.Pool) (*docker.Network, error) {
 	networks, err := pool.Client.ListNetworks()
 	if err != nil {
@@ -226,7 +188,7 @@ func findNetwork(name string, pool *dockertest.Pool) (*docker.Network, error) {
 	return nil, nil
 }
 
-func testDBConnectivity(pool *dockertest.Pool, dbUrl string) (*sql.DB, error) {
+func getDBConnectionPool(pool *dockertest.Pool, dbUrl string) (*sql.DB, error) {
 	var db *sql.DB
 
 	pool.MaxWait = 120 * time.Second
@@ -244,16 +206,55 @@ func testDBConnectivity(pool *dockertest.Pool, dbUrl string) (*sql.DB, error) {
 	return db, err
 }
 
-func migrateDB(pool *dockertest.Pool, dbUrl string, migration *dockertest.Resource) error {
+func createPostgresDB(pool *dockertest.Pool, network *docker.Network) (*dockertest.Resource, error) {
+	return pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: "postgres",
+		Tag:        "16",
+		NetworkID:  network.ID,
+		Env: []string{
+			"POSTGRES_USER=root",
+			"POSTGRES_PASSWORD=password",
+			"POSTGRES_DB=app_test",
+			"TZ=UTC",
+			"PGTZ=UTC",
+			"listen_addresses = '*'",
+		},
+	}, func(config *docker.HostConfig) {
+		config.NetworkMode = "bridge"
+		config.AutoRemove = true
+		config.RestartPolicy = docker.RestartPolicy{Name: "no"}
+	})
+}
+
+func createMigration(pool *dockertest.Pool, network *docker.Network, dbUrl, tempDir string) (*dockertest.Resource, error) {
+	return pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: "migrate/migrate",
+		Tag:        "latest",
+		NetworkID:  network.ID,
+		Cmd:        []string{"-database", dbUrl, "-path", "/migrations", "up"},
+	}, func(config *docker.HostConfig) {
+		config.Mounts = []docker.HostMount{
+			{
+				Target: "/migrations",
+				Source: tempDir,
+				Type:   "bind",
+			},
+		}
+		config.NetworkMode = "bridge"
+		config.AutoRemove = true
+		config.RestartPolicy = docker.RestartPolicy{Name: "no"}
+	})
+}
+
+func migrateDB(pool *dockertest.Pool, migration *dockertest.Resource, dbUrl string) error {
 	pool.MaxWait = 120 * time.Second
-	err := pool.Retry(func() error {
+	return pool.Retry(func() error {
 		_, err := migration.Exec(
 			[]string{"migrate", "-database", dbUrl, "-path", "/migrations", "up"},
-			dockertest.ExecOptions{})
+			dockertest.ExecOptions{},
+		)
 		return err
 	})
-
-	return err
 }
 
 func copyDir(src string, dst string) error {

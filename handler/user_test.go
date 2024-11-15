@@ -23,10 +23,9 @@ func TestIntegration_UserHandler(t *testing.T) {
 	}
 
 	gin.SetMode("test")
+	h, lct := setup(t)
 
-	h, lct := setUp(t)
-
-	fooUser := createUser(t, lct.DB())
+	fooUser := createRandomUser(t, lct.DB())
 
 	t.Run("Login", func(t *testing.T) {
 		r := message.LoginUserRequest{
@@ -41,25 +40,25 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest(http.MethodPost,
-			"/api/login", bytes.NewReader(body))
+		c.Request = httptest.NewRequest(http.MethodPost, "/api/login", bytes.NewReader(body))
 
 		h.Login(c)
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
 		assertCtx.Request = &http.Request{
 			Header: make(http.Header),
 		}
-		assertCtx.Request.Header.Set("Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "))
+		assertCtx.Request.Header.Set(
+			"Cookie",
+			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
+		)
 
 		actualUserID, err := h.auth.GetUserID(assertCtx, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.NoError(t, err)
 		assert.Equal(t, fooUser.ID, actualUserID)
 	})
@@ -90,68 +89,66 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest(http.MethodPost,
-			"/api/register", bytes.NewReader(body))
+		c.Request = httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader(body))
 
 		h.Register(c)
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 		var actual message.ProfileResponse
 		err = json.NewDecoder(w.Result().Body).Decode(&actual)
 		if err != nil {
 			t.Fatal(err)
 		}
-		w.Result().Body.Close()
-
-		assert.Equal(t, expected, actual)
+		defer w.Result().Body.Close()
 
 		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
 		assertCtx.Request = &http.Request{
 			Header: make(http.Header),
 		}
-		assertCtx.Request.Header.Set("Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "))
+		assertCtx.Request.Header.Set(
+			"Cookie",
+			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
+		)
 
 		actualUserID, err := h.auth.GetUserID(assertCtx, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.Equal(t, expected, actual)
 		assert.NoError(t, err)
 		assert.Greater(t, actualUserID, uint(1))
 	})
 
 	t.Run("RefreshToken", func(t *testing.T) {
-		tokenTime := time.Now().Add(-5 * time.Hour)
-		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/api/refresh_token", nil)
-		c, token := ctxWithToken(t, w, req, fooUser.ID, tokenTime)
+		w := httptest.NewRecorder()
+		c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
 
 		h.RefreshToken(c)
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
 		assertCtx.Request = &http.Request{
 			Header: make(http.Header),
 		}
-		assertCtx.Request.Header.Set("Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "))
+		assertCtx.Request.Header.Set(
+			"Cookie",
+			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
+		)
 
 		actualToken, err := h.auth.GetCookieToken(assertCtx)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		assert.NotEqual(t, token.Token, actualToken.Token)
-		assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
-
 		actualUserID, err := h.auth.GetUserID(assertCtx, true)
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.NotEqual(t, token.Token, actualToken.Token)
+		assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
 		assert.NoError(t, err)
 		assert.Equal(t, fooUser.ID, actualUserID)
 	})
@@ -160,44 +157,42 @@ func TestIntegration_UserHandler(t *testing.T) {
 		following := false
 		expected := fooUser.ResponseProfile(following)
 
-		tokenTime := time.Now().Add(-5 * time.Hour)
-		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
-		c, token := ctxWithToken(t, w, req, fooUser.ID, tokenTime)
+		w := httptest.NewRecorder()
+		c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
 
 		h.GetCurrentUser(c)
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 		var actual message.ProfileResponse
 		err := json.NewDecoder(w.Result().Body).Decode(&actual)
 		if err != nil {
 			t.Fatal(err)
 		}
-		w.Result().Body.Close()
-
-		assert.Equal(t, expected, actual)
+		defer w.Result().Body.Close()
 
 		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
 		assertCtx.Request = &http.Request{
 			Header: make(http.Header),
 		}
-		assertCtx.Request.Header.Set("Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "))
+		assertCtx.Request.Header.Set(
+			"Cookie",
+			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
+		)
 
 		actualToken, err := h.auth.GetCookieToken(assertCtx)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		assert.NotEqual(t, token.Token, actualToken.Token)
-		assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
-
 		actualUserID, err := h.auth.GetUserID(assertCtx, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.Equal(t, expected, actual)
+		assert.NotEqual(t, token.Token, actualToken.Token)
+		assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
 		assert.NoError(t, err)
 		assert.Equal(t, fooUser.ID, actualUserID)
 	})
@@ -230,44 +225,42 @@ func TestIntegration_UserHandler(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		tokenTime := time.Now().Add(-5 * time.Hour)
-		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPut, "/api/me", bytes.NewReader(body))
-		c, token := ctxWithToken(t, w, req, fooUser.ID, tokenTime)
+		w := httptest.NewRecorder()
+		c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
 
 		h.UpdateCurrentUser(c)
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 		var actual message.ProfileResponse
 		err = json.NewDecoder(w.Result().Body).Decode(&actual)
 		if err != nil {
 			t.Fatal(err)
 		}
-		w.Result().Body.Close()
-
-		assert.Equal(t, expected, actual)
+		defer w.Result().Body.Close()
 
 		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
 		assertCtx.Request = &http.Request{
 			Header: make(http.Header),
 		}
-		assertCtx.Request.Header.Set("Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "))
+		assertCtx.Request.Header.Set(
+			"Cookie",
+			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
+		)
 
 		actualToken, err := h.auth.GetCookieToken(assertCtx)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		assert.NotEqual(t, token.Token, actualToken.Token)
-		assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
-
 		actualUserID, err := h.auth.GetUserID(assertCtx, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.Equal(t, expected, actual)
+		assert.NotEqual(t, token.Token, actualToken.Token)
+		assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
 		assert.NoError(t, err)
 		assert.Equal(t, fooUser.ID, actualUserID)
 	})
