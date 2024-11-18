@@ -61,8 +61,6 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 func (h *Handler) GetComments(ctx *gin.Context) {
 	h.logger.Info().Msg("get comments")
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
-
 	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
 	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
 	if err != nil {
@@ -77,6 +75,18 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
+	}
+
+	var currentUser *model.User
+
+	id := h.auth.GetContextUserID(ctx)
+	if id > 0 {
+		currentUser, err = h.us.GetByID(ctx.Request.Context(), id)
+		if err != nil {
+			h.logger.Error().Err(err).Msg(fmt.Sprintf("current user (id=%d) not found", id))
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "current user not found"})
+			return
+		}
 	}
 
 	crs := make([]message.CommentResponse, 0, len(comments))

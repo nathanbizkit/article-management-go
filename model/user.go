@@ -17,7 +17,7 @@ const (
 	userShortMaxLen = 100
 	userLongMaxLen  = 255
 	passwordMinLen  = 7
-	passwordMaxLen  = 50
+	passwordMaxLen  = 100
 )
 
 // User model

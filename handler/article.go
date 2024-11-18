@@ -67,14 +67,24 @@ func (h *Handler) CreateArticle(ctx *gin.Context) {
 func (h *Handler) GetArticle(ctx *gin.Context) {
 	h.logger.Info().Msg("get article")
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
-
 	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
 	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
 		return
+	}
+
+	var currentUser *model.User
+
+	id := h.auth.GetContextUserID(ctx)
+	if id > 0 {
+		currentUser, err = h.us.GetByID(ctx.Request.Context(), id)
+		if err != nil {
+			h.logger.Error().Err(err).Msg(fmt.Sprintf("current user (id=%d) not found", id))
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "current user not found"})
+			return
+		}
 	}
 
 	favorited, err := h.as.IsFavorited(ctx.Request.Context(), article, currentUser)
@@ -100,8 +110,6 @@ func (h *Handler) GetArticle(ctx *gin.Context) {
 func (h *Handler) GetArticles(ctx *gin.Context) {
 	h.logger.Info().Msg("get articles")
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
-
 	var favoritedAuthor *model.User
 	favUsername := ctx.Query("favorited")
 	if favUsername != "" {
@@ -123,6 +131,18 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
+	}
+
+	var currentUser *model.User
+
+	id := h.auth.GetContextUserID(ctx)
+	if id > 0 {
+		currentUser, err = h.us.GetByID(ctx.Request.Context(), id)
+		if err != nil {
+			h.logger.Error().Err(err).Msg(fmt.Sprintf("current user (id=%d) not found", id))
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "current user not found"})
+			return
+		}
 	}
 
 	ras := make([]message.ArticleResponse, 0, len(articles))

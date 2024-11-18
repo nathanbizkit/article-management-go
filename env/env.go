@@ -63,7 +63,7 @@ func Parse(envFile string) (*ENV, error) {
 	err = validation.ValidateStruct(&e,
 		validation.Field(
 			&e.AppMode,
-			validation.In("dev", "develop", "prod", "production"),
+			validation.In("test", "testing", "dev", "develop", "prod", "production"),
 		),
 		validation.Field(
 			&e.AppPort,

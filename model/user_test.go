@@ -19,7 +19,7 @@ func TestUnit_UserModel(t *testing.T) {
 	t.Run("Validate", func(t *testing.T) {
 		shortMaxLenString := strings.Repeat("a", 101)
 		longMaxLenString := strings.Repeat("a", 256)
-		passwordMaxLenString := strings.Repeat("a", 51)
+		passwordMaxLenString := strings.Repeat("a", 101)
 
 		tests := []struct {
 			title    string

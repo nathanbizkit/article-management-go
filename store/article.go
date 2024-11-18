@@ -338,12 +338,20 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		as = append(as, a)
 	}
 
-	articles, err := getArticlesTags(s.db, ctx, as)
+	tagsMap, err := getArticlesTags(s.db, ctx, as)
 	if err != nil {
 		return []model.Article{}, err
 	}
 
-	return articles, nil
+	for _, a := range as {
+		a.Tags = make([]model.Tag, 0)
+
+		if tags, exists := tagsMap[a.ID]; exists {
+			a.Tags = append(a.Tags, tags...)
+		}
+	}
+
+	return as, nil
 }
 
 // GetFeedArticles gets following users' articles
@@ -393,12 +401,20 @@ func (s *ArticleStore) GetFeedArticles(ctx context.Context, userIDs []uint, limi
 		as = append(as, a)
 	}
 
-	articles, err := getArticlesTags(s.db, ctx, as)
+	tagsMap, err := getArticlesTags(s.db, ctx, as)
 	if err != nil {
 		return []model.Article{}, err
 	}
 
-	return articles, nil
+	for _, a := range as {
+		a.Tags = make([]model.Tag, 0)
+
+		if tags, exists := tagsMap[a.ID]; exists {
+			a.Tags = append(a.Tags, tags...)
+		}
+	}
+
+	return as, nil
 }
 
 // Delete deletes an article
@@ -717,7 +733,7 @@ func getArticleTags(db *sql.DB, ctx context.Context, a *model.Article) ([]model.
 	return tags, nil
 }
 
-func getArticlesTags(db *sql.DB, ctx context.Context, as []model.Article) ([]model.Article, error) {
+func getArticlesTags(db *sql.DB, ctx context.Context, as []model.Article) (map[uint][]model.Tag, error) {
 	articles := make([]model.Article, 0, len(as))
 	copy(articles, as)
 
@@ -754,13 +770,5 @@ func getArticlesTags(db *sql.DB, ctx context.Context, as []model.Article) ([]mod
 		tagsMap[articleID] = append(tagsMap[articleID], tag)
 	}
 
-	for _, a := range articles {
-		a.Tags = make([]model.Tag, 0)
-
-		if tags, exists := tagsMap[a.ID]; exists {
-			a.Tags = append(a.Tags, tags...)
-		}
-	}
-
-	return articles, nil
+	return tagsMap, nil
 }

@@ -15,6 +15,10 @@ const (
 	tokenTTLInHour     = 72 * time.Hour
 	refreshTTLInHour   = 14 * (24 * time.Hour)
 	cookieMaxAgeInHour = (20 * (24 * time.Hour))
+
+	contextAuthUserID = "auth_user_id"
+	cookieAuthSession = "session"
+	cookieAuthRefresh = "refreshToken"
 )
 
 type claims struct {
@@ -89,19 +93,19 @@ func generateToken(key string, id uint, now time.Time, fromNow time.Duration) (s
 
 // SetContextUserID sets auth user id to http context
 func (a *Auth) SetContextUserID(ctx *gin.Context, id uint) {
-	ctx.Set("auth_user_id", id)
+	ctx.Set(contextAuthUserID, id)
 }
 
 // GetContextUserID returns auth user id from http context
 func (a *Auth) GetContextUserID(ctx *gin.Context) uint {
-	return ctx.GetUint("auth_user_id")
+	return ctx.GetUint(contextAuthUserID)
 }
 
 // GetUserID gets a user id from request context
 func (a *Auth) GetUserID(ctx *gin.Context, refresh bool) (uint, error) {
-	tokenName := "session"
+	tokenName := cookieAuthSession
 	if refresh {
-		tokenName = "refreshToken"
+		tokenName = cookieAuthRefresh
 	}
 
 	tokenString, err := ctx.Cookie(tokenName)
@@ -136,12 +140,12 @@ func (a *Auth) GetUserID(ctx *gin.Context, refresh bool) (uint, error) {
 func (a *Auth) SetCookieToken(ctx *gin.Context, t AuthToken, path string) {
 	ctx.SetSameSite(http.SameSiteStrictMode)
 	ctx.SetCookie(
-		"session", t.Token,
+		cookieAuthSession, t.Token,
 		int(cookieMaxAgeInHour.Seconds()),
 		path, a.env.AuthCookieDomain, true, true,
 	)
 	ctx.SetCookie(
-		"refreshToken", t.RefreshToken,
+		cookieAuthRefresh, t.RefreshToken,
 		int(cookieMaxAgeInHour.Seconds()),
 		path, a.env.AuthCookieDomain, true, true,
 	)
@@ -149,22 +153,22 @@ func (a *Auth) SetCookieToken(ctx *gin.Context, t AuthToken, path string) {
 
 // GetCookieToken returns a jwt token in http cookie
 func (a *Auth) GetCookieToken(ctx *gin.Context) (*AuthToken, error) {
-	t, err := ctx.Cookie("session")
+	t, err := ctx.Cookie(cookieAuthSession)
 	if err != nil {
 		return nil, err
 	}
 
 	if t == "" {
-		return nil, errors.New("session token is empty")
+		return nil, fmt.Errorf("%s is empty", cookieAuthSession)
 	}
 
-	rt, err := ctx.Cookie("refreshToken")
+	rt, err := ctx.Cookie(cookieAuthRefresh)
 	if err != nil {
 		return nil, err
 	}
 
 	if rt == "" {
-		return nil, errors.New("refresh token is empty")
+		return nil, fmt.Errorf("%s is empty", cookieAuthRefresh)
 	}
 
 	return &AuthToken{Token: t, RefreshToken: rt}, nil

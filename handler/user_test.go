@@ -28,96 +28,224 @@ func TestIntegration_UserHandler(t *testing.T) {
 	t.Run("Login", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 
-		r := message.LoginUserRequest{
-			Email:    fooUser.Email,
-			Password: userPassword,
+		tests := []struct {
+			title              string
+			reqBody            *message.LoginUserRequest
+			expectedStatusCode int
+			expectedUserID     uint
+			hasError           bool
+		}{
+			{
+				"login to fooUser: success",
+				&message.LoginUserRequest{
+					Email:    fooUser.Email,
+					Password: userPassword,
+				},
+				http.StatusOK,
+				fooUser.ID,
+				false,
+			},
+			{
+				"login to fooUser: wrong email",
+				&message.LoginUserRequest{
+					Email:    "fooooo@example.com",
+					Password: userPassword,
+				},
+				http.StatusNotFound,
+				uint(0),
+				true,
+			},
+			{
+				"login to fooUser: wrong password",
+				&message.LoginUserRequest{
+					Email:    fooUser.Email,
+					Password: "wrong_password",
+				},
+				http.StatusBadRequest,
+				uint(0),
+				true,
+			},
 		}
 
-		body, err := json.Marshal(r)
-		if err != nil {
-			t.Fatal(err)
+		for _, tt := range tests {
+			body, err := json.Marshal(tt.reqBody)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/login", bytes.NewReader(body))
+
+			h.Login(c)
+
+			assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+			assertCtx.Request = &http.Request{
+				Header: make(http.Header),
+			}
+			assertCtx.Request.Header.Set(
+				"Cookie",
+				strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
+			)
+
+			actualUserID, err := h.auth.GetUserID(assertCtx, false)
+
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
+			assert.Equal(t, tt.expectedUserID, actualUserID, tt.title)
+
+			if tt.hasError {
+				assert.Error(t, err, tt.title)
+			} else {
+				assert.NoError(t, err, tt.title)
+			}
 		}
-
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest(http.MethodPost, "/api/login", bytes.NewReader(body))
-
-		h.Login(c)
-
-		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
-		assertCtx.Request = &http.Request{
-			Header: make(http.Header),
-		}
-		assertCtx.Request.Header.Set(
-			"Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
-		)
-
-		actualUserID, err := h.auth.GetUserID(assertCtx, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.NoError(t, err)
-		assert.Equal(t, fooUser.ID, actualUserID)
 	})
 
 	t.Run("Register", func(t *testing.T) {
+		fooUser := createRandomUser(t, lct.DB())
+
 		randStr := test.RandomString(t, 10)
-		u := model.User{
+		barUser := model.User{
 			Username: randStr,
 			Email:    fmt.Sprintf("%s@example.com", randStr),
 			Password: userPassword,
 			Name:     strings.ToUpper(randStr),
 		}
 
-		following := false
-		expected := u.ResponseProfile(following)
-
-		r := message.CreateUserRequest{
-			Username: u.Username,
-			Email:    u.Email,
-			Password: u.Password,
-			Name:     u.Name,
+		tests := []struct {
+			title              string
+			reqBody            *message.CreateUserRequest
+			expectedStatusCode int
+			expected           message.ProfileResponse
+			hasError           bool
+		}{
+			{
+				"register barUser: success",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    barUser.Email,
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusOK,
+				barUser.ResponseProfile(false),
+				false,
+			},
+			{
+				"register barUser: no username",
+				&message.CreateUserRequest{
+					Username: "",
+					Email:    barUser.Email,
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				true,
+			},
+			{
+				"register barUser: no password",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    barUser.Email,
+					Password: "",
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				true,
+			},
+			{
+				"register barUser: no email",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    "",
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				true,
+			},
+			{
+				"register barUser: no name",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    barUser.Email,
+					Password: barUser.Password,
+					Name:     "",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				true,
+			},
+			{
+				"register barUser: username already exists",
+				&message.CreateUserRequest{
+					Username: fooUser.Username,
+					Email:    barUser.Email,
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusInternalServerError,
+				message.ProfileResponse{},
+				true,
+			},
+			{
+				"register barUser: email already exists",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    fooUser.Email,
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusInternalServerError,
+				message.ProfileResponse{},
+				true,
+			},
 		}
 
-		body, err := json.Marshal(r)
-		if err != nil {
-			t.Fatal(err)
+		for _, tt := range tests {
+			body, err := json.Marshal(tt.reqBody)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader(body))
+
+			h.Register(c)
+
+			var actual message.ProfileResponse
+			err = json.NewDecoder(w.Result().Body).Decode(&actual)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer w.Result().Body.Close()
+
+			assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+			assertCtx.Request = &http.Request{
+				Header: make(http.Header),
+			}
+			assertCtx.Request.Header.Set(
+				"Cookie",
+				strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
+			)
+
+			actualUserID, err := h.auth.GetUserID(assertCtx, false)
+
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
+			assert.Equal(t, tt.expected, actual, tt.title)
+
+			if tt.hasError {
+				assert.Error(t, err, tt.title)
+				assert.Empty(t, actualUserID, tt.title)
+			} else {
+				assert.NoError(t, err, tt.title)
+				assert.NotEmpty(t, actualUserID, tt.title)
+			}
 		}
-
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader(body))
-
-		h.Register(c)
-
-		var actual message.ProfileResponse
-		err = json.NewDecoder(w.Result().Body).Decode(&actual)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer w.Result().Body.Close()
-
-		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
-		assertCtx.Request = &http.Request{
-			Header: make(http.Header),
-		}
-		assertCtx.Request.Header.Set(
-			"Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
-		)
-
-		actualUserID, err := h.auth.GetUserID(assertCtx, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, expected, actual)
-		assert.NoError(t, err)
-		assert.Greater(t, actualUserID, uint(1))
 	})
 
 	t.Run("RefreshToken", func(t *testing.T) {
@@ -217,57 +345,84 @@ func TestIntegration_UserHandler(t *testing.T) {
 		following := false
 		expected := u.ResponseProfile(following)
 
-		r := message.UpdateUserRequest{
-			Username: u.Username,
-			Email:    u.Email,
-			Password: u.Password,
-			Name:     u.Name,
-			Bio:      randStr,
-			Image:    "https://imgur.com/image.jpg",
+		tests := []struct {
+			title              string
+			reqBody            *message.UpdateUserRequest
+			expectedStatusCode int
+			expected           message.ProfileResponse
+		}{
+			{
+				"update fooUser: success",
+				&message.UpdateUserRequest{
+					Username: u.Username,
+					Email:    u.Email,
+					Password: u.Password,
+					Name:     u.Name,
+					Bio:      randStr,
+					Image:    "https://imgur.com/image.jpg",
+				},
+				http.StatusOK,
+				expected,
+			},
+			{
+				"update fooUser: ignore zero-value field",
+				&message.UpdateUserRequest{
+					Username: "",
+					Email:    "",
+					Password: "",
+					Name:     "",
+					Bio:      randStr,
+					Image:    "https://imgur.com/image.jpg",
+				},
+				http.StatusOK,
+				expected,
+			},
 		}
 
-		body, err := json.Marshal(r)
-		if err != nil {
-			t.Fatal(err)
+		for _, tt := range tests {
+			body, err := json.Marshal(tt.reqBody)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			req := httptest.NewRequest(http.MethodPut, "/api/me", bytes.NewReader(body))
+			w := httptest.NewRecorder()
+			c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+
+			h.UpdateCurrentUser(c)
+
+			var actual message.ProfileResponse
+			err = json.NewDecoder(w.Result().Body).Decode(&actual)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer w.Result().Body.Close()
+
+			assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+			assertCtx.Request = &http.Request{
+				Header: make(http.Header),
+			}
+			assertCtx.Request.Header.Set(
+				"Cookie",
+				strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
+			)
+
+			actualToken, err := h.auth.GetCookieToken(assertCtx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			actualUserID, err := h.auth.GetUserID(assertCtx, false)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
+			assert.Equal(t, tt.expected, actual, tt.title)
+			assert.NotEqual(t, token.Token, actualToken.Token)
+			assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
+			assert.NoError(t, err)
+			assert.Equal(t, fooUser.ID, actualUserID)
 		}
-
-		req := httptest.NewRequest(http.MethodPut, "/api/me", bytes.NewReader(body))
-		w := httptest.NewRecorder()
-		c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
-
-		h.UpdateCurrentUser(c)
-
-		var actual message.ProfileResponse
-		err = json.NewDecoder(w.Result().Body).Decode(&actual)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer w.Result().Body.Close()
-
-		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
-		assertCtx.Request = &http.Request{
-			Header: make(http.Header),
-		}
-		assertCtx.Request.Header.Set(
-			"Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
-		)
-
-		actualToken, err := h.auth.GetCookieToken(assertCtx)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		actualUserID, err := h.auth.GetUserID(assertCtx, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, expected, actual)
-		assert.NotEqual(t, token.Token, actualToken.Token)
-		assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
-		assert.NoError(t, err)
-		assert.Equal(t, fooUser.ID, actualUserID)
 	})
 }

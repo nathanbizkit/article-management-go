@@ -16,6 +16,12 @@ func Route(router *gin.Engine, h *Handler) {
 		public.POST("/login", h.Login)
 		public.POST("/register", h.Register)
 		public.POST("/refresh_token", h.RefreshToken)
+
+		public.GET("/articles", h.GetArticles)
+		public.GET("/articles/:slug", h.GetArticle)
+		public.GET("/articles/:slug/comments", h.GetComments)
+
+		public.GET("/tags", h.GetTags)
 	}
 
 	{
@@ -30,19 +36,14 @@ func Route(router *gin.Engine, h *Handler) {
 		private.DELETE("/profiles/:username/follow", h.UnfollowUser)
 
 		private.GET("/articles/feed", h.GetFeedArticles)
-		private.GET("/articles", h.GetArticles)
 		private.POST("/articles", h.CreateArticle)
-		private.GET("/articles/:slug", h.GetArticle)
 		private.PUT("/articles/:slug", h.UpdateArticle)
 		private.DELETE("/articles/:slug", h.DeleteArticle)
 
-		private.GET("/articles/:slug/comments", h.GetComments)
 		private.POST("/articles/:slug/comments", h.CreateComment)
 		private.DELETE("/articles/:slug/comments/:id", h.DeleteComment)
 
 		private.POST("/articles/:slug/favorite", h.FavoriteArticle)
 		private.DELETE("/articles/:slug/favorite", h.UnfavoriteArticle)
-
-		private.GET("/tags", h.GetTags)
 	}
 }

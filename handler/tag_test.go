@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nathanbizkit/article-management/message"
@@ -58,9 +57,9 @@ func TestIntegration_TagHandler(t *testing.T) {
 
 		expected := message.TagsResponse{Tags: tags}
 
-		req := httptest.NewRequest(http.MethodGet, "/api/tags", nil)
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/tags", nil)
 
 		h.GetTags(c)
 
