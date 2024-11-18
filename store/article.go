@@ -161,7 +161,8 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 			for _, tag := range tags {
 				valueStr := fmt.Sprintf("($%d, $%d)", valueCount, valueCount+1)
 				valueStrings = append(valueStrings, valueStr)
-				valueArgs = append(valueArgs, a.ID, tag.ID)
+				valueArgs = append(valueArgs, a.ID)
+				valueArgs = append(valueArgs, tag.ID)
 				valueCount += 2
 			}
 
@@ -236,13 +237,13 @@ func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Art
 }
 
 // GetArticles gets global articles
-func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, favoritedAuthor *model.User, limit, offset int64) ([]model.Article, error) {
+func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, favoritedBy *model.User, limit, offset int64) ([]model.Article, error) {
 	var q bytes.Buffer
 	q.WriteString(`SELECT 
-		a.id, a.title, a.description, a.body, a.user_id, a.favorites_count, a.created_at, a.updated_at 
+		a.id, a.title, a.description, a.body, a.user_id, a.favorites_count, a.created_at, a.updated_at, 
 		u.id, u.username, u.email, u.password, u.name, u.bio, u.image, u.created_at, u.updated_at 
 		FROM article_management.articles a 
-		INNER JOIN article_management_users u ON u.id = a.user_id `)
+		INNER JOIN article_management.users u ON u.id = a.user_id `)
 
 	condCount := 1
 	condStrings := make([]string, 0)
@@ -263,11 +264,11 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		condCount += 1
 	}
 
-	if favoritedAuthor != nil {
+	if favoritedBy != nil {
 		queryString := `SELECT article_id 
 			FROM article_management.favorite_articles 
 			WHERE user_id = $1`
-		rows, err := s.db.QueryContext(ctx, queryString, favoritedAuthor.ID)
+		rows, err := s.db.QueryContext(ctx, queryString, favoritedBy.ID)
 		if err != nil {
 			return []model.Article{}, err
 		}
@@ -285,7 +286,7 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 			ids = append(ids, id)
 		}
 
-		condStrings = append(condStrings, fmt.Sprintf("a.id IN ($%d)", condCount))
+		condStrings = append(condStrings, fmt.Sprintf("a.id = ANY($%d)", condCount))
 		condArgs = append(condArgs, pq.Array(ids))
 		condCount += 1
 	}
@@ -295,8 +296,10 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		q.WriteString(strings.Join(condStrings, " AND "))
 	}
 
-	q.WriteString(fmt.Sprintf(" OFFSET $%d LIMIT $%d", condCount, condCount+1))
-	condArgs = append(condArgs, offset, limit)
+	q.WriteString(" ORDER BY a.created_at DESC ")
+	q.WriteString(fmt.Sprintf(" LIMIT $%d OFFSET $%d", condCount, condCount+1))
+	condArgs = append(condArgs, limit)
+	condArgs = append(condArgs, offset)
 	condCount += 2
 
 	rows, err := s.db.QueryContext(ctx, q.String(), condArgs...)
@@ -357,13 +360,14 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 // GetFeedArticles gets following users' articles
 func (s *ArticleStore) GetFeedArticles(ctx context.Context, userIDs []uint, limit, offset int64) ([]model.Article, error) {
 	queryString := `SELECT 
-		a.id, a.title, a.description, a.body, a.user_id, a.favorites_count, a.created_at, a.updated_at 
+		a.id, a.title, a.description, a.body, a.user_id, a.favorites_count, a.created_at, a.updated_at, 
 		u.id, u.username, u.email, u.password, u.name, u.bio, u.image, u.created_at, u.updated_at 
 		FROM article_management.articles a 
-		INNER JOIN article_management_users u ON u.id = a.user_id 
-		WHERE a.user_id IN ($1) 
-		OFFSET $2 LIMIT $3`
-	rows, err := s.db.QueryContext(ctx, queryString, pq.Array(userIDs), offset, limit)
+		INNER JOIN article_management.users u ON u.id = a.user_id 
+		WHERE a.user_id = ANY($1) 
+		ORDER BY a.created_at DESC 
+		LIMIT $2 OFFSET $3`
+	rows, err := s.db.QueryContext(ctx, queryString, pq.Array(userIDs), limit, offset)
 	if err != nil {
 		return []model.Article{}, err
 	}
@@ -734,19 +738,20 @@ func getArticleTags(db *sql.DB, ctx context.Context, a *model.Article) ([]model.
 }
 
 func getArticlesTags(db *sql.DB, ctx context.Context, as []model.Article) (map[uint][]model.Tag, error) {
-	articles := make([]model.Article, 0, len(as))
-	copy(articles, as)
+	if len(as) == 0 {
+		return make(map[uint][]model.Tag), nil
+	}
 
-	ids := make([]uint, 0, len(articles))
-	for _, a := range articles {
+	ids := make([]uint, 0, len(as))
+	for _, a := range as {
 		ids = append(ids, a.ID)
 	}
 
 	queryString := `SELECT 
-		a.id, t.id, t.name, t.created_at, t.updated_at 
-		FROM (SELECT id FROM article_management.articles WHERE id IN ($1)) AS a 
-		INNER JOIN article_management.article_tags at ON at.article_id = a.id 
-		INNER JOIN article_management.tags t ON t.id = at.tag_id`
+		at.article_id, t.id, t.name, t.created_at, t.updated_at 
+		FROM article_management.article_tags at 
+		INNER JOIN article_management.tags t ON t.id = at.tag_id 
+		WHERE at.article_id = ANY($1)`
 	rows, err := db.QueryContext(ctx, queryString, pq.Array(ids))
 	if err != nil {
 		return nil, err

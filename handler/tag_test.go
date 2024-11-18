@@ -45,7 +45,8 @@ func TestIntegration_TagHandler(t *testing.T) {
 
 			tag1 := test.RandomString(t, 10)
 			tag2 := test.RandomString(t, 10)
-			tags = append(tags, tag1, tag2)
+			tags = append(tags, tag1)
+			tags = append(tags, tag2)
 
 			a.Tags = []model.Tag{{Name: tag1}, {Name: tag2}}
 

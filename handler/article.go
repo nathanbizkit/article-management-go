@@ -110,14 +110,14 @@ func (h *Handler) GetArticle(ctx *gin.Context) {
 func (h *Handler) GetArticles(ctx *gin.Context) {
 	h.logger.Info().Msg("get articles")
 
-	var favoritedAuthor *model.User
+	var favoritedBy *model.User
 	favUsername := ctx.Query("favorited")
 	if favUsername != "" {
 		var err error
-		favoritedAuthor, err = h.us.GetByUsername(ctx.Request.Context(), favUsername)
+		favoritedBy, err = h.us.GetByUsername(ctx.Request.Context(), favUsername)
 		if err != nil {
-			favoritedAuthor = nil
-			h.logger.Warn().Msg("skipped: cannot find favorited author")
+			favoritedBy = nil
+			h.logger.Warn().Msg("skipped: cannot find user (favorited by)")
 		}
 	}
 
@@ -125,7 +125,7 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 	author := ctx.Query("username")
 	limit, offset := h.GetPaginationQuery(ctx, defaultLimit, defaultOffset)
 
-	articles, err := h.as.GetArticles(ctx.Request.Context(), tagName, author, favoritedAuthor, limit, offset)
+	articles, err := h.as.GetArticles(ctx.Request.Context(), tagName, author, favoritedBy, limit, offset)
 	if err != nil {
 		msg := "failed to search articles"
 		h.logger.Error().Err(err).Msg(msg)

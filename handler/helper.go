@@ -49,14 +49,20 @@ func (h *Handler) GetPaginationQuery(ctx *gin.Context, defaultLimit, defaultOffs
 	limit = defaultLimit
 	offset = defaultOffset
 
-	l, err := strconv.Atoi(ctx.Query("limit"))
-	if err == nil {
-		limit = int64(l)
+	queryLimit := ctx.Query("limit")
+	if queryLimit != "" {
+		l, err := strconv.Atoi(queryLimit)
+		if err == nil && l > 0 {
+			limit = int64(l)
+		}
 	}
 
-	o, err := strconv.Atoi(ctx.Query("offset"))
-	if err == nil {
-		offset = int64(o)
+	queryOffset := ctx.Query("offset")
+	if queryOffset != "" {
+		o, err := strconv.Atoi(queryOffset)
+		if err == nil && o > 0 {
+			offset = int64(o)
+		}
 	}
 
 	return
