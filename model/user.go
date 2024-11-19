@@ -41,7 +41,7 @@ func (u User) Validate() error {
 			validation.Required,
 			validation.Length(userShortMinLen, userShortMaxLen),
 			validation.Match(
-				regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9_]+[a-zA-Z0-9]$")),
+				regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9_.]+[a-zA-Z0-9]$")),
 		),
 		validation.Field(
 			&u.Email,

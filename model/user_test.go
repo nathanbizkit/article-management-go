@@ -99,9 +99,9 @@ func TestUnit_UserModel(t *testing.T) {
 				true,
 			},
 			{
-				"validate user: username is other than a-z, A-Z, 0-9, _ in the middle",
+				"validate user: username is other than a-z, A-Z, 0-9, _, . in the middle",
 				&User{
-					Username: "foo_name-@-",
+					Username: "foo_name.-@-",
 					Email:    "foo@example.com",
 					Password: "pA55w0Rd!",
 					Name:     "FooUser",
