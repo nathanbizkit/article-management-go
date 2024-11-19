@@ -92,10 +92,11 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		cm1 := createRandomComment(t, lct.DB(), barArticle.ID, fooUser.ID)
 		cm2 := createRandomComment(t, lct.DB(), barArticle.ID, barUser.ID)
 
+		following := false
 		expected := message.CommentsResponse{
 			Comments: []message.CommentResponse{
-				cm1.ResponseComment(false),
-				cm2.ResponseComment(false),
+				cm1.ResponseComment(following),
+				cm2.ResponseComment(following),
 			},
 		}
 

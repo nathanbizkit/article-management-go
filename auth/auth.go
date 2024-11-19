@@ -102,7 +102,7 @@ func (a *Auth) GetContextUserID(ctx *gin.Context) uint {
 }
 
 // GetUserID gets a user id from request context
-func (a *Auth) GetUserID(ctx *gin.Context, secure, refresh bool) (uint, error) {
+func (a *Auth) GetUserID(ctx *gin.Context, strictCookie, refresh bool) (uint, error) {
 	tokenName := cookieAuthSession
 	if refresh {
 		tokenName = cookieAuthRefresh
@@ -110,25 +110,21 @@ func (a *Auth) GetUserID(ctx *gin.Context, secure, refresh bool) (uint, error) {
 
 	tokenString, err := ctx.Cookie(tokenName)
 	if err != nil {
-		if secure {
+		if strictCookie {
 			return 0, err
 		}
 
-		// allow unsecured connection if secure=false
+		// allow unsecured connection
 		return 0, nil
 	}
 
 	if tokenString == "" {
-		if secure {
+		if strictCookie {
 			return 0, errors.New("auth token is empty")
 		}
 
-		// allow unsecured connection if secure=false
+		// allow unsecured connection
 		return 0, nil
-	}
-
-	if tokenString == "" && secure {
-		return 0, errors.New("auth token is empty")
 	}
 
 	token, err := jwt.ParseWithClaims(

@@ -22,8 +22,8 @@ func Route(router *gin.Engine, h *Handler) {
 	{
 		unsecured := root.Group("")
 
-		secure := false
-		unsecured.Use(middleware.Auth(h.logger, h.auth, secure))
+		strictCookie := false
+		unsecured.Use(middleware.Auth(h.logger, h.auth, strictCookie))
 
 		unsecured.GET("/articles", h.GetArticles)
 		unsecured.GET("/articles/:slug", h.GetArticle)
@@ -35,8 +35,8 @@ func Route(router *gin.Engine, h *Handler) {
 	{
 		private := root.Group("")
 
-		secure := true
-		private.Use(middleware.Auth(h.logger, h.auth, secure))
+		strictCookie := true
+		private.Use(middleware.Auth(h.logger, h.auth, strictCookie))
 
 		private.GET("/me", h.GetCurrentUser)
 		private.PUT("/me", h.UpdateCurrentUser)

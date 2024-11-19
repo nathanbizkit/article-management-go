@@ -160,12 +160,12 @@ func TestUnit_Auth(t *testing.T) {
 		}
 
 		tests := []struct {
-			title    string
-			ctx      func() *gin.Context
-			secure   bool
-			refresh  bool
-			expected uint
-			hasError bool
+			title        string
+			ctx          func() *gin.Context
+			strictCookie bool
+			refresh      bool
+			expected     uint
+			hasError     bool
 		}{
 			{
 				"get user id (session): success",
@@ -274,7 +274,7 @@ func TestUnit_Auth(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			actual, err := a.GetUserID(tt.ctx(), tt.secure, tt.refresh)
+			actual, err := a.GetUserID(tt.ctx(), tt.strictCookie, tt.refresh)
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)

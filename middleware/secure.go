@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"net/http"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nathanbizkit/article-management/env"
@@ -14,16 +14,27 @@ func Secure(e *env.ENV) gin.HandlerFunc {
 		isDevelopment := e.AppMode == "dev" || e.AppMode == "develop" ||
 			e.AppMode == "test" || e.AppMode == "testing"
 
-		secureMiddleware := secure.New(secure.Options{
+		opts := secure.Options{
 			SSLRedirect:   true,
-			SSLHost:       "localhost:8443",
 			IsDevelopment: isDevelopment,
-		})
+		}
+
+		if isDevelopment {
+			opts.SSLHost = fmt.Sprintf("localhost:%s", e.AppTLSPort)
+		}
+
+		secureMiddleware := secure.New(opts)
 
 		err := secureMiddleware.Process(ctx.Writer, ctx.Request)
 		if err != nil {
-			msg := "failed to process tls connection"
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.Abort()
+			return
+		}
+
+		// avoid header rewrite if response is a redirection
+		status := ctx.Writer.Status()
+		if status > 300 && status < 399 {
+			ctx.Abort()
 			return
 		}
 

@@ -54,7 +54,8 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, createdComment.ResponseComment(false))
+	following := false
+	ctx.JSON(http.StatusOK, createdComment.ResponseComment(following))
 }
 
 // GetComments gets comments of an article

@@ -72,8 +72,7 @@ func main() {
 	l.Info().Str("port", e.AppPort).Msg("starting server...")
 
 	if e.TLSEnabled {
-		l.Info().Msg("tls enabled...")
-		l.Info().Str("port", e.AppTLSPort).Msg("starting tls server...")
+		l.Info().Str("port", e.AppTLSPort).Msg("also starting tls server...")
 	}
 
 	go func() {
@@ -104,8 +103,4 @@ func main() {
 	}
 
 	l.Info().Msg("server exiting...")
-}
-
-func redirectToTLS(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, fmt.Sprintf("https://%s%s", r.Host, r.RequestURI), http.StatusMovedPermanently)
 }
