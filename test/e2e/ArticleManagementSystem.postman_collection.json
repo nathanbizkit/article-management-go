@@ -1,0 +1,628 @@
+{
+	"info": {
+		"_postman_id": "6bed5be9-50ae-425a-b445-530b0821831c",
+		"name": "ArticleManagementSystem",
+		"description": "Collection of tests for the article management system API.\n\n[https://github.com/nathanbizkit/article-management](https://github.com/nathanbizkit/article-management)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1971676"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Auth cookie is present\", () => {",
+									"    pm.response.to.have.status(200)",
+									"    pm.expect(pm.cookies.has('session')).to.be.true",
+									"    pm.expect(pm.cookies.has('refreshToken')).to.be.true",
+									"",
+									"    // so we can see the random generated data ",
+									"    // to be able use them later",
+									"    console.log(pm.request.body.toJSON())",
+									"})",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableCookies": false
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{$randomUserName}}\",\n    \"email\": \"{{$randomEmail}}\",\n    \"password\": \"{{$randomPassword}}@!\",\n    \"name\": \"{{$randomFullName}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APIURL}}/register",
+							"host": [
+								"{{APIURL}}"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register (using data from globals)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Auth cookie is present\", () => {",
+									"    pm.response.to.have.status(200)",
+									"    pm.expect(pm.cookies.has('session')).to.be.true",
+									"    pm.expect(pm.cookies.has('refreshToken')).to.be.true",
+									"})",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableCookies": false
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{USERNAME}}\",\n    \"email\": \"{{EMAIL}}\",\n    \"password\": \"{{PASSWORD}}\",\n    \"name\": \"{{NAME}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APIURL}}/register",
+							"host": [
+								"{{APIURL}}"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Auth cookie is present\", () => {",
+									"    pm.response.to.have.status(200)",
+									"    pm.expect(pm.cookies.has('session')).to.be.true",
+									"    pm.expect(pm.cookies.has('refreshToken')).to.be.true",
+									"})",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableCookies": false,
+						"strictSSL": false
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{EMAIL}}\",\n    \"password\": \"{{PASSWORD}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APIURL}}/login",
+							"host": [
+								"{{APIURL}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Auth cookie is present\", () => {",
+									"    pm.response.to.have.status(200)",
+									"    pm.expect(pm.cookies.has('session')).to.be.true",
+									"    pm.expect(pm.cookies.has('refreshToken')).to.be.true",
+									"})",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{APIURL}}/refresh_token",
+							"host": [
+								"{{APIURL}}"
+							],
+							"path": [
+								"refresh_token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User profile is present\", () => {",
+									"    pm.response.to.have.status(200)",
+									"",
+									"    const jsonBody = pm.response.json()",
+									"    pm.expect(jsonBody).to.have.property('username')",
+									"    pm.expect(jsonBody).to.have.property('name')",
+									"    pm.expect(jsonBody).to.have.property('bio')",
+									"    pm.expect(jsonBody).to.have.property('image')",
+									"    pm.expect(jsonBody).to.have.property('following')",
+									"    pm.expect(jsonBody).property('following').to.equal(false)",
+									"})",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APIURL}}/me",
+							"host": [
+								"{{APIURL}}"
+							],
+							"path": [
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User profile is present\", () => {",
+									"    pm.response.to.have.status(200)",
+									"",
+									"    const jsonBody = pm.response.json()",
+									"    pm.expect(jsonBody).to.have.property('username')",
+									"    pm.expect(jsonBody).to.have.property('name')",
+									"    pm.expect(jsonBody).to.have.property('bio')",
+									"    pm.expect(jsonBody).to.have.property('image')",
+									"    pm.expect(jsonBody).to.have.property('following')",
+									"    pm.expect(jsonBody).property('following').to.equal(false)",
+									"})",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{USERNAME}}\",\n    \"email\": \"{{EMAIL}}\",\n    \"password\": \"{{PASSWORD}}\",\n    \"name\": \"{{NAME}}\",\n    \"bio\": \"{{$randomWords}}\",\n    \"image\": \"{{$randomAvatarImage}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APIURL}}/me",
+							"host": [
+								"{{APIURL}}"
+							],
+							"path": [
+								"me"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Articles",
+			"item": [
+				{
+					"name": "Create Article",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Article is present\", () => {",
+									"    pm.response.to.have.status(200)",
+									"",
+									"    const jsonBody = pm.response.json()",
+									"    pm.expect(jsonBody).to.have.property('id')",
+									"    pm.expect(jsonBody).to.have.property('title')",
+									"    pm.expect(jsonBody).to.have.property('description')",
+									"    pm.expect(jsonBody).to.have.property('body')",
+									"    pm.expect(jsonBody).to.have.property('tags')",
+									"    pm.expect(jsonBody).to.have.property('favorited')",
+									"    pm.expect(jsonBody).to.have.property('favorites_count')",
+									"    pm.expect(jsonBody).to.have.property('author')",
+									"    pm.expect(jsonBody).to.have.deep.nested.property('author.username')",
+									"    pm.expect(jsonBody).to.have.deep.nested.property('author.name')",
+									"    pm.expect(jsonBody).to.have.deep.nested.property('author.bio')",
+									"    pm.expect(jsonBody).to.have.deep.nested.property('author.image')",
+									"    pm.expect(jsonBody).to.have.deep.nested.property('author.following')",
+									"    pm.expect(jsonBody).to.have.deep.nested.property('author.username')",
+									"    pm.expect(jsonBody).to.have.property('created_at')",
+									"    pm.expect(jsonBody).to.have.property('updated_at')",
+									"})",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"{{$randomWords}}\",\n    \"description\": \"{{$randomLoremSentence}}\",\n    \"body\": \"{{$randomLoremSentence}}\\\\n{{$randomLoremSentence}}\\\\n{{$randomLoremSentence}}\",\n    \"tags\": [\n        \"{{$randomWord}}\",\n        \"{{$randomWord}}\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APIURL}}/articles",
+							"host": [
+								"{{APIURL}}"
+							],
+							"path": [
+								"articles"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "All Global Articles",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "All Global Articles with Auth",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "All Feed Articles",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "All Articles by Author",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "All Articles by Author with Auth",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "All Articles Favorited by User",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "All Articles Favorited by User with Auth",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "All Articles by Tag",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Single Article by Slug",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Update Article",
+					"request": {
+						"method": "PUT",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Article",
+					"request": {
+						"method": "DELETE",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Favorite Article",
+					"request": {
+						"method": "POST",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Unfavorite Article",
+					"request": {
+						"method": "DELETE",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Profiles",
+			"item": [
+				{
+					"name": "User Profile",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Follow User",
+					"request": {
+						"method": "POST",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Unfollow User",
+					"request": {
+						"method": "DELETE",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tags",
+			"item": [
+				{
+					"name": "All Tags",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Tags array is present\", () => {",
+									"    pm.response.to.have.status(200)",
+									"",
+									"    const jsonBody = pm.response.json()",
+									"    pm.expect(jsonBody).to.have.property('tags')",
+									"    pm.expect(jsonBody).property('tags').to.be.an('array')",
+									"})",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APIURL}}/tags",
+							"host": [
+								"{{APIURL}}"
+							],
+							"path": [
+								"tags"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Comments",
+			"item": [
+				{
+					"name": "Create Comment for Article",
+					"request": {
+						"method": "POST",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "All Comments of Article",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Comment from Article",
+					"request": {
+						"method": "DELETE",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "APIURL",
+			"value": "https://localhost:8443/api",
+			"type": "string"
+		},
+		{
+			"key": "USERNAME",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "EMAIL",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "PASSWORD",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "NAME",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

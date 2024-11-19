@@ -9,7 +9,7 @@ EMAIL=${EMAIL:-$USERNAME@example.com}
 PASSWORD=${PASSWORD:-pA55w0Rd!}
 NAME=${NAME:-$USERNAME}
 
-npx newman run $SCRIPTDIR/Conduit.postman_collection.json \
+npx newman run $SCRIPTDIR/ArticleManagementSystem.postman_collection.json \
     --delay-request 500 \
     --insecure \
     --ssl-client-cert ~/certs/localCA.pem \
