@@ -17,16 +17,26 @@ func Route(router *gin.Engine, h *Handler) {
 		public.POST("/register", h.Register)
 		public.POST("/refresh_token", h.RefreshToken)
 
-		public.GET("/articles", h.GetArticles)
-		public.GET("/articles/:slug", h.GetArticle)
-		public.GET("/articles/:slug/comments", h.GetComments)
+	}
 
-		public.GET("/tags", h.GetTags)
+	{
+		unsecured := root.Group("")
+
+		secure := false
+		unsecured.Use(middleware.Auth(h.logger, h.auth, secure))
+
+		unsecured.GET("/articles", h.GetArticles)
+		unsecured.GET("/articles/:slug", h.GetArticle)
+		unsecured.GET("/articles/:slug/comments", h.GetComments)
+
+		unsecured.GET("/tags", h.GetTags)
 	}
 
 	{
 		private := root.Group("")
-		private.Use(middleware.Auth(h.logger, h.auth))
+
+		secure := true
+		private.Use(middleware.Auth(h.logger, h.auth, secure))
 
 		private.GET("/me", h.GetCurrentUser)
 		private.PUT("/me", h.UpdateCurrentUser)

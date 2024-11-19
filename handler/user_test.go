@@ -88,7 +88,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 				strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
 			)
 
-			actualUserID, err := h.auth.GetUserID(assertCtx, false)
+			actualUserID, err := h.auth.GetUserID(assertCtx, true, false)
 
 			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
 			assert.Equal(t, tt.expectedUserID, actualUserID, tt.title)
@@ -233,7 +233,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 				strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
 			)
 
-			actualUserID, err := h.auth.GetUserID(assertCtx, false)
+			actualUserID, err := h.auth.GetUserID(assertCtx, true, false)
 
 			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
 			assert.Equal(t, tt.expected, actual, tt.title)
@@ -271,7 +271,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		actualUserID, err := h.auth.GetUserID(assertCtx, true)
+		actualUserID, err := h.auth.GetUserID(assertCtx, true, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -316,7 +316,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		actualUserID, err := h.auth.GetUserID(assertCtx, false)
+		actualUserID, err := h.auth.GetUserID(assertCtx, true, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -412,7 +412,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			actualUserID, err := h.auth.GetUserID(assertCtx, false)
+			actualUserID, err := h.auth.GetUserID(assertCtx, true, false)
 			if err != nil {
 				t.Fatal(err)
 			}

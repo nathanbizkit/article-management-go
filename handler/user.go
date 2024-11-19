@@ -109,8 +109,9 @@ func (h *Handler) Register(ctx *gin.Context) {
 func (h *Handler) RefreshToken(ctx *gin.Context) {
 	h.logger.Info().Msg("refresh token")
 
+	secure := true
 	refresh := true
-	id, err := h.auth.GetUserID(ctx, refresh)
+	id, err := h.auth.GetUserID(ctx, secure, refresh)
 	if err != nil {
 		msg := "failed to extract token from cookie"
 		h.logger.Error().Err(err).Msg(msg)

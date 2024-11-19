@@ -162,6 +162,7 @@ func TestUnit_Auth(t *testing.T) {
 		tests := []struct {
 			title    string
 			ctx      func() *gin.Context
+			secure   bool
 			refresh  bool
 			expected uint
 			hasError bool
@@ -169,6 +170,7 @@ func TestUnit_Auth(t *testing.T) {
 			{
 				"get user id (session): success",
 				normalCtx,
+				true,
 				false,
 				id,
 				false,
@@ -177,12 +179,14 @@ func TestUnit_Auth(t *testing.T) {
 				"get user id (refresh): success",
 				normalCtx,
 				true,
+				true,
 				id,
 				false,
 			},
 			{
 				"get user id (session): no token in cookie",
 				noCookieCtx,
+				true,
 				false,
 				0,
 				true,
@@ -191,12 +195,14 @@ func TestUnit_Auth(t *testing.T) {
 				"get user id (refresh): no token in cookie",
 				noCookieCtx,
 				true,
+				true,
 				0,
 				true,
 			},
 			{
 				"get user id (session): empty token",
 				emptyTokenCtx,
+				true,
 				false,
 				0,
 				true,
@@ -205,12 +211,14 @@ func TestUnit_Auth(t *testing.T) {
 				"get user id (refresh): empty token",
 				emptyTokenCtx,
 				true,
+				true,
 				0,
 				true,
 			},
 			{
 				"get user id (session): expired token",
 				expiredTokenCtx,
+				true,
 				false,
 				0,
 				true,
@@ -219,12 +227,14 @@ func TestUnit_Auth(t *testing.T) {
 				"get user id (refresh): expired token",
 				expiredTokenCtx,
 				true,
+				true,
 				0,
 				true,
 			},
 			{
 				"get user id (session): wrong jwt signing method",
 				rsaTokenCtx,
+				true,
 				false,
 				0,
 				true,
@@ -233,12 +243,14 @@ func TestUnit_Auth(t *testing.T) {
 				"get user id (refresh): wrong jwt signing method",
 				rsaTokenCtx,
 				true,
+				true,
 				0,
 				true,
 			},
 			{
 				"get user id (session): empty token claims",
 				emptyClaimTokenCtx,
+				true,
 				false,
 				0,
 				true,
@@ -247,13 +259,22 @@ func TestUnit_Auth(t *testing.T) {
 				"get user id (refresh): empty token claims",
 				emptyClaimTokenCtx,
 				true,
+				true,
 				0,
 				true,
+			},
+			{
+				"get user id: allow unsecured connection",
+				noCookieCtx,
+				false,
+				false,
+				0,
+				false,
 			},
 		}
 
 		for _, tt := range tests {
-			actual, err := a.GetUserID(tt.ctx(), tt.refresh)
+			actual, err := a.GetUserID(tt.ctx(), tt.secure, tt.refresh)
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)
