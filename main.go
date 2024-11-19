@@ -53,8 +53,11 @@ func main() {
 	l.Info().Str("mode", gin.Mode()).Msgf("gin is in %s mode", gin.Mode())
 
 	router := gin.Default()
+	router.SetTrustedProxies(nil)
+
 	router.Use(gzip.DefaultHandler().Gin)
 	router.Use(middleware.CORS(e))
+	router.Use(middleware.Secure(e))
 
 	auth := auth.New(e)
 	us := store.NewUserStore(d)
@@ -66,32 +69,26 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", e.AppPort),
-		Handler: router,
-	}
-
 	l.Info().Str("port", e.AppPort).Msg("starting server...")
 
-	if e.TLSCertFile != "" && e.TLSKeyFile != "" {
-		l.Info().Msg("tls is on: running on http")
-
-		go func() {
-			err := srv.ListenAndServeTLS(e.TLSCertFile, e.TLSKeyFile)
-			if err != nil && err != http.ErrServerClosed {
-				l.Fatal().Err(err).Msg("failed to listen and serve")
-			}
-		}()
-	} else {
-		l.Info().Msg("tls is off: running on https")
-
-		go func() {
-			err := srv.ListenAndServe()
-			if err != nil && err != http.ErrServerClosed {
-				l.Fatal().Err(err).Msg("failed to listen and serve")
-			}
-		}()
+	if e.TLSEnabled {
+		l.Info().Msg("tls enabled...")
+		l.Info().Str("port", e.AppTLSPort).Msg("starting tls server...")
 	}
+
+	go func() {
+		err := router.Run(fmt.Sprintf(":%s", e.AppPort))
+		if err != nil && err != http.ErrServerClosed {
+			l.Fatal().Err(err).Msg("failed to listen and serve")
+		}
+	}()
+
+	go func() {
+		err := router.RunTLS(fmt.Sprintf(":%s", e.AppTLSPort), e.TLSCertFile, e.TLSKeyFile)
+		if err != nil && err != http.ErrServerClosed {
+			l.Fatal().Err(err).Msg("failed to listen and serve")
+		}
+	}()
 
 	<-ctx.Done()
 
@@ -106,10 +103,9 @@ func main() {
 		l.Fatal().Err(err).Msg("failed to close database connection")
 	}
 
-	err = srv.Shutdown(ctx)
-	if err != nil {
-		l.Fatal().Err(err).Msg("failed to shutdown http server")
-	}
-
 	l.Info().Msg("server exiting...")
+}
+
+func redirectToTLS(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, fmt.Sprintf("https://%s%s", r.Host, r.RequestURI), http.StatusMovedPermanently)
 }

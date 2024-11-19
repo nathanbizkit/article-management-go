@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ~/certs:/certs # change this to CA cert and key files
+      - ~/certs:/certs
     env_file:
       - env/local.env
     depends_on:
@@ -12,6 +12,7 @@ services:
         condition: service_healthy
     ports:
       - 8000:8000
+      - 8443:8443
 
   db:
     image: postgres:16-alpine

@@ -10,6 +10,7 @@ import (
 type ENV struct {
 	AppMode            string   `mapstructure:"APP_MODE"`
 	AppPort            string   `mapstructure:"APP_PORT"`
+	AppTLSPort         string   `mapstructure:"APP_TLS_PORT"`
 	TLSCertFile        string   `mapstructure:"TLS_CERT_FILE"`
 	TLSKeyFile         string   `mapstructure:"TLS_KEY_FILE"`
 	CORSAllowedOrigins []string `mapstructure:"CORS_ALLOWED_ORIGINS"`
@@ -20,6 +21,7 @@ type ENV struct {
 	DBHost             string   `mapstructure:"DB_HOST"`
 	DBPort             string   `mapstructure:"DB_PORT"`
 	DBName             string   `mapstructure:"DB_NAME"`
+	TLSEnabled         bool
 }
 
 // Parse loads environment variables either from .env or environment directly and returns a new env
@@ -43,6 +45,7 @@ func Parse(envFile string) (*ENV, error) {
 	// which we can check later
 	viper.SetDefault("APP_MODE", "develop")
 	viper.SetDefault("APP_PORT", "8000")
+	viper.SetDefault("APP_TLS_PORT", "8443")
 	viper.SetDefault("TLS_CERT_FILE", "")
 	viper.SetDefault("TLS_KEY_FILE", "")
 	viper.SetDefault("CORS_ALLOWED_ORIGINS", "*")
@@ -67,6 +70,10 @@ func Parse(envFile string) (*ENV, error) {
 		),
 		validation.Field(
 			&e.AppPort,
+			is.Digit,
+		),
+		validation.Field(
+			&e.AppTLSPort,
 			is.Digit,
 		),
 		validation.Field(
@@ -99,6 +106,10 @@ func Parse(envFile string) (*ENV, error) {
 		if allowAllOrigins {
 			e.CORSAllowedOrigins = make([]string, 0)
 		}
+	}
+
+	if e.TLSCertFile != "" && e.TLSKeyFile != "" {
+		e.TLSEnabled = true
 	}
 
 	return &e, err

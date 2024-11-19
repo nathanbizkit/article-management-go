@@ -3,10 +3,11 @@ set -x
 
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-APIURL=${APIURL:-https://localhost:8000}
+APIURL=${APIURL:-https://localhost:8443/api}
 USERNAME=${USERNAME:-u$(date +%s)}
-EMAIL=${EMAIL:-$USERNAME@mail.com}
+EMAIL=${EMAIL:-$USERNAME@example.com}
 PASSWORD=${PASSWORD:-pA55w0Rd!}
+NAME=${NAME:-$USERNAME}
 
 npx newman run $SCRIPTDIR/Conduit.postman_collection.json \
     --delay-request 500 \
@@ -14,4 +15,5 @@ npx newman run $SCRIPTDIR/Conduit.postman_collection.json \
     --global-var "APIURL=$APIURL" \
     --global-var "USERNAME=$USERNAME" \
     --global-var "EMAIL=$EMAIL" \
-    --global-var "PASSWORD=$PASSWORD"
+    --global-var "PASSWORD=$PASSWORD" \
+    --global-var "NAME=$NAME"

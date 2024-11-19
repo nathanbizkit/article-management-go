@@ -1,5 +1,5 @@
 # build stage
-FROM golang:1.23.1-alpine as builder
+FROM golang:1.23.1-alpine AS builder
 
 WORKDIR /builder
 
@@ -17,5 +17,6 @@ FROM alpine:3.19
 COPY --from=builder /builder/app /app
 
 EXPOSE 8000
+EXPOSE 8443
 
 ENTRYPOINT [ "/app" ]
