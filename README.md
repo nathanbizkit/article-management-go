@@ -2,13 +2,19 @@
 
 ## Getting Started
 
+API endpoints:
+
+- HTTP: [http://localhost:8000/api](http://localhost:8000/api)
+- HTTPS: [https://localhost:8443/api](https://localhost:8443/api)
+
 ### Running
 
-API endpoint will be at [https://localhost:8000/api](https://localhost:8000/api)
-
-```bash
-docker-compose up -d
-```
+1. Copy `template.env` and edit it accordingly
+2. In `docker-compose.yml`, set env file location for `app` service accordingly
+3. TLS is enabled when `TLS_CERT_FILE` and `TLS_KEY_FILE` is set in env file
+4. If TLS is enabled, set cert directory location for `app` service in `docker-compose.yml`
+5. Start by running `docker-compose up -d`
+6. Stop by running `docker-compose down`
 
 ### Testing
 

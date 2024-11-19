@@ -29,7 +29,5 @@ db/data/*
 
 *.env
 *.env.*
-!local.env
-!local.env.*
 !template.env
 !template.env.*
