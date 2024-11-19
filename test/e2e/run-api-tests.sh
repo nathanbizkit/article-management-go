@@ -11,6 +11,7 @@ NAME=${NAME:-$USERNAME}
 
 npx newman run $SCRIPTDIR/Conduit.postman_collection.json \
     --delay-request 500 \
+    --insecure \
     --ssl-client-cert ~/certs/localCA.pem \
     --global-var "APIURL=$APIURL" \
     --global-var "USERNAME=$USERNAME" \
