@@ -32,4 +32,4 @@ coverage:
 	}
 
 e2etest:
-	bash test/run-api-tests.sh
+	bash test/e2e/run-api-tests.sh
