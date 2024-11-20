@@ -1,4 +1,4 @@
-.PHONY: unittest integrationtest unitcoverage integrationcoverage coverage e2etest
+.PHONY: unittest integrationtest unitcoverage integrationcoverage testall coverage e2etest
 
 unittest:
 	go test -v ./... -short
@@ -16,6 +16,12 @@ integrationcoverage:
 	{ \
 	go test -v ./... -coverprofile="$$PWD/coverage/profile_integration.out" ;\
 	go tool cover -html coverage/profile_integration.out ;\
+	}
+
+testall:
+	{ \
+	go test -v ./... -short ;\
+	go test -v ./... ;\
 	}
 
 coverage:
