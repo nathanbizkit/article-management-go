@@ -58,7 +58,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		req := httptest.NewRequest(http.MethodPut, "/api/articles", bytes.NewReader(body))
+		req := httptest.NewRequest(http.MethodPut, "/api/v1/articles", bytes.NewReader(body))
 
 		w := httptest.NewRecorder()
 		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
@@ -95,7 +95,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		following := false
 		expected := fooArticle.ResponseArticle(favorited, following)
 
-		apiUrl := fmt.Sprintf("/api/articles/%d", fooArticle.ID)
+		apiUrl := fmt.Sprintf("/api/v1/articles/%d", fooArticle.ID)
 		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
 		w := httptest.NewRecorder()
@@ -296,7 +296,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			req := httptest.NewRequest(http.MethodPut, "/api/articles", nil)
+			req := httptest.NewRequest(http.MethodPut, "/api/v1/articles", nil)
 
 			q := req.URL.Query()
 			q.Add("tag", tt.query.tag)
@@ -445,7 +445,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			req := httptest.NewRequest(http.MethodPut, "/api/articles/feed", nil)
+			req := httptest.NewRequest(http.MethodPut, "/api/v1/articles/feed", nil)
 
 			q := req.URL.Query()
 			q.Add("limit", tt.query.limit)
@@ -508,7 +508,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		apiUrl := fmt.Sprintf("/api/articles/%d", fooArticle.ID)
+		apiUrl := fmt.Sprintf("/api/v1/articles/%d", fooArticle.ID)
 		req := httptest.NewRequest(http.MethodPut, apiUrl, bytes.NewReader(body))
 
 		w := httptest.NewRecorder()
@@ -543,7 +543,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 			[]string{test.RandomString(t, 10), test.RandomString(t, 10)},
 		)
 
-		apiUrl := fmt.Sprintf("/api/articles/%d", fooArticle.ID)
+		apiUrl := fmt.Sprintf("/api/v1/articles/%d", fooArticle.ID)
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
@@ -575,7 +575,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		expected.Favorited = favorited
 		expected.FavoritesCount = 1
 
-		apiUrl := fmt.Sprintf("/api/articles/%d/favorite", barArticle.ID)
+		apiUrl := fmt.Sprintf("/api/v1/articles/%d/favorite", barArticle.ID)
 		req := httptest.NewRequest(http.MethodPost, apiUrl, nil)
 
 		w := httptest.NewRecorder()
@@ -634,7 +634,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		expected.Favorited = favorited
 		expected.FavoritesCount = 0
 
-		apiUrl := fmt.Sprintf("/api/articles/%d/favorite", barArticle.ID)
+		apiUrl := fmt.Sprintf("/api/v1/articles/%d/favorite", barArticle.ID)
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()

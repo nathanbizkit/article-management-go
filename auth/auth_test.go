@@ -300,7 +300,7 @@ func TestUnit_Auth(t *testing.T) {
 		w2 := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w2)
 
-		a.SetCookieToken(c, *token, "/api")
+		a.SetCookieToken(c, *token, "/api/v1")
 
 		actual := w2.Header().Get("Set-Cookie")
 		assert.Equal(t, expected, actual)

@@ -75,7 +75,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
-			c.Request = httptest.NewRequest(http.MethodPost, "/api/login", bytes.NewReader(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewReader(body))
 
 			h.Login(c)
 
@@ -215,7 +215,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
-			c.Request = httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader(body))
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/register", bytes.NewReader(body))
 
 			h.Register(c)
 
@@ -255,7 +255,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 	t.Run("RefreshToken", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 
-		req := httptest.NewRequest(http.MethodPost, "/api/refresh_token", nil)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/refresh_token", nil)
 		w := httptest.NewRecorder()
 		c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
 
@@ -295,7 +295,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 		following := false
 		expected := fooUser.ResponseProfile(following)
 
-		req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
 		w := httptest.NewRecorder()
 		c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
 
@@ -393,7 +393,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			req := httptest.NewRequest(http.MethodPut, "/api/me", bytes.NewReader(body))
+			req := httptest.NewRequest(http.MethodPut, "/api/v1/me", bytes.NewReader(body))
 			w := httptest.NewRecorder()
 			c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
 

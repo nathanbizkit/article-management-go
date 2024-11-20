@@ -29,7 +29,7 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		following := false
 		expected := barUser.ResponseProfile(following)
 
-		apiUrl := fmt.Sprintf("/api/profiles/%s", barUser.Username)
+		apiUrl := fmt.Sprintf("/api/v1/profiles/%s", barUser.Username)
 		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
 		w := httptest.NewRecorder()
@@ -56,7 +56,7 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		following := true
 		expected := barUser.ResponseProfile(following)
 
-		apiUrl := fmt.Sprintf("/api/profiles/%s/follow", barUser.Username)
+		apiUrl := fmt.Sprintf("/api/v1/profiles/%s/follow", barUser.Username)
 		req := httptest.NewRequest(http.MethodPost, apiUrl, nil)
 
 		w := httptest.NewRecorder()
@@ -94,7 +94,7 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		following := false
 		expected := barUser.ResponseProfile(following)
 
-		apiUrl := fmt.Sprintf("/api/profiles/%s/follow", barUser.Username)
+		apiUrl := fmt.Sprintf("/api/v1/profiles/%s/follow", barUser.Username)
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()

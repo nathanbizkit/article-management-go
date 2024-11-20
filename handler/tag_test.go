@@ -60,7 +60,7 @@ func TestIntegration_TagHandler(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest(http.MethodGet, "/api/tags", nil)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/tags", nil)
 
 		h.GetTags(c)
 

@@ -5,7 +5,7 @@ import (
 	"github.com/nathanbizkit/article-management/middleware"
 )
 
-const APIGroupPath = "/api"
+const APIGroupPath = "/api/v1"
 
 // Route links handlers to http api router
 func Route(router *gin.Engine, h *Handler) {

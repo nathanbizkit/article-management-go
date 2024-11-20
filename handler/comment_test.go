@@ -54,7 +54,7 @@ func TestIntegration_CommentHandler(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		apiUrl := fmt.Sprintf("/api/articles/%d/comments", barArticle.ID)
+		apiUrl := fmt.Sprintf("/api/v1/articles/%d/comments", barArticle.ID)
 		req := httptest.NewRequest(http.MethodPost, apiUrl, bytes.NewReader(body))
 
 		w := httptest.NewRecorder()
@@ -101,7 +101,7 @@ func TestIntegration_CommentHandler(t *testing.T) {
 			},
 		}
 
-		apiUrl := fmt.Sprintf("/api/articles/%d/comments", barArticle.ID)
+		apiUrl := fmt.Sprintf("/api/v1/articles/%d/comments", barArticle.ID)
 		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
 		w := httptest.NewRecorder()
@@ -133,7 +133,7 @@ func TestIntegration_CommentHandler(t *testing.T) {
 
 		cm := createRandomComment(t, lct.DB(), barArticle.ID, fooUser.ID)
 
-		apiUrl := fmt.Sprintf("/api/articles/%d/comments/%d", barArticle.ID, cm.ID)
+		apiUrl := fmt.Sprintf("/api/v1/articles/%d/comments/%d", barArticle.ID, cm.ID)
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
