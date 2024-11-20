@@ -346,11 +346,12 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		return []model.Article{}, err
 	}
 
-	for _, a := range as {
+	for i, a := range as {
 		a.Tags = make([]model.Tag, 0)
 
 		if tags, exists := tagsMap[a.ID]; exists {
 			a.Tags = append(a.Tags, tags...)
+			as[i] = a
 		}
 	}
 
@@ -410,11 +411,12 @@ func (s *ArticleStore) GetFeedArticles(ctx context.Context, userIDs []uint, limi
 		return []model.Article{}, err
 	}
 
-	for _, a := range as {
+	for i, a := range as {
 		a.Tags = make([]model.Tag, 0)
 
 		if tags, exists := tagsMap[a.ID]; exists {
 			a.Tags = append(a.Tags, tags...)
+			as[i] = a
 		}
 	}
 
@@ -591,7 +593,8 @@ func (s *ArticleStore) GetComments(ctx context.Context, m *model.Article) ([]mod
 		u.id, u.username, u.email, u.password, u.name, u.bio, u.image, u.created_at, u.updated_at 
 		FROM article_management.comments c 
 		INNER JOIN article_management.users u ON u.id = c.user_id 
-		WHERE c.article_id = $1`
+		WHERE c.article_id = $1 
+		ORDER BY c.created_at DESC`
 	rows, err := s.db.QueryContext(ctx, queryString, m.ID)
 	if err != nil {
 		return []model.Comment{}, err
