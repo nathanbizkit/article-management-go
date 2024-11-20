@@ -11,6 +11,9 @@ func CORS(e *env.ENV) gin.HandlerFunc {
 	config := cors.DefaultConfig()
 	config.AllowCredentials = true
 	config.AllowAllOrigins = true
+	config.AllowWildcard = true
+	config.AllowWebSockets = true
+	config.AllowBrowserExtensions = true
 
 	if len(e.CORSAllowedOrigins) > 0 {
 		config.AllowAllOrigins = false
