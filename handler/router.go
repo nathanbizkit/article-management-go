@@ -11,32 +11,32 @@ const APIGroupPath = "/api/v1"
 func Route(router *gin.Engine, h *Handler) {
 	root := router.Group(APIGroupPath)
 	{
-		public := root.Group("")
+		unsecured := root.Group("")
 
-		public.POST("/login", h.Login)
-		public.POST("/register", h.Register)
-		public.POST("/refresh_token", h.RefreshToken)
+		unsecured.POST("/login", h.Login)
+		unsecured.POST("/register", h.Register)
+		unsecured.POST("/refresh_token", h.RefreshToken)
 
 	}
 
 	{
-		unsecured := root.Group("")
+		public := root.Group("")
 
 		strictCookie := false
-		unsecured.Use(middleware.Auth(h.logger, h.auth, strictCookie))
+		public.Use(middleware.Auth(h.logger, h.authen, strictCookie))
 
-		unsecured.GET("/articles", h.GetArticles)
-		unsecured.GET("/articles/:slug", h.GetArticle)
-		unsecured.GET("/articles/:slug/comments", h.GetComments)
+		public.GET("/articles", h.GetArticles)
+		public.GET("/articles/:slug", h.GetArticle)
+		public.GET("/articles/:slug/comments", h.GetComments)
 
-		unsecured.GET("/tags", h.GetTags)
+		public.GET("/tags", h.GetTags)
 	}
 
 	{
 		private := root.Group("")
 
 		strictCookie := true
-		private.Use(middleware.Auth(h.logger, h.auth, strictCookie))
+		private.Use(middleware.Auth(h.logger, h.authen, strictCookie))
 
 		private.GET("/me", h.GetCurrentUser)
 		private.PUT("/me", h.UpdateCurrentUser)

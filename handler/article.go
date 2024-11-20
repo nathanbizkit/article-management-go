@@ -21,23 +21,23 @@ func (h *Handler) CreateArticle(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	var r message.CreateArticleRequest
-	err := ctx.ShouldBindJSON(&r)
+	var req message.CreateArticleRequest
+	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("failed to bind request body")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
-	tags := make([]model.Tag, 0, len(r.Tags))
-	for _, t := range r.Tags {
+	tags := make([]model.Tag, 0, len(req.Tags))
+	for _, t := range req.Tags {
 		tags = append(tags, model.Tag{Name: t})
 	}
 
 	article := model.Article{
-		Title:       r.Title,
-		Description: r.Description,
-		Body:        r.Body,
+		Title:       req.Title,
+		Description: req.Description,
+		Body:        req.Body,
 		UserID:      currentUser.ID,
 		Author:      *currentUser,
 		Tags:        tags,
@@ -77,11 +77,11 @@ func (h *Handler) GetArticle(ctx *gin.Context) {
 
 	var currentUser *model.User
 
-	id := h.auth.GetContextUserID(ctx)
-	if id > 0 {
-		currentUser, err = h.us.GetByID(ctx.Request.Context(), id)
+	userID := h.authen.GetContextUserID(ctx)
+	if userID != 0 {
+		currentUser, err = h.us.GetByID(ctx.Request.Context(), userID)
 		if err != nil {
-			h.logger.Error().Err(err).Msg(fmt.Sprintf("current user (id=%d) not found", id))
+			h.logger.Error().Err(err).Msg(fmt.Sprintf("current user (id=%d) not found", userID))
 			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "current user not found"})
 			return
 		}
@@ -111,10 +111,10 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 	h.logger.Info().Msg("get articles")
 
 	var favoritedBy *model.User
-	favUsername := ctx.Query("favorited")
-	if favUsername != "" {
+	favByUsername := ctx.Query("favorited")
+	if favByUsername != "" {
 		var err error
-		favoritedBy, err = h.us.GetByUsername(ctx.Request.Context(), favUsername)
+		favoritedBy, err = h.us.GetByUsername(ctx.Request.Context(), favByUsername)
 		if err != nil {
 			favoritedBy = nil
 			h.logger.Warn().Msg("skipped: cannot find user (favorited by)")
@@ -135,17 +135,17 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 
 	var currentUser *model.User
 
-	id := h.auth.GetContextUserID(ctx)
-	if id > 0 {
-		currentUser, err = h.us.GetByID(ctx.Request.Context(), id)
+	userID := h.authen.GetContextUserID(ctx)
+	if userID != 0 {
+		currentUser, err = h.us.GetByID(ctx.Request.Context(), userID)
 		if err != nil {
-			h.logger.Error().Err(err).Msg(fmt.Sprintf("current user (id=%d) not found", id))
+			h.logger.Error().Err(err).Msg(fmt.Sprintf("current user (id=%d) not found", userID))
 			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "current user not found"})
 			return
 		}
 	}
 
-	ras := make([]message.ArticleResponse, 0, len(articles))
+	resp := make([]message.ArticleResponse, 0, len(articles))
 	for _, article := range articles {
 		favorited, err := h.as.IsFavorited(ctx.Request.Context(), &article, currentUser)
 		if err != nil {
@@ -163,10 +163,10 @@ func (h *Handler) GetArticles(ctx *gin.Context) {
 			return
 		}
 
-		ras = append(ras, article.ResponseArticle(favorited, following))
+		resp = append(resp, article.ResponseArticle(favorited, following))
 	}
 
-	ctx.JSON(http.StatusOK, message.ArticlesResponse{Articles: ras, ArticlesCount: int64(len(ras))})
+	ctx.JSON(http.StatusOK, message.ArticlesResponse{Articles: resp, ArticlesCount: int64(len(resp))})
 }
 
 // GetFeedArticles gets recent articles from users that current user follows
@@ -193,7 +193,7 @@ func (h *Handler) GetFeedArticles(ctx *gin.Context) {
 	}
 
 	following := true
-	ras := make([]message.ArticleResponse, 0, len(articles))
+	resp := make([]message.ArticleResponse, 0, len(articles))
 	for _, article := range articles {
 		favorited, err := h.as.IsFavorited(ctx.Request.Context(), &article, currentUser)
 		if err != nil {
@@ -203,10 +203,10 @@ func (h *Handler) GetFeedArticles(ctx *gin.Context) {
 			return
 		}
 
-		ras = append(ras, article.ResponseArticle(favorited, following))
+		resp = append(resp, article.ResponseArticle(favorited, following))
 	}
 
-	ctx.JSON(http.StatusOK, message.ArticlesResponse{Articles: ras, ArticlesCount: int64(len(ras))})
+	ctx.JSON(http.StatusOK, message.ArticlesResponse{Articles: resp, ArticlesCount: int64(len(resp))})
 }
 
 // UpdateArticle updates an article
@@ -215,31 +215,31 @@ func (h *Handler) UpdateArticle(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
+	slug := h.GetParamAsIDOrAbort(ctx, "slug")
+	article, err := h.as.GetByID(ctx.Request.Context(), slug)
 	if err != nil {
-		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
+		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", slug))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
 		return
 	}
 
 	if article.Author.ID != currentUser.ID {
 		msg := "forbidden"
-		err := fmt.Errorf("user (id=%d) attempted to update user's article (id=%d)", currentUser.ID, articleID)
+		err := fmt.Errorf("user (id=%d) attempted to update user's article (id=%d)", currentUser.ID, slug)
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": msg})
 		return
 	}
 
-	var r message.UpdateArticleRequest
-	err = ctx.ShouldBindJSON(&r)
+	var req message.UpdateArticleRequest
+	err = ctx.ShouldBindJSON(&req)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("failed to bind request body")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
-	article.Overwrite(r.Title, r.Description, r.Body)
+	article.Overwrite(req.Title, req.Description, req.Body)
 
 	err = article.Validate()
 	if err != nil {
@@ -267,17 +267,17 @@ func (h *Handler) DeleteArticle(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
+	slug := h.GetParamAsIDOrAbort(ctx, "slug")
+	article, err := h.as.GetByID(ctx.Request.Context(), slug)
 	if err != nil {
-		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
+		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", slug))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
 		return
 	}
 
 	if article.Author.ID != currentUser.ID {
 		msg := "forbidden"
-		err := fmt.Errorf("user (id=%d) attempted to delete user's article (id=%d)", currentUser.ID, articleID)
+		err := fmt.Errorf("user (id=%d) attempted to delete user's article (id=%d)", currentUser.ID, slug)
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": msg})
 		return
@@ -300,10 +300,10 @@ func (h *Handler) FavoriteArticle(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
+	slug := h.GetParamAsIDOrAbort(ctx, "slug")
+	article, err := h.as.GetByID(ctx.Request.Context(), slug)
 	if err != nil {
-		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
+		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", slug))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
 		return
 	}
@@ -338,10 +338,10 @@ func (h *Handler) UnfavoriteArticle(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	articleID := h.GetParamAsIDOrAbort(ctx, "slug")
-	article, err := h.as.GetByID(ctx.Request.Context(), articleID)
+	slug := h.GetParamAsIDOrAbort(ctx, "slug")
+	article, err := h.as.GetByID(ctx.Request.Context(), slug)
 	if err != nil {
-		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", articleID))
+		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", slug))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "article not found"})
 		return
 	}

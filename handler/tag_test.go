@@ -59,10 +59,10 @@ func TestIntegration_TagHandler(t *testing.T) {
 		expected := message.TagsResponse{Tags: tags}
 
 		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/tags", nil)
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/tags", nil)
 
-		h.GetTags(c)
+		h.GetTags(ctx)
 
 		var actual message.TagsResponse
 		err := json.NewDecoder(w.Result().Body).Decode(&actual)

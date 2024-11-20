@@ -58,10 +58,10 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, apiUrl, bytes.NewReader(body))
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
-		c.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
 
-		h.CreateComment(c)
+		h.CreateComment(ctx)
 
 		var actual message.CommentResponse
 		err = json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -105,10 +105,10 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
-		c.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
 
-		h.GetComments(c)
+		h.GetComments(ctx)
 
 		var actual message.CommentsResponse
 		err := json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -137,11 +137,11 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
-		c.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
-		c.AddParam("id", strconv.Itoa(int(cm.ID)))
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
+		ctx.AddParam("id", strconv.Itoa(int(cm.ID)))
 
-		h.DeleteComment(c)
+		h.DeleteComment(ctx)
 
 		cms, err := h.as.GetComments(context.Background(), barArticle)
 		if err != nil {

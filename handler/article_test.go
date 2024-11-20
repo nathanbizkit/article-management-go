@@ -25,7 +25,6 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 	}
 
 	gin.SetMode("test")
-
 	h, lct := setup(t)
 
 	t.Run("CreateArticle", func(t *testing.T) {
@@ -61,9 +60,9 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "/api/v1/articles", bytes.NewReader(body))
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
 
-		h.CreateArticle(c)
+		h.CreateArticle(ctx)
 
 		var actual message.ArticleResponse
 		err = json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -99,10 +98,10 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
-		c.AddParam("slug", strconv.Itoa(int(fooArticle.ID)))
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx.AddParam("slug", strconv.Itoa(int(fooArticle.ID)))
 
-		h.GetArticle(c)
+		h.GetArticle(ctx)
 
 		var actual message.ArticleResponse
 		err := json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -307,9 +306,9 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 			req.URL.RawQuery = q.Encode()
 
 			w := httptest.NewRecorder()
-			c, _ := ctxWithToken(t, w, req, reqUser.ID, time.Now())
+			ctx, _ := ctxWithToken(t, w, req, reqUser.ID, time.Now())
 
-			h.GetArticles(c)
+			h.GetArticles(ctx)
 
 			var actual message.ArticlesResponse
 			err := json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -453,9 +452,9 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 			req.URL.RawQuery = q.Encode()
 
 			w := httptest.NewRecorder()
-			c, _ := ctxWithToken(t, w, req, tt.reqUser.ID, time.Now())
+			ctx, _ := ctxWithToken(t, w, req, tt.reqUser.ID, time.Now())
 
-			h.GetFeedArticles(c)
+			h.GetFeedArticles(ctx)
 
 			var actual message.ArticlesResponse
 			err := json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -512,10 +511,10 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, apiUrl, bytes.NewReader(body))
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
-		c.AddParam("slug", strconv.Itoa(int(fooArticle.ID)))
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx.AddParam("slug", strconv.Itoa(int(fooArticle.ID)))
 
-		h.UpdateArticle(c)
+		h.UpdateArticle(ctx)
 
 		var actual message.ArticleResponse
 		err = json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -547,10 +546,10 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
-		c.AddParam("slug", strconv.Itoa(int(fooArticle.ID)))
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx.AddParam("slug", strconv.Itoa(int(fooArticle.ID)))
 
-		h.DeleteArticle(c)
+		h.DeleteArticle(ctx)
 
 		actual, err := h.as.GetByID(context.Background(), fooArticle.ID)
 
@@ -579,10 +578,10 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
-		c.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
 
-		h.FavoriteArticle(c)
+		h.FavoriteArticle(ctx)
 
 		var actual message.ArticleResponse
 		err := json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -638,10 +637,10 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
-		c.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
 
-		h.UnfavoriteArticle(c)
+		h.UnfavoriteArticle(ctx)
 
 		var actual message.ArticleResponse
 		err = json.NewDecoder(w.Result().Body).Decode(&actual)

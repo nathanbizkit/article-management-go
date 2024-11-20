@@ -23,42 +23,42 @@ func setup(t *testing.T) (*Handler, *container.LocalTestContainer) {
 	t.Helper()
 
 	l := test.NewTestLogger(t)
-	e := test.NewTestENV(t)
+	environ := test.NewTestENV(t)
 	lct := test.NewLocalTestContainer(t)
 
-	auth := auth.New(e)
+	authen := auth.New(environ)
 	as := store.NewArticleStore(lct.DB())
 	us := store.NewUserStore(lct.DB())
 
-	return New(&l, e, auth, us, as), lct
+	return New(&l, environ, authen, us, as), lct
 }
 
 func ctxWithToken(t *testing.T, w http.ResponseWriter, req *http.Request, id uint, timeNow time.Time) (*gin.Context, *auth.AuthToken) {
 	t.Helper()
 
-	e := test.NewTestENV(t)
-	a := auth.New(e)
+	environ := test.NewTestENV(t)
+	authen := auth.New(environ)
 
-	token, err := a.GenerateTokenWithTime(id, timeNow)
+	token, err := authen.GenerateTokenWithTime(id, timeNow)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req.Clone(context.Background())
-
-	a.SetContextUserID(c, id)
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = req.Clone(context.Background())
 
 	test.AddCookieToRequest(
-		t, c.Request,
+		t, ctx.Request,
 		"session", token.Token, "localhost",
 	)
 	test.AddCookieToRequest(
-		t, c.Request,
+		t, ctx.Request,
 		"refreshToken", token.RefreshToken, "localhost",
 	)
 
-	return c, token
+	authen.SetContextUserID(ctx, id)
+
+	return ctx, token
 }
 
 func createRandomUser(t *testing.T, db *sql.DB) *model.User {
@@ -76,16 +76,16 @@ func createRandomUser(t *testing.T, db *sql.DB) *model.User {
 	m.HashPassword()
 
 	us := store.NewUserStore(db)
-	u, err := us.Create(context.Background(), &m)
+	user, err := us.Create(context.Background(), &m)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Cleanup(func() {
-		deleteUser(t, db, u.ID)
+		deleteUser(t, db, user.ID)
 	})
 
-	return u
+	return user
 }
 
 func deleteUser(t *testing.T, db *sql.DB, id uint) {
@@ -109,7 +109,7 @@ func createRandomArticle(t *testing.T, db *sql.DB, userID uint, tagNames []strin
 		UserID:      userID,
 	}
 
-	if len(tagNames) > 0 {
+	if len(tagNames) != 0 {
 		tags := make([]model.Tag, 0, len(tagNames))
 		for _, name := range tagNames {
 			tags = append(tags, model.Tag{Name: name})
@@ -119,16 +119,16 @@ func createRandomArticle(t *testing.T, db *sql.DB, userID uint, tagNames []strin
 	}
 
 	as := store.NewArticleStore(db)
-	a, err := as.Create(context.Background(), &m)
+	article, err := as.Create(context.Background(), &m)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Cleanup(func() {
-		deleteArticle(t, db, a.ID)
+		deleteArticle(t, db, article.ID)
 	})
 
-	return a
+	return article
 }
 
 func deleteArticle(t *testing.T, db *sql.DB, id uint) {
@@ -152,16 +152,16 @@ func createRandomComment(t *testing.T, db *sql.DB, articleID uint, userID uint) 
 	}
 
 	as := store.NewArticleStore(db)
-	cm, err := as.CreateComment(context.Background(), &m)
+	comment, err := as.CreateComment(context.Background(), &m)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Cleanup(func() {
-		deleteComment(t, db, cm.ID)
+		deleteComment(t, db, comment.ID)
 	})
 
-	return cm
+	return comment
 }
 
 func deleteComment(t *testing.T, db *sql.DB, id uint) {

@@ -16,10 +16,9 @@ import (
 const englishCharset = "abcdefghijklmnopqrstuvwxyz" +
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-var ltc *container.LocalTestContainer
 var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-// NewTestENV returns an env for testing
+// NewTestENV returns an env for testing (mock)
 func NewTestENV(t *testing.T) *env.ENV {
 	t.Helper()
 
@@ -41,7 +40,6 @@ func NewTestLogger(t *testing.T) zerolog.Logger {
 	t.Helper()
 
 	w := zerolog.ConsoleWriter{Out: io.Discard}
-	// w := zerolog.ConsoleWriter{Out: os.Stderr}
 	return zerolog.New(w).With().Timestamp().Caller().Logger()
 }
 
@@ -50,7 +48,7 @@ func NewLocalTestContainer(t *testing.T) *container.LocalTestContainer {
 	t.Helper()
 
 	if testing.Short() {
-		return nil
+		t.Fatal("only available in integration tests")
 	}
 
 	ltc, err := container.NewLocalTestContainer()
@@ -69,9 +67,9 @@ func NewLocalTestContainer(t *testing.T) *container.LocalTestContainer {
 func RandomString(t *testing.T, length int) string {
 	t.Helper()
 
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = englishCharset[seededRand.Intn(len(englishCharset))]
+	b := make([]byte, 0, length)
+	for i := 0; i < length; i++ {
+		b = append(b, englishCharset[seededRand.Intn(len(englishCharset))])
 	}
 
 	return string(b)
@@ -84,7 +82,7 @@ func AddCookieToRequest(t *testing.T, req *http.Request, name, value, domain str
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    url.QueryEscape(value),
-		MaxAge:   int((20 * (24 * time.Hour)).Seconds()),
+		MaxAge:   int((5 * (24 * time.Hour)).Seconds()),
 		Path:     "/api/v1",
 		Domain:   domain,
 		SameSite: http.SameSiteStrictMode,
@@ -104,7 +102,7 @@ func AddCookieToResponse(t *testing.T, w http.ResponseWriter, name, value, domai
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    url.QueryEscape(value),
-		MaxAge:   int((20 * (24 * time.Hour)).Seconds()),
+		MaxAge:   int((5 * (24 * time.Hour)).Seconds()),
 		Path:     "/api/v1",
 		Domain:   domain,
 		SameSite: http.SameSiteStrictMode,

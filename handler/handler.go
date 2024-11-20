@@ -9,14 +9,14 @@ import (
 
 // Handler definition
 type Handler struct {
-	logger *zerolog.Logger
-	env    *env.ENV
-	auth   *auth.Auth
-	us     *store.UserStore
-	as     *store.ArticleStore
+	logger  *zerolog.Logger
+	environ *env.ENV
+	authen  *auth.Auth
+	us      *store.UserStore
+	as      *store.ArticleStore
 }
 
-// New returns a new handler with logger, env, auth and database
-func New(l *zerolog.Logger, e *env.ENV, auth *auth.Auth, us *store.UserStore, as *store.ArticleStore) *Handler {
-	return &Handler{logger: l, env: e, auth: auth, us: us, as: as}
+// New returns a new handler with logger, env, auth and stores
+func New(l *zerolog.Logger, environ *env.ENV, authen *auth.Auth, us *store.UserStore, as *store.ArticleStore) *Handler {
+	return &Handler{logger: l, environ: environ, authen: authen, us: us, as: as}
 }

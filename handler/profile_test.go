@@ -33,10 +33,10 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
-		c.AddParam("username", barUser.Username)
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx.AddParam("username", barUser.Username)
 
-		h.ShowProfile(c)
+		h.ShowProfile(ctx)
 
 		var actual message.ProfileResponse
 		err := json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -60,10 +60,10 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
-		c.AddParam("username", barUser.Username)
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx.AddParam("username", barUser.Username)
 
-		h.FollowUser(c)
+		h.FollowUser(ctx)
 
 		var actual message.ProfileResponse
 		err := json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -98,10 +98,10 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		c, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
-		c.AddParam("username", barUser.Username)
+		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx.AddParam("username", barUser.Username)
 
-		h.UnfollowUser(c)
+		h.UnfollowUser(ctx)
 
 		var actual message.ProfileResponse
 		err = json.NewDecoder(w.Result().Body).Decode(&actual)

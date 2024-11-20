@@ -29,24 +29,21 @@ type LocalTestContainer struct {
 func NewLocalTestContainer() (*LocalTestContainer, error) {
 	pool, err := dockertest.NewPool("")
 	if err != nil {
-		err = fmt.Errorf("failed to construct pool: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to construct pool: %w", err)
 	}
 
 	// network
-	networkName := "article-management-app"
-	network, err := createNetwork(networkName, pool)
+	networkName := "article-management-testing-app"
+	network, err := createNetwork(pool, networkName)
 	if err != nil {
-		err = fmt.Errorf("failed to create network: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create network: %w", err)
 	}
 
 	// db
 	dbResource, err := createPostgresDB(pool, network)
 	if err != nil {
 		pool.Client.RemoveNetwork(networkName)
-		err = fmt.Errorf("failed to create db container: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create db container: %w", err)
 	}
 
 	closeResources := func() {
@@ -57,8 +54,7 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	err = pool.Client.Ping()
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("failed to connect to Docker: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to Docker: %w", err)
 	}
 
 	db, err := getDBConnectionPool(
@@ -70,8 +66,7 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("failed to connect to database: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	log.Printf("db container: %s\n", dbResource.Container.Name)
@@ -85,30 +80,26 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	tempDir, err := os.MkdirTemp("", "migrations")
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("failed to create temp dir: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create temp dir: %w", err)
 	}
 	defer os.RemoveAll(tempDir)
 
 	err = copyDir(filepath.Join(util.Root, "./db/migrations"), tempDir)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("failed to copy files to migrations folder: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to copy files to migrations folder: %w", err)
 	}
 
 	migrationResource, err := createMigration(pool, network, dbUrl, tempDir)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("failed to create db migration container: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create db migration container: %w", err)
 	}
 
 	err = migrateDB(pool, migrationResource, dbUrl)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("failed to migrate db: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to migrate db: %w", err)
 	}
 
 	log.Printf("migration container: %s\n", migrationResource.Container.Name)
@@ -117,8 +108,7 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	_, err = db.Exec(`SET search_path TO article_management`)
 	if err != nil {
 		closeResources()
-		err = fmt.Errorf("failed to set db schema: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to set db schema: %w", err)
 	}
 
 	return &LocalTestContainer{
@@ -140,21 +130,19 @@ func (l *LocalTestContainer) DB() *sql.DB {
 func (l *LocalTestContainer) Close() error {
 	err := l.dbContainer.Close()
 	if err != nil {
-		err = fmt.Errorf("failed to purge db resource, please remove container manually")
-		return err
+		return fmt.Errorf("failed to purge db resource, please remove container manually: %w", err)
 	}
 
 	err = l.pool.Client.RemoveNetwork(l.network)
 	if err != nil {
-		err = fmt.Errorf("failed to remove network: %s", err)
-		return err
+		return fmt.Errorf("failed to remove network: %w", err)
 	}
 
 	return nil
 }
 
-func createNetwork(name string, pool *dockertest.Pool) (*docker.Network, error) {
-	network, err := findNetwork(name, pool)
+func createNetwork(pool *dockertest.Pool, name string) (*docker.Network, error) {
+	network, err := findNetwork(pool, name)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +161,7 @@ func createNetwork(name string, pool *dockertest.Pool) (*docker.Network, error) 
 	return network, err
 }
 
-func findNetwork(name string, pool *dockertest.Pool) (*docker.Network, error) {
+func findNetwork(pool *dockertest.Pool, name string) (*docker.Network, error) {
 	networks, err := pool.Client.ListNetworks()
 	if err != nil {
 		return nil, err

@@ -7,7 +7,7 @@ import (
 )
 
 // CORS attaches cors middleware to http engine
-func CORS(e *env.ENV) gin.HandlerFunc {
+func CORS(environ *env.ENV) gin.HandlerFunc {
 	config := cors.DefaultConfig()
 	config.AllowCredentials = true
 	config.AllowAllOrigins = true
@@ -15,9 +15,9 @@ func CORS(e *env.ENV) gin.HandlerFunc {
 	config.AllowWebSockets = true
 	config.AllowBrowserExtensions = true
 
-	if len(e.CORSAllowedOrigins) > 0 {
+	if len(environ.CORSAllowedOrigins) != 0 {
 		config.AllowAllOrigins = false
-		config.AllowOrigins = e.CORSAllowedOrigins
+		config.AllowOrigins = environ.CORSAllowedOrigins
 	}
 
 	return cors.New(config)

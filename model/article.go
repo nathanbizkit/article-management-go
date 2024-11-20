@@ -99,7 +99,7 @@ func (a *Article) Overwrite(title, description, body string) {
 
 // ResponseArticle generates response message from article
 func (a *Article) ResponseArticle(favorited, followingAuthor bool) message.ArticleResponse {
-	ar := message.ArticleResponse{
+	resp := message.ArticleResponse{
 		ID:             a.ID,
 		Title:          a.Title,
 		Description:    a.Description,
@@ -116,6 +116,6 @@ func (a *Article) ResponseArticle(favorited, followingAuthor bool) message.Artic
 		tags = append(tags, t.Name)
 	}
 
-	ar.Tags = tags
-	return ar
+	resp.Tags = tags
+	return resp
 }

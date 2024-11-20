@@ -19,12 +19,13 @@ func TestUnit_UserModel(t *testing.T) {
 	t.Run("Validate", func(t *testing.T) {
 		shortMaxLenString := strings.Repeat("a", 101)
 		longMaxLenString := strings.Repeat("a", 256)
-		passwordMaxLenString := strings.Repeat("a", 101)
+		passwordMaxLenString := strings.Repeat("a", 51)
 
 		tests := []struct {
-			title    string
-			u        *User
-			hasError bool
+			title           string
+			u               *User
+			isPlainPassword bool
+			hasError        bool
 		}{
 			{
 				"validate user: success",
@@ -36,6 +37,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      "This is my bio.",
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				false,
 			},
 			{
@@ -49,6 +51,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "https://imgur.com/image.jpeg",
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: username is too short",
@@ -60,6 +63,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      "This is my bio.",
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				true,
 			},
 			{
@@ -73,6 +77,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "https://imgur.com/image.jpeg",
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: no underscore at the beginning of username",
@@ -84,6 +89,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      "This is my bio.",
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				true,
 			},
 			{
@@ -97,6 +103,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "https://imgur.com/image.jpeg",
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: username is other than a-z, A-Z, 0-9, _, . in the middle",
@@ -108,6 +115,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      "This is my bio.",
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				true,
 			},
 			{
@@ -121,6 +129,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "https://imgur.com/image.jpeg",
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: email is in invalid format",
@@ -132,6 +141,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      "This is my bio.",
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				true,
 			},
 			{
@@ -145,6 +155,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "https://imgur.com/image.jpeg",
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: email is too long",
@@ -156,6 +167,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      "This is my bio.",
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				true,
 			},
 			{
@@ -169,6 +181,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "https://imgur.com/image.jpeg",
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: name is too short",
@@ -180,6 +193,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      "This is my bio.",
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				true,
 			},
 			{
@@ -193,6 +207,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "https://imgur.com/image.jpeg",
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: no password",
@@ -204,6 +219,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      "This is my bio.",
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				true,
 			},
 			{
@@ -217,6 +233,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "https://imgur.com/image.jpeg",
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: password is too long",
@@ -228,6 +245,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      "This is my bio.",
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				true,
 			},
 			{
@@ -241,6 +259,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "https://imgur.com/image.jpeg",
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: bio is too long",
@@ -252,6 +271,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Bio:      longMaxLenString,
 					Image:    "https://imgur.com/image.jpeg",
 				},
+				true,
 				true,
 			},
 			{
@@ -265,6 +285,7 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    longMaxLenString,
 				},
 				true,
+				true,
 			},
 			{
 				"validate user: invalid type image (url)",
@@ -277,11 +298,12 @@ func TestUnit_UserModel(t *testing.T) {
 					Image:    "invalid_image_url",
 				},
 				true,
+				true,
 			},
 		}
 
 		for _, tt := range tests {
-			err := tt.u.Validate()
+			err := tt.u.Validate(tt.isPlainPassword)
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)

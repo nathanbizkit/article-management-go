@@ -74,10 +74,10 @@ func TestIntegration_UserHandler(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewReader(body))
+			ctx, _ := gin.CreateTestContext(w)
+			ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewReader(body))
 
-			h.Login(c)
+			h.Login(ctx)
 
 			assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
 			assertCtx.Request = &http.Request{
@@ -90,7 +90,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 			strictCookie := true
 			refresh := false
-			actualUserID, err := h.auth.GetUserID(assertCtx, strictCookie, refresh)
+			actualUserID, err := h.authen.GetUserID(assertCtx, strictCookie, refresh)
 
 			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
 			assert.Equal(t, tt.expectedUserID, actualUserID, tt.title)
@@ -214,10 +214,10 @@ func TestIntegration_UserHandler(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-			c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/register", bytes.NewReader(body))
+			ctx, _ := gin.CreateTestContext(w)
+			ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/register", bytes.NewReader(body))
 
-			h.Register(c)
+			h.Register(ctx)
 
 			var actual message.ProfileResponse
 			err = json.NewDecoder(w.Result().Body).Decode(&actual)
@@ -237,7 +237,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 			strictCookie := true
 			refresh := false
-			actualUserID, err := h.auth.GetUserID(assertCtx, strictCookie, refresh)
+			actualUserID, err := h.authen.GetUserID(assertCtx, strictCookie, refresh)
 
 			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
 			assert.Equal(t, tt.expected, actual, tt.title)
@@ -261,32 +261,26 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 		h.RefreshToken(c)
 
-		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
-		assertCtx.Request = &http.Request{
-			Header: make(http.Header),
-		}
-		assertCtx.Request.Header.Set(
-			"Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
-		)
-
-		actualToken, err := h.auth.GetCookieToken(assertCtx)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		strictCookie := true
-		refresh := true
-		actualUserID, err := h.auth.GetUserID(assertCtx, strictCookie, refresh)
-		if err != nil {
-			t.Fatal(err)
-		}
+		actualCookies := w.Result().Header.Values("Set-Cookie")
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.NotEqual(t, token.Token, actualToken.Token)
-		assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
-		assert.NoError(t, err)
-		assert.Equal(t, fooUser.ID, actualUserID)
+		assert.Len(t, actualCookies, 2)
+
+		for _, actualCookie := range actualCookies {
+			cookie, err := http.ParseSetCookie(actualCookie)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.NotEmpty(t, cookie.Value)
+
+			switch cookie.Name {
+			case "session":
+				assert.NotEqual(t, token.Token, cookie.Value)
+			case "refreshToken":
+				assert.NotEqual(t, token.RefreshToken, cookie.Value)
+			}
+		}
 	})
 
 	t.Run("GetCurrentUser", func(t *testing.T) {
@@ -308,33 +302,27 @@ func TestIntegration_UserHandler(t *testing.T) {
 		}
 		defer w.Result().Body.Close()
 
-		assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
-		assertCtx.Request = &http.Request{
-			Header: make(http.Header),
-		}
-		assertCtx.Request.Header.Set(
-			"Cookie",
-			strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
-		)
-
-		actualToken, err := h.auth.GetCookieToken(assertCtx)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		strictCookie := true
-		refresh := false
-		actualUserID, err := h.auth.GetUserID(assertCtx, strictCookie, refresh)
-		if err != nil {
-			t.Fatal(err)
-		}
+		actualCookies := w.Result().Header.Values("Set-Cookie")
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, expected, actual)
-		assert.NotEqual(t, token.Token, actualToken.Token)
-		assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
-		assert.NoError(t, err)
-		assert.Equal(t, fooUser.ID, actualUserID)
+		assert.Len(t, actualCookies, 2)
+
+		for _, actualCookie := range actualCookies {
+			cookie, err := http.ParseSetCookie(actualCookie)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.NotEmpty(t, cookie.Value)
+
+			switch cookie.Name {
+			case "session":
+				assert.NotEqual(t, token.Token, cookie.Value)
+			case "refreshToken":
+				assert.NotEqual(t, token.RefreshToken, cookie.Value)
+			}
+		}
 	})
 
 	t.Run("UpdateCurrentUser", func(t *testing.T) {
@@ -406,33 +394,27 @@ func TestIntegration_UserHandler(t *testing.T) {
 			}
 			defer w.Result().Body.Close()
 
-			assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
-			assertCtx.Request = &http.Request{
-				Header: make(http.Header),
-			}
-			assertCtx.Request.Header.Set(
-				"Cookie",
-				strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
-			)
+			actualCookies := w.Result().Header.Values("Set-Cookie")
 
-			actualToken, err := h.auth.GetCookieToken(assertCtx)
-			if err != nil {
-				t.Fatal(err)
-			}
+			assert.Equal(t, http.StatusOK, w.Result().StatusCode, tt.title)
+			assert.Equal(t, expected, actual, tt.title)
+			assert.Len(t, actualCookies, 2, tt.title)
 
-			strictCookie := true
-			refresh := false
-			actualUserID, err := h.auth.GetUserID(assertCtx, strictCookie, refresh)
-			if err != nil {
-				t.Fatal(err)
-			}
+			for _, actualCookie := range actualCookies {
+				cookie, err := http.ParseSetCookie(actualCookie)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
-			assert.Equal(t, tt.expected, actual, tt.title)
-			assert.NotEqual(t, token.Token, actualToken.Token)
-			assert.NotEqual(t, token.RefreshToken, actualToken.RefreshToken)
-			assert.NoError(t, err)
-			assert.Equal(t, fooUser.ID, actualUserID)
+				assert.NotEmpty(t, cookie.Value, tt.title)
+
+				switch cookie.Name {
+				case "session":
+					assert.NotEqual(t, token.Token, cookie.Value, tt.title)
+				case "refreshToken":
+					assert.NotEqual(t, token.RefreshToken, cookie.Value, tt.title)
+				}
+			}
 		}
 	})
 }

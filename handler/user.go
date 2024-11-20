@@ -13,15 +13,15 @@ import (
 func (h *Handler) Login(ctx *gin.Context) {
 	h.logger.Info().Msg("login")
 
-	var r message.LoginUserRequest
-	err := ctx.ShouldBindJSON(&r)
+	var req message.LoginUserRequest
+	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("failed to bind request body")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
-	user, err := h.us.GetByEmail(ctx.Request.Context(), r.Email)
+	user, err := h.us.GetByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
 		msg := "user not found"
 		h.logger.Error().Err(err).Msg(msg)
@@ -29,15 +29,15 @@ func (h *Handler) Login(ctx *gin.Context) {
 		return
 	}
 
-	if !user.CheckPassword(r.Password) {
+	if !user.CheckPassword(req.Password) {
 		msg := "invalid password"
-		err := fmt.Errorf("password (%s) is not matched", r.Password)
+		err := fmt.Errorf("password (%s) is not matched", req.Password)
 		h.logger.Error().Err(err).Msgf(msg)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
 	}
 
-	token, err := h.auth.GenerateToken(user.ID)
+	token, err := h.authen.GenerateToken(user.ID)
 	if err != nil {
 		msg := "failed to generate token"
 		h.logger.Error().Err(err).Msg(msg)
@@ -45,7 +45,7 @@ func (h *Handler) Login(ctx *gin.Context) {
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
+	h.authen.SetCookieToken(ctx, *token, APIGroupPath)
 
 	ctx.AbortWithStatus(http.StatusOK)
 }
@@ -54,8 +54,8 @@ func (h *Handler) Login(ctx *gin.Context) {
 func (h *Handler) Register(ctx *gin.Context) {
 	h.logger.Info().Msg("register")
 
-	var r message.CreateUserRequest
-	err := ctx.ShouldBindJSON(&r)
+	var req message.CreateUserRequest
+	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("failed to bind request body")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
@@ -63,13 +63,14 @@ func (h *Handler) Register(ctx *gin.Context) {
 	}
 
 	user := model.User{
-		Username: r.Username,
-		Email:    r.Email,
-		Password: r.Password,
-		Name:     r.Name,
+		Username: req.Username,
+		Email:    req.Email,
+		Password: req.Password,
+		Name:     req.Name,
 	}
 
-	err = user.Validate()
+	isPlainPassword := true
+	err = user.Validate(isPlainPassword)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("validation error")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -91,7 +92,7 @@ func (h *Handler) Register(ctx *gin.Context) {
 		return
 	}
 
-	token, err := h.auth.GenerateToken(createdUser.ID)
+	token, err := h.authen.GenerateToken(createdUser.ID)
 	if err != nil {
 		msg := "failed to generate token"
 		h.logger.Error().Err(err).Msg(msg)
@@ -99,7 +100,7 @@ func (h *Handler) Register(ctx *gin.Context) {
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
+	h.authen.SetCookieToken(ctx, *token, APIGroupPath)
 
 	following := false
 	ctx.AbortWithStatusJSON(http.StatusOK, createdUser.ResponseProfile(following))
@@ -111,7 +112,7 @@ func (h *Handler) RefreshToken(ctx *gin.Context) {
 
 	strictCookie := true
 	refresh := true
-	id, err := h.auth.GetUserID(ctx, strictCookie, refresh)
+	id, err := h.authen.GetUserID(ctx, strictCookie, refresh)
 	if err != nil {
 		msg := "failed to extract token from cookie"
 		h.logger.Error().Err(err).Msg(msg)
@@ -119,7 +120,7 @@ func (h *Handler) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	token, err := h.auth.GenerateToken(id)
+	token, err := h.authen.GenerateToken(id)
 	if err != nil {
 		msg := "failed to generate token"
 		h.logger.Error().Err(err).Msg(msg)
@@ -127,7 +128,7 @@ func (h *Handler) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
+	h.authen.SetCookieToken(ctx, *token, APIGroupPath)
 
 	ctx.AbortWithStatus(http.StatusOK)
 }
@@ -138,7 +139,7 @@ func (h *Handler) GetCurrentUser(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	token, err := h.auth.GenerateToken(currentUser.ID)
+	token, err := h.authen.GenerateToken(currentUser.ID)
 	if err != nil {
 		msg := "failed to generate token"
 		h.logger.Error().Err(err).Msg(msg)
@@ -146,7 +147,7 @@ func (h *Handler) GetCurrentUser(ctx *gin.Context) {
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
+	h.authen.SetCookieToken(ctx, *token, APIGroupPath)
 
 	following := false
 	ctx.AbortWithStatusJSON(http.StatusOK, currentUser.ResponseProfile(following))
@@ -156,8 +157,8 @@ func (h *Handler) GetCurrentUser(ctx *gin.Context) {
 func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
 	h.logger.Info().Msg("update current user")
 
-	var r message.UpdateUserRequest
-	err := ctx.ShouldBindJSON(&r)
+	var req message.UpdateUserRequest
+	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("failed to bind request body")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
@@ -166,9 +167,9 @@ func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
 
 	currentUser := h.GetCurrentUserOrAbort(ctx)
 
-	isPlainPassword := currentUser.Overwrite(r.Username, r.Email, r.Password, r.Name, r.Bio, r.Image)
+	isPlainPassword := currentUser.Overwrite(req.Username, req.Email, req.Password, req.Name, req.Bio, req.Image)
 
-	err = currentUser.Validate()
+	err = currentUser.Validate(isPlainPassword)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("validation error")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -192,7 +193,7 @@ func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
 		return
 	}
 
-	token, err := h.auth.GenerateToken(updatedUser.ID)
+	token, err := h.authen.GenerateToken(updatedUser.ID)
 	if err != nil {
 		msg := "failed to generate token"
 		h.logger.Error().Err(err).Msg(msg)
@@ -200,7 +201,7 @@ func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
 		return
 	}
 
-	h.auth.SetCookieToken(ctx, *token, APIGroupPath)
+	h.authen.SetCookieToken(ctx, *token, APIGroupPath)
 
 	following := false
 	ctx.AbortWithStatusJSON(http.StatusOK, updatedUser.ResponseProfile(following))

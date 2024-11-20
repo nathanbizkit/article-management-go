@@ -9,18 +9,15 @@ import (
 )
 
 // Secure attaches secure tls middleware to http engine
-func Secure(e *env.ENV) gin.HandlerFunc {
+func Secure(environ *env.ENV) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		isDevelopment := e.AppMode == "dev" || e.AppMode == "develop" ||
-			e.AppMode == "test" || e.AppMode == "testing"
-
 		opts := secure.Options{
 			SSLRedirect:   true,
-			IsDevelopment: isDevelopment,
+			IsDevelopment: environ.IsDevelopment,
 		}
 
-		if isDevelopment {
-			opts.SSLHost = fmt.Sprintf("localhost:%s", e.AppTLSPort)
+		if environ.IsDevelopment {
+			opts.SSLHost = fmt.Sprintf("localhost:%s", environ.AppTLSPort)
 		}
 
 		secureMiddleware := secure.New(opts)

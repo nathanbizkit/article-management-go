@@ -10,10 +10,10 @@ import (
 )
 
 // Auth guards against unauthenticated incoming request
-func Auth(l *zerolog.Logger, a *auth.Auth, strictCookie bool) gin.HandlerFunc {
+func Auth(l *zerolog.Logger, authen *auth.Auth, strictCookie bool) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		refresh := false
-		id, err := a.GetUserID(ctx, strictCookie, refresh)
+		id, err := authen.GetUserID(ctx, strictCookie, refresh)
 		if err != nil {
 			msg := "unauthenticated"
 			err = fmt.Errorf("unauthenticated: %w", err)
@@ -22,6 +22,8 @@ func Auth(l *zerolog.Logger, a *auth.Auth, strictCookie bool) gin.HandlerFunc {
 			return
 		}
 
-		a.SetContextUserID(ctx, id)
+		authen.SetContextUserID(ctx, id)
+
+		ctx.Next()
 	}
 }

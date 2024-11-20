@@ -22,6 +22,7 @@ type ENV struct {
 	DBPort             string   `mapstructure:"DB_PORT"`
 	DBName             string   `mapstructure:"DB_NAME"`
 	TLSEnabled         bool
+	IsDevelopment      bool
 }
 
 // Parse loads environment variables either from .env or environment directly and returns a new env
@@ -57,60 +58,61 @@ func Parse(envFile string) (*ENV, error) {
 	viper.SetDefault("DB_PORT", "5432")
 	viper.SetDefault("DB_NAME", "")
 
-	e := ENV{}
-	err := viper.Unmarshal(&e)
+	environ := ENV{}
+	err := viper.Unmarshal(&environ)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validation.ValidateStruct(&e,
+	err = validation.ValidateStruct(&environ,
 		validation.Field(
-			&e.AppMode,
+			&environ.AppMode,
 			validation.In("test", "testing", "dev", "develop", "prod", "production"),
 		),
 		validation.Field(
-			&e.AppPort,
+			&environ.AppPort,
 			is.Digit,
 		),
 		validation.Field(
-			&e.AppTLSPort,
+			&environ.AppTLSPort,
 			is.Digit,
 		),
 		validation.Field(
-			&e.AuthJWTSecretKey,
+			&environ.AuthJWTSecretKey,
 			validation.Required,
 		),
 		validation.Field(
-			&e.DBUser,
+			&environ.DBUser,
 			validation.Required,
 		),
 		validation.Field(
-			&e.DBPass,
+			&environ.DBPass,
 			validation.Required,
 		),
 		validation.Field(
-			&e.DBName,
+			&environ.DBName,
 			validation.Required,
 		),
 	)
 
-	if len(e.CORSAllowedOrigins) > 0 {
-		var allowAllOrigins bool
-		for _, origin := range e.CORSAllowedOrigins {
+	if len(environ.CORSAllowedOrigins) != 0 {
+		var allowedAllOrigins bool
+		for _, origin := range environ.CORSAllowedOrigins {
 			if origin == "*" {
-				allowAllOrigins = true
+				allowedAllOrigins = true
 				break
 			}
 		}
 
-		if allowAllOrigins {
-			e.CORSAllowedOrigins = make([]string, 0)
+		if allowedAllOrigins {
+			environ.CORSAllowedOrigins = []string{}
 		}
 	}
 
-	if e.TLSCertFile != "" && e.TLSKeyFile != "" {
-		e.TLSEnabled = true
-	}
+	environ.TLSEnabled = environ.TLSCertFile != "" && environ.TLSKeyFile != ""
 
-	return &e, err
+	environ.IsDevelopment = environ.AppMode == "dev" || environ.AppMode == "develop" ||
+		environ.AppMode == "test" || environ.AppMode == "testing"
+
+	return &environ, err
 }

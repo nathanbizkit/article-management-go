@@ -22,7 +22,7 @@ func NewUserStore(db *sql.DB) *UserStore {
 
 // GetByID finds a user by id
 func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
-	var u model.User
+	var user model.User
 
 	queryString := `SELECT 
 		id, username, email, password, name, bio, image, created_at, updated_at 
@@ -30,15 +30,15 @@ func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 		WHERE id = $1`
 	err := s.db.QueryRowContext(ctx, queryString, id).
 		Scan(
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
+			&user.ID,
+			&user.Username,
+			&user.Email,
+			&user.Password,
+			&user.Name,
+			&user.Bio,
+			&user.Image,
+			&user.CreatedAt,
+			&user.UpdatedAt,
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -47,12 +47,12 @@ func (s *UserStore) GetByID(ctx context.Context, id uint) (*model.User, error) {
 		return nil, err
 	}
 
-	return &u, nil
+	return &user, nil
 }
 
 // GetByEmail finds a user by email
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, error) {
-	var u model.User
+	var user model.User
 
 	queryString := `SELECT 
 		id, username, email, password, name, bio, image, created_at, updated_at 
@@ -60,15 +60,15 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, 
 		WHERE email = $1`
 	err := s.db.QueryRowContext(ctx, queryString, email).
 		Scan(
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
+			&user.ID,
+			&user.Username,
+			&user.Email,
+			&user.Password,
+			&user.Name,
+			&user.Bio,
+			&user.Image,
+			&user.CreatedAt,
+			&user.UpdatedAt,
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -77,12 +77,12 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*model.User, 
 		return nil, err
 	}
 
-	return &u, nil
+	return &user, nil
 }
 
 // GetByUsername finds a user by username
 func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.User, error) {
-	var u model.User
+	var user model.User
 
 	queryString := `SELECT 
 		id, username, email, password, name, bio, image, created_at, updated_at 
@@ -90,15 +90,15 @@ func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.
 		WHERE username = $1`
 	err := s.db.QueryRowContext(ctx, queryString, username).
 		Scan(
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
+			&user.ID,
+			&user.Username,
+			&user.Email,
+			&user.Password,
+			&user.Name,
+			&user.Bio,
+			&user.Image,
+			&user.CreatedAt,
+			&user.UpdatedAt,
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -107,12 +107,12 @@ func (s *UserStore) GetByUsername(ctx context.Context, username string) (*model.
 		return nil, err
 	}
 
-	return &u, nil
+	return &user, nil
 }
 
 // Create creates a user and returns the newly created user
 func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, error) {
-	var u model.User
+	var user model.User
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `INSERT INTO article_management.users 
@@ -120,15 +120,15 @@ func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, err
 			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image).
 			Scan(
-				&u.ID,
-				&u.Username,
-				&u.Email,
-				&u.Password,
-				&u.Name,
-				&u.Bio,
-				&u.Image,
-				&u.CreatedAt,
-				&u.UpdatedAt,
+				&user.ID,
+				&user.Username,
+				&user.Email,
+				&user.Password,
+				&user.Name,
+				&user.Bio,
+				&user.Image,
+				&user.CreatedAt,
+				&user.UpdatedAt,
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -140,12 +140,12 @@ func (s *UserStore) Create(ctx context.Context, m *model.User) (*model.User, err
 		return nil
 	})
 
-	return &u, err
+	return &user, err
 }
 
 // Update updates a user (for username, email, password, name, bio, image)
 func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, error) {
-	var u model.User
+	var user model.User
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `UPDATE article_management.users 
@@ -154,15 +154,15 @@ func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, err
 			RETURNING id, username, email, password, name, bio, image, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Username, m.Email, m.Password, m.Name, m.Bio, m.Image, m.ID).
 			Scan(
-				&u.ID,
-				&u.Username,
-				&u.Email,
-				&u.Password,
-				&u.Name,
-				&u.Bio,
-				&u.Image,
-				&u.CreatedAt,
-				&u.UpdatedAt,
+				&user.ID,
+				&user.Username,
+				&user.Email,
+				&user.Password,
+				&user.Name,
+				&user.Bio,
+				&user.Image,
+				&user.CreatedAt,
+				&user.UpdatedAt,
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -174,7 +174,7 @@ func (s *UserStore) Update(ctx context.Context, m *model.User) (*model.User, err
 		return nil
 	})
 
-	return &u, err
+	return &user, err
 }
 
 // IsFollowing returns wheter user A follows user B
@@ -193,7 +193,7 @@ func (s *UserStore) IsFollowing(ctx context.Context, a *model.User, b *model.Use
 		return false, err
 	}
 
-	return count > 0, nil
+	return count != 0, nil
 }
 
 // Follow creates a follow relationship from user A to user B
@@ -227,7 +227,7 @@ func (s *UserStore) GetFollowingUserIDs(ctx context.Context, m *model.User) ([]u
 	}
 	defer rows.Close()
 
-	ids := make([]uint, 0)
+	ids := []uint{}
 	for rows.Next() {
 		var id uint
 

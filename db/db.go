@@ -11,16 +11,16 @@ import (
 )
 
 // New returns a database pool connection
-func New(e *env.ENV) (*sql.DB, error) {
+func New(environ *env.ENV) (*sql.DB, error) {
 	psqlInfo := fmt.Sprintf(
 		"user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
-		e.DBUser, e.DBPass, e.DBHost, e.DBPort, e.DBName,
+		environ.DBUser, environ.DBPass, environ.DBHost, environ.DBPort, environ.DBName,
 	)
 
-	var d *sql.DB
+	var db *sql.DB
 	var err error
 	for i := 0; i < 10; i++ {
-		d, err = sql.Open("postgres", psqlInfo)
+		db, err = sql.Open("postgres", psqlInfo)
 		if err == nil {
 			break
 		}
@@ -31,12 +31,12 @@ func New(e *env.ENV) (*sql.DB, error) {
 		return nil, err
 	}
 
-	err = d.Ping()
+	err = db.Ping()
 	if err != nil {
 		return nil, err
 	}
 
-	return d, nil
+	return db, nil
 }
 
 // RunInTx wraps database operations with a transaction

@@ -31,61 +31,61 @@ func main() {
 
 	flag.Parse()
 
-	e, err := env.Parse(envFile)
+	environ, err := env.Parse(envFile)
 	if err != nil {
 		l.Fatal().Err(err).Msg("failed to load env")
 	}
 
 	l.Info().Msg("succeeded to load env")
 
-	d, err := db.New(e)
+	dbPool, err := db.New(environ)
 	if err != nil {
 		l.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
-	l.Info().Str("name", "postgres").Str("database", e.DBName).Msg("succeeded to connect to database")
+	l.Info().Str("name", "postgres").Str("database", environ.DBName).Msg("succeeded to connect to database")
 
-	if e.AppMode == "production" || e.AppMode == "prod" {
+	if environ.AppMode == "production" || environ.AppMode == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	l.Info().Str("mode", e.AppMode).Msgf("setting app to %s mode", e.AppMode)
+	l.Info().Str("mode", environ.AppMode).Msgf("setting app to %s mode", environ.AppMode)
 	l.Info().Str("mode", gin.Mode()).Msgf("gin is in %s mode", gin.Mode())
 
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
 
 	router.Use(gzip.DefaultHandler().Gin)
-	router.Use(middleware.CORS(e))
+	router.Use(middleware.CORS(environ))
 
-	if e.TLSEnabled {
-		router.Use(middleware.Secure(e))
+	if environ.TLSEnabled {
+		router.Use(middleware.Secure(environ))
 	}
 
-	auth := auth.New(e)
-	us := store.NewUserStore(d)
-	as := store.NewArticleStore(d)
-	h := handler.New(&l, e, auth, us, as)
+	auth := auth.New(environ)
+	us := store.NewUserStore(dbPool)
+	as := store.NewArticleStore(dbPool)
+	h := handler.New(&l, environ, auth, us, as)
 
 	handler.Route(router, h)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	l.Info().Str("port", e.AppPort).Msg("starting server...")
+	l.Info().Str("port", environ.AppPort).Msg("starting server...")
 
 	go func() {
-		err := router.Run(fmt.Sprintf(":%s", e.AppPort))
+		err := router.Run(fmt.Sprintf(":%s", environ.AppPort))
 		if err != nil && err != http.ErrServerClosed {
 			l.Fatal().Err(err).Msg("failed to listen and serve")
 		}
 	}()
 
-	if e.TLSEnabled {
-		l.Info().Str("port", e.AppTLSPort).Msg("also starting tls server...")
+	if environ.TLSEnabled {
+		l.Info().Str("port", environ.AppTLSPort).Msg("also starting tls server...")
 
 		go func() {
-			err := router.RunTLS(fmt.Sprintf(":%s", e.AppTLSPort), e.TLSCertFile, e.TLSKeyFile)
+			err := router.RunTLS(fmt.Sprintf(":%s", environ.AppTLSPort), environ.TLSCertFile, environ.TLSKeyFile)
 			if err != nil && err != http.ErrServerClosed {
 				l.Fatal().Err(err).Msg("failed to listen and serve")
 			}
@@ -100,7 +100,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err = d.Close()
+	err = dbPool.Close()
 	if err != nil {
 		l.Fatal().Err(err).Msg("failed to close database connection")
 	}

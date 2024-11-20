@@ -11,16 +11,16 @@ import (
 
 // GetCurrentUserOrAbort returns current auth user or abort
 func (h *Handler) GetCurrentUserOrAbort(ctx *gin.Context) *model.User {
-	id := h.auth.GetContextUserID(ctx)
+	id := h.authen.GetContextUserID(ctx)
 
-	u, err := h.us.GetByID(ctx.Request.Context(), id)
+	user, err := h.us.GetByID(ctx.Request.Context(), id)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("current user (id=%d) not found", id))
 		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "current user not found"})
 		return nil
 	}
 
-	return u
+	return user
 }
 
 // GetParamIDOrAbort returns param value as uint id from url parameters or abort
@@ -52,7 +52,7 @@ func (h *Handler) GetPaginationQuery(ctx *gin.Context, defaultLimit, defaultOffs
 	queryLimit := ctx.Query("limit")
 	if queryLimit != "" {
 		l, err := strconv.Atoi(queryLimit)
-		if err == nil && l > 0 {
+		if err == nil && l != 0 {
 			limit = int64(l)
 		}
 	}
@@ -60,7 +60,7 @@ func (h *Handler) GetPaginationQuery(ctx *gin.Context, defaultLimit, defaultOffs
 	queryOffset := ctx.Query("offset")
 	if queryOffset != "" {
 		o, err := strconv.Atoi(queryOffset)
-		if err == nil && o > 0 {
+		if err == nil && o != 0 {
 			offset = int64(o)
 		}
 	}

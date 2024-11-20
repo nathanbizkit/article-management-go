@@ -26,8 +26,8 @@ func NewArticleStore(db *sql.DB) *ArticleStore {
 
 // GetByID find an article by id
 func (s *ArticleStore) GetByID(ctx context.Context, id uint) (*model.Article, error) {
-	var a model.Article
-	var u model.User
+	var article model.Article
+	var author model.User
 
 	queryString := `SELECT 
 		a.id, a.title, a.description, a.body, a.user_id, a.favorites_count, a.created_at, a.updated_at, 
@@ -37,24 +37,24 @@ func (s *ArticleStore) GetByID(ctx context.Context, id uint) (*model.Article, er
 		WHERE a.id = $1`
 	err := s.db.QueryRowContext(ctx, queryString, id).
 		Scan(
-			&a.ID,
-			&a.Title,
-			&a.Description,
-			&a.Body,
-			&a.UserID,
-			&a.FavoritesCount,
-			&a.CreatedAt,
-			&a.UpdatedAt,
+			&article.ID,
+			&article.Title,
+			&article.Description,
+			&article.Body,
+			&article.UserID,
+			&article.FavoritesCount,
+			&article.CreatedAt,
+			&article.UpdatedAt,
 
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
+			&author.ID,
+			&author.Username,
+			&author.Email,
+			&author.Password,
+			&author.Name,
+			&author.Bio,
+			&author.Image,
+			&author.CreatedAt,
+			&author.UpdatedAt,
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -63,20 +63,20 @@ func (s *ArticleStore) GetByID(ctx context.Context, id uint) (*model.Article, er
 		return nil, err
 	}
 
-	a.Author = u
+	article.Author = author
 
-	tags, err := getArticleTags(s.db, ctx, &a)
+	tags, err := getArticleTags(s.db, ctx, &article)
 	if err != nil {
 		return nil, err
 	}
 
-	a.Tags = tags
-	return &a, nil
+	article.Tags = tags
+	return &article, nil
 }
 
 // Create creates an article and returns the newly created article
 func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Article, error) {
-	var a model.Article
+	var article model.Article
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `INSERT INTO article_management.articles 
@@ -84,14 +84,14 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 			RETURNING id, title, description, body, user_id, favorites_count, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Title, m.Description, m.Body, m.UserID).
 			Scan(
-				&a.ID,
-				&a.Title,
-				&a.Description,
-				&a.Body,
-				&a.UserID,
-				&a.FavoritesCount,
-				&a.CreatedAt,
-				&a.UpdatedAt,
+				&article.ID,
+				&article.Title,
+				&article.Description,
+				&article.Body,
+				&article.UserID,
+				&article.FavoritesCount,
+				&article.CreatedAt,
+				&article.UpdatedAt,
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -100,14 +100,14 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 			return err
 		}
 
-		u, err := getArticleAuthor(s.db, ctx, &a)
+		author, err := getArticleAuthor(s.db, ctx, &article)
 		if err != nil {
 			return err
 		}
 
-		a.Author = *u
+		article.Author = *author
 
-		if len(m.Tags) > 0 {
+		if len(m.Tags) != 0 {
 			// create temporary tags table
 			queryString = `CREATE TEMPORARY TABLE tags_staging 
 				(LIKE article_management.tags INCLUDING ALL) ON COMMIT DROP`
@@ -142,7 +142,7 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 			}
 			defer rows.Close()
 
-			tags := make([]model.Tag, 0)
+			tags := []model.Tag{}
 			for rows.Next() {
 				var tag model.Tag
 
@@ -161,7 +161,7 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 			for _, tag := range tags {
 				valueStr := fmt.Sprintf("($%d, $%d)", valueCount, valueCount+1)
 				valueStrings = append(valueStrings, valueStr)
-				valueArgs = append(valueArgs, a.ID)
+				valueArgs = append(valueArgs, article.ID)
 				valueArgs = append(valueArgs, tag.ID)
 				valueCount += 2
 			}
@@ -181,18 +181,18 @@ func (s *ArticleStore) Create(ctx context.Context, m *model.Article) (*model.Art
 				return err
 			}
 
-			a.Tags = tags
+			article.Tags = tags
 		}
 
 		return nil
 	})
 
-	return &a, err
+	return &article, err
 }
 
 // Update updates an article (for title, description, body)
 func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Article, error) {
-	var a model.Article
+	var article model.Article
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `UPDATE article_management.articles 
@@ -201,14 +201,14 @@ func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Art
 			RETURNING id, title, description, body, user_id, favorites_count, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Title, m.Description, m.Body, m.ID).
 			Scan(
-				&a.ID,
-				&a.Title,
-				&a.Description,
-				&a.Body,
-				&a.UserID,
-				&a.FavoritesCount,
-				&a.CreatedAt,
-				&a.UpdatedAt,
+				&article.ID,
+				&article.Title,
+				&article.Description,
+				&article.Body,
+				&article.UserID,
+				&article.FavoritesCount,
+				&article.CreatedAt,
+				&article.UpdatedAt,
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -217,27 +217,27 @@ func (s *ArticleStore) Update(ctx context.Context, m *model.Article) (*model.Art
 			return err
 		}
 
-		u, err := getArticleAuthor(s.db, ctx, &a)
+		author, err := getArticleAuthor(s.db, ctx, &article)
 		if err != nil {
 			return err
 		}
 
-		a.Author = *u
+		article.Author = *author
 
-		tags, err := getArticleTags(s.db, ctx, &a)
+		tags, err := getArticleTags(s.db, ctx, &article)
 		if err != nil {
 			return err
 		}
 
-		a.Tags = tags
+		article.Tags = tags
 		return nil
 	})
 
-	return &a, err
+	return &article, err
 }
 
 // GetArticles gets global articles
-func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, favoritedBy *model.User, limit, offset int64) ([]model.Article, error) {
+func (s *ArticleStore) GetArticles(ctx context.Context, tagName, username string, favoritedBy *model.User, limit, offset int64) ([]model.Article, error) {
 	var q bytes.Buffer
 	q.WriteString(`SELECT 
 		a.id, a.title, a.description, a.body, a.user_id, a.favorites_count, a.created_at, a.updated_at, 
@@ -246,8 +246,8 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		INNER JOIN article_management.users u ON u.id = a.user_id `)
 
 	condCount := 1
-	condStrings := make([]string, 0)
-	condArgs := make([]interface{}, 0)
+	condStrings := []string{}
+	condArgs := []interface{}{}
 
 	if username != "" {
 		condStrings = append(condStrings, fmt.Sprintf("u.username = $%d", condCount))
@@ -255,12 +255,12 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		condCount += 1
 	}
 
-	if tag != "" {
+	if tagName != "" {
 		q.WriteString(` INNER JOIN article_management.article_tags at ON at.article_id = a.id 
 			INNER JOIN article_management.tags t ON t.id = at.tag_id `)
 
 		condStrings = append(condStrings, fmt.Sprintf("t.name = $%d", condCount))
-		condArgs = append(condArgs, tag)
+		condArgs = append(condArgs, tagName)
 		condCount += 1
 	}
 
@@ -274,7 +274,7 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		}
 		defer rows.Close()
 
-		ids := make([]uint, 0)
+		ids := []uint{}
 		for rows.Next() {
 			var id uint
 
@@ -291,7 +291,7 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 		condCount += 1
 	}
 
-	if len(condStrings) > 0 {
+	if len(condStrings) != 0 {
 		q.WriteString(" WHERE ")
 		q.WriteString(strings.Join(condStrings, " AND "))
 	}
@@ -308,54 +308,52 @@ func (s *ArticleStore) GetArticles(ctx context.Context, tag, username string, fa
 	}
 	defer rows.Close()
 
-	as := make([]model.Article, 0)
+	articles := []model.Article{}
 	for rows.Next() {
-		var a model.Article
-		var u model.User
+		var article model.Article
+		var author model.User
 
 		err = rows.Scan(
-			&a.ID,
-			&a.Title,
-			&a.Description,
-			&a.Body,
-			&a.UserID,
-			&a.FavoritesCount,
-			&a.CreatedAt,
-			&a.UpdatedAt,
+			&article.ID,
+			&article.Title,
+			&article.Description,
+			&article.Body,
+			&article.UserID,
+			&article.FavoritesCount,
+			&article.CreatedAt,
+			&article.UpdatedAt,
 
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
+			&author.ID,
+			&author.Username,
+			&author.Email,
+			&author.Password,
+			&author.Name,
+			&author.Bio,
+			&author.Image,
+			&author.CreatedAt,
+			&author.UpdatedAt,
 		)
 		if err != nil {
 			return []model.Article{}, err
 		}
 
-		a.Author = u
-		as = append(as, a)
+		article.Author = author
+		articles = append(articles, article)
 	}
 
-	tagsMap, err := getArticlesTags(s.db, ctx, as)
+	tagsMap, err := getArticlesTags(s.db, ctx, articles)
 	if err != nil {
 		return []model.Article{}, err
 	}
 
-	for i, a := range as {
-		a.Tags = make([]model.Tag, 0)
-
-		if tags, exists := tagsMap[a.ID]; exists {
-			a.Tags = append(a.Tags, tags...)
-			as[i] = a
+	for i, article := range articles {
+		if tags, exists := tagsMap[article.ID]; exists {
+			article.Tags = append(article.Tags, tags...)
+			articles[i] = article
 		}
 	}
 
-	return as, nil
+	return articles, nil
 }
 
 // GetFeedArticles gets following users' articles
@@ -373,54 +371,52 @@ func (s *ArticleStore) GetFeedArticles(ctx context.Context, userIDs []uint, limi
 		return []model.Article{}, err
 	}
 
-	as := make([]model.Article, 0)
+	articles := []model.Article{}
 	for rows.Next() {
-		var a model.Article
-		var u model.User
+		var article model.Article
+		var author model.User
 
 		err = rows.Scan(
-			&a.ID,
-			&a.Title,
-			&a.Description,
-			&a.Body,
-			&a.UserID,
-			&a.FavoritesCount,
-			&a.CreatedAt,
-			&a.UpdatedAt,
+			&article.ID,
+			&article.Title,
+			&article.Description,
+			&article.Body,
+			&article.UserID,
+			&article.FavoritesCount,
+			&article.CreatedAt,
+			&article.UpdatedAt,
 
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
+			&author.ID,
+			&author.Username,
+			&author.Email,
+			&author.Password,
+			&author.Name,
+			&author.Bio,
+			&author.Image,
+			&author.CreatedAt,
+			&author.UpdatedAt,
 		)
 		if err != nil {
 			return []model.Article{}, err
 		}
 
-		a.Author = u
-		as = append(as, a)
+		article.Author = author
+		articles = append(articles, article)
 	}
 
-	tagsMap, err := getArticlesTags(s.db, ctx, as)
+	tagsMap, err := getArticlesTags(s.db, ctx, articles)
 	if err != nil {
 		return []model.Article{}, err
 	}
 
-	for i, a := range as {
-		a.Tags = make([]model.Tag, 0)
-
-		if tags, exists := tagsMap[a.ID]; exists {
-			a.Tags = append(a.Tags, tags...)
-			as[i] = a
+	for i, article := range articles {
+		if tags, exists := tagsMap[article.ID]; exists {
+			article.Tags = append(article.Tags, tags...)
+			articles[i] = article
 		}
 	}
 
-	return as, nil
+	return articles, nil
 }
 
 // Delete deletes an article
@@ -433,8 +429,8 @@ func (s *ArticleStore) Delete(ctx context.Context, m *model.Article) error {
 }
 
 // IsFavorited checks whether the article is favorited by the user
-func (s *ArticleStore) IsFavorited(ctx context.Context, a *model.Article, u *model.User) (bool, error) {
-	if a == nil || u == nil {
+func (s *ArticleStore) IsFavorited(ctx context.Context, article *model.Article, user *model.User) (bool, error) {
+	if article == nil || user == nil {
 		return false, nil
 	}
 
@@ -443,20 +439,20 @@ func (s *ArticleStore) IsFavorited(ctx context.Context, a *model.Article, u *mod
 	queryString := `SELECT COUNT(article_id) 
 		FROM article_management.favorite_articles 
 		WHERE article_id = $1 AND user_id = $2`
-	err := s.db.QueryRowContext(ctx, queryString, a.ID, u.ID).Scan(&count)
+	err := s.db.QueryRowContext(ctx, queryString, article.ID, user.ID).Scan(&count)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return false, err
 	}
 
-	return count > 0, nil
+	return count != 0, nil
 }
 
 // AddFavorite favorites an article
-func (s *ArticleStore) AddFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(favoritesCount int64, updatedAt time.Time)) error {
+func (s *ArticleStore) AddFavorite(ctx context.Context, article *model.Article, user *model.User, updateFn func(favoritesCount int64, updatedAt time.Time)) error {
 	return db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `INSERT INTO article_management.favorite_articles 
 			(article_id, user_id) VALUES ($1, $2)`
-		_, err := tx.ExecContext(ctx, queryString, a.ID, u.ID)
+		_, err := tx.ExecContext(ctx, queryString, article.ID, user.ID)
 		if err != nil {
 			return err
 		}
@@ -468,22 +464,22 @@ func (s *ArticleStore) AddFavorite(ctx context.Context, a *model.Article, u *mod
 			SET favorites_count = favorites_count + $1, updated_at = DEFAULT 
 			WHERE id = $2 
 			RETURNING favorites_count, updated_at`
-		err = tx.QueryRowContext(ctx, queryString, 1, a.ID).Scan(&favoritesCount, &updatedAt)
+		err = tx.QueryRowContext(ctx, queryString, 1, article.ID).Scan(&favoritesCount, &updatedAt)
 		if err != nil {
 			return err
 		}
 
-		updateFunc(favoritesCount, updatedAt)
+		updateFn(favoritesCount, updatedAt)
 		return nil
 	})
 }
 
 // DeleteFavorite unfavorites an article
-func (s *ArticleStore) DeleteFavorite(ctx context.Context, a *model.Article, u *model.User, updateFunc func(favoritesCount int64, updatedAt time.Time)) error {
+func (s *ArticleStore) DeleteFavorite(ctx context.Context, article *model.Article, user *model.User, updateFn func(favoritesCount int64, updatedAt time.Time)) error {
 	return db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `DELETE FROM article_management.favorite_articles 
 			WHERE article_id = $1 AND user_id = $2`
-		_, err := tx.ExecContext(ctx, queryString, a.ID, u.ID)
+		_, err := tx.ExecContext(ctx, queryString, article.ID, user.ID)
 		if err != nil {
 			return err
 		}
@@ -495,12 +491,12 @@ func (s *ArticleStore) DeleteFavorite(ctx context.Context, a *model.Article, u *
 			SET favorites_count = GREATEST(0, favorites_count - $1), updated_at = DEFAULT 
 			WHERE id = $2 
 			RETURNING favorites_count, updated_at`
-		err = tx.QueryRowContext(ctx, queryString, 1, a.ID).Scan(&favoritesCount, &updatedAt)
+		err = tx.QueryRowContext(ctx, queryString, 1, article.ID).Scan(&favoritesCount, &updatedAt)
 		if err != nil {
 			return err
 		}
 
-		updateFunc(favoritesCount, updatedAt)
+		updateFn(favoritesCount, updatedAt)
 		return nil
 	})
 }
@@ -515,7 +511,7 @@ func (s *ArticleStore) GetTags(ctx context.Context) ([]model.Tag, error) {
 	}
 	defer rows.Close()
 
-	tags := make([]model.Tag, 0)
+	tags := []model.Tag{}
 	for rows.Next() {
 		var tag model.Tag
 
@@ -532,7 +528,7 @@ func (s *ArticleStore) GetTags(ctx context.Context) ([]model.Tag, error) {
 
 // CreateComment creates a comment of the article
 func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*model.Comment, error) {
-	var c model.Comment
+	var comment model.Comment
 
 	err := db.RunInTx(s.db, func(tx *sql.Tx) error {
 		queryString := `INSERT INTO article_management.comments 
@@ -540,12 +536,12 @@ func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*mo
 			RETURNING id, body, user_id, article_id, created_at, updated_at`
 		err := tx.QueryRowContext(ctx, queryString, m.Body, m.UserID, m.ArticleID).
 			Scan(
-				&c.ID,
-				&c.Body,
-				&c.UserID,
-				&c.ArticleID,
-				&c.CreatedAt,
-				&c.UpdatedAt,
+				&comment.ID,
+				&comment.Body,
+				&comment.UserID,
+				&comment.ArticleID,
+				&comment.CreatedAt,
+				&comment.UpdatedAt,
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -554,7 +550,7 @@ func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*mo
 			return err
 		}
 
-		var u model.User
+		var author model.User
 
 		queryString = `SELECT 
 			id, username, email, password, name, bio, image, created_at, updated_at 
@@ -562,15 +558,15 @@ func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*mo
 			WHERE id = $1`
 		err = tx.QueryRowContext(ctx, queryString, m.UserID).
 			Scan(
-				&u.ID,
-				&u.Username,
-				&u.Email,
-				&u.Password,
-				&u.Name,
-				&u.Bio,
-				&u.Image,
-				&u.CreatedAt,
-				&u.UpdatedAt,
+				&author.ID,
+				&author.Username,
+				&author.Email,
+				&author.Password,
+				&author.Name,
+				&author.Bio,
+				&author.Image,
+				&author.CreatedAt,
+				&author.UpdatedAt,
 			)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -579,11 +575,11 @@ func (s *ArticleStore) CreateComment(ctx context.Context, m *model.Comment) (*mo
 			return err
 		}
 
-		c.Author = u
+		comment.Author = author
 		return nil
 	})
 
-	return &c, err
+	return &comment, err
 }
 
 // GetComments gets comments of the article
@@ -600,44 +596,44 @@ func (s *ArticleStore) GetComments(ctx context.Context, m *model.Article) ([]mod
 		return []model.Comment{}, err
 	}
 
-	cs := make([]model.Comment, 0)
+	comments := []model.Comment{}
 	for rows.Next() {
-		var c model.Comment
-		var u model.User
+		var comment model.Comment
+		var author model.User
 
 		err = rows.Scan(
-			&c.ID,
-			&c.Body,
-			&c.UserID,
-			&c.ArticleID,
-			&c.CreatedAt,
-			&c.UpdatedAt,
+			&comment.ID,
+			&comment.Body,
+			&comment.UserID,
+			&comment.ArticleID,
+			&comment.CreatedAt,
+			&comment.UpdatedAt,
 
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
+			&author.ID,
+			&author.Username,
+			&author.Email,
+			&author.Password,
+			&author.Name,
+			&author.Bio,
+			&author.Image,
+			&author.CreatedAt,
+			&author.UpdatedAt,
 		)
 		if err != nil {
 			return []model.Comment{}, err
 		}
 
-		c.Author = u
-		cs = append(cs, c)
+		comment.Author = author
+		comments = append(comments, comment)
 	}
 
-	return cs, nil
+	return comments, nil
 }
 
 // GetCommentByID finds a comment from id
 func (s *ArticleStore) GetCommentByID(ctx context.Context, id uint) (*model.Comment, error) {
-	var c model.Comment
-	var u model.User
+	var comment model.Comment
+	var author model.User
 
 	queryString := `SELECT 
 		c.id, c.body, c.user_id, c.article_id, c.created_at, c.updated_at, 
@@ -647,22 +643,22 @@ func (s *ArticleStore) GetCommentByID(ctx context.Context, id uint) (*model.Comm
 		WHERE c.id = $1`
 	err := s.db.QueryRowContext(ctx, queryString, id).
 		Scan(
-			&c.ID,
-			&c.Body,
-			&c.UserID,
-			&c.ArticleID,
-			&c.CreatedAt,
-			&c.UpdatedAt,
+			&comment.ID,
+			&comment.Body,
+			&comment.UserID,
+			&comment.ArticleID,
+			&comment.CreatedAt,
+			&comment.UpdatedAt,
 
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
+			&author.ID,
+			&author.Username,
+			&author.Email,
+			&author.Password,
+			&author.Name,
+			&author.Bio,
+			&author.Image,
+			&author.CreatedAt,
+			&author.UpdatedAt,
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -671,8 +667,8 @@ func (s *ArticleStore) GetCommentByID(ctx context.Context, id uint) (*model.Comm
 		return nil, err
 	}
 
-	c.Author = u
-	return &c, nil
+	comment.Author = author
+	return &comment, nil
 }
 
 // DeleteComment deletes a comment
@@ -684,24 +680,24 @@ func (s *ArticleStore) DeleteComment(ctx context.Context, m *model.Comment) erro
 	})
 }
 
-func getArticleAuthor(db *sql.DB, ctx context.Context, a *model.Article) (*model.User, error) {
-	var u model.User
+func getArticleAuthor(db *sql.DB, ctx context.Context, article *model.Article) (*model.User, error) {
+	var author model.User
 
 	queryString := `SELECT 
 		id, username, email, password, name, bio, image, created_at, updated_at 
 		FROM article_management.users 
 		WHERE id = $1`
-	err := db.QueryRowContext(ctx, queryString, a.UserID).
+	err := db.QueryRowContext(ctx, queryString, article.UserID).
 		Scan(
-			&u.ID,
-			&u.Username,
-			&u.Email,
-			&u.Password,
-			&u.Name,
-			&u.Bio,
-			&u.Image,
-			&u.CreatedAt,
-			&u.UpdatedAt,
+			&author.ID,
+			&author.Username,
+			&author.Email,
+			&author.Password,
+			&author.Name,
+			&author.Bio,
+			&author.Image,
+			&author.CreatedAt,
+			&author.UpdatedAt,
 		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -710,22 +706,22 @@ func getArticleAuthor(db *sql.DB, ctx context.Context, a *model.Article) (*model
 		return nil, err
 	}
 
-	return &u, nil
+	return &author, nil
 }
 
-func getArticleTags(db *sql.DB, ctx context.Context, a *model.Article) ([]model.Tag, error) {
+func getArticleTags(db *sql.DB, ctx context.Context, article *model.Article) ([]model.Tag, error) {
 	queryString := `SELECT 
 		t.id, t.name, t.created_at, t.updated_at 
 		FROM article_management.tags t 
 		INNER JOIN article_management.article_tags at ON at.tag_id = t.id 
 		WHERE at.article_id = $1`
-	rows, err := db.QueryContext(ctx, queryString, a.ID)
+	rows, err := db.QueryContext(ctx, queryString, article.ID)
 	if err != nil {
 		return []model.Tag{}, err
 	}
 	defer rows.Close()
 
-	tags := make([]model.Tag, 0)
+	tags := []model.Tag{}
 	for rows.Next() {
 		var tag model.Tag
 
@@ -740,14 +736,14 @@ func getArticleTags(db *sql.DB, ctx context.Context, a *model.Article) ([]model.
 	return tags, nil
 }
 
-func getArticlesTags(db *sql.DB, ctx context.Context, as []model.Article) (map[uint][]model.Tag, error) {
-	if len(as) == 0 {
-		return make(map[uint][]model.Tag), nil
+func getArticlesTags(db *sql.DB, ctx context.Context, articles []model.Article) (map[uint][]model.Tag, error) {
+	if len(articles) == 0 {
+		return map[uint][]model.Tag{}, nil
 	}
 
-	ids := make([]uint, 0, len(as))
-	for _, a := range as {
-		ids = append(ids, a.ID)
+	ids := make([]uint, 0, len(articles))
+	for _, article := range articles {
+		ids = append(ids, article.ID)
 	}
 
 	queryString := `SELECT 
@@ -761,7 +757,7 @@ func getArticlesTags(db *sql.DB, ctx context.Context, as []model.Article) (map[u
 	}
 	defer rows.Close()
 
-	tagsMap := make(map[uint][]model.Tag)
+	tagsMap := map[uint][]model.Tag{}
 	for rows.Next() {
 		var articleID uint
 		var tag model.Tag
@@ -769,10 +765,6 @@ func getArticlesTags(db *sql.DB, ctx context.Context, as []model.Article) (map[u
 		err = rows.Scan(&articleID, &tag.ID, &tag.Name, &tag.CreatedAt, &tag.UpdatedAt)
 		if err != nil {
 			return nil, err
-		}
-
-		if _, exists := tagsMap[articleID]; !exists {
-			tagsMap[articleID] = make([]model.Tag, 0)
 		}
 
 		tagsMap[articleID] = append(tagsMap[articleID], tag)
