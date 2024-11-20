@@ -1,0 +1,868 @@
+openapi: 3.0.3
+info:
+  title: Article Management System
+  description: >-
+    Collection of tests for the article management system API.
+
+
+    [https://github.com/nathanbizkit/article-management](https://github.com/nathanbizkit/article-management)
+  version: 1.0.0
+  contact: {}
+servers:
+  - url: http://localhost:8000/api
+  - url: https://localhost:8443/api
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: session
+    refreshAuth:
+      type: apiKey
+      in: cookie
+      name: refreshToken
+security:
+  - sessionAuth: []
+paths:
+  /register:
+    post:
+      tags:
+        - Auth
+      summary: Register
+      description: Registers a new user and returns authentication in cookie.
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                name:
+                  type: string
+      responses:
+        "200":
+          description: >
+            Successfully registered the new user.
+            The authentication is returned in cookie (session in cookie named `session` and refresh token in cookie named `refreshToken`). You need to include these two cookies in subsequent private requests.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: session=abcde12345; Path=/; HttpOnly; refreshToken=abcde12345; Path=/; HttpOnly
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: Login
+      description: Logs in and returns authentication in cookie.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: >
+            Successfully logged in the user.
+            The authentication is returned in cookie (session in cookie named `session` and refresh token in cookie named `refreshToken`). You need to include these two cookies in subsequent private requests.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: session=abcde12345; Path=/; HttpOnly; refreshToken=abcde12345; Path=/; HttpOnly
+  /refresh_token:
+    post:
+      tags:
+        - Auth
+      summary: Refresh Token
+      description: Refreshes session with authentication in request headers and returns a new authentication in cookie.
+      operationId: refreshToken
+      security:
+        - refreshAuth: []
+      responses:
+        "200":
+          description: >
+            Successfully refreshed authentication.
+            The authentication is returned in cookie (session in cookie named `session` and refresh token in cookie named `refreshToken`). You need to include these two cookies in subsequent private requests.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: session=abcde12345; Path=/; HttpOnly; refreshToken=abcde12345; Path=/; HttpOnly
+  /me:
+    get:
+      tags:
+        - Auth
+      summary: Current User's Profile
+      description: Retrieves current user's profile.
+      operationId: me
+      responses:
+        "200":
+          description: "A profile object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  name:
+                    type: string
+                  bio:
+                    type: string
+                  image:
+                    type: string
+                    format: uri
+                  following:
+                    type: boolean
+    put:
+      tags:
+        - Auth
+      summary: Update Current User's Profile
+      description: Updates current user's profile.
+      operationId: updateMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                name:
+                  type: string
+                bio:
+                  type: string
+                image:
+                  type: string
+                  format: uri
+      responses:
+        "200":
+          description: "A profile object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  name:
+                    type: string
+                  bio:
+                    type: string
+                  image:
+                    type: string
+                    format: uri
+                  following:
+                    type: boolean
+  /profiles/{username}:
+    get:
+      tags:
+        - Profiles
+      summary: Profile by Username
+      description: Retrieves other user's profile.
+      operationId: profile
+      responses:
+        "200":
+          description: "A profile object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  name:
+                    type: string
+                  bio:
+                    type: string
+                  image:
+                    type: string
+                    format: uri
+                  following:
+                    type: boolean
+    parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+  /profiles/{username}/follow:
+    post:
+      tags:
+        - Profiles
+      summary: Follow User
+      description: Follows other user.
+      operationId: followUser
+      responses:
+        "200":
+          description: "A profile object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  name:
+                    type: string
+                  bio:
+                    type: string
+                  image:
+                    type: string
+                    format: uri
+                  following:
+                    type: boolean
+    delete:
+      tags:
+        - Profiles
+      summary: Unfollow User
+      description: Unfollow other user.
+      operationId: unfollowUser
+      responses:
+        "200":
+          description: "A profile object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  name:
+                    type: string
+                  bio:
+                    type: string
+                  image:
+                    type: string
+                    format: uri
+                  following:
+                    type: boolean
+    parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+  /articles:
+    get:
+      tags:
+        - Articles
+      summary: All Global Articles
+      description: Retrieves all global articles.
+      operationId: allGlobalArticles
+      parameters:
+        - name: tag
+          in: query
+          schema:
+            type: string
+        - name: username
+          description: Author's username
+          in: query
+          schema:
+            type: string
+        - name: favorited
+          description: Username of whom you want to see their favorited articles
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: number
+        - name: offset
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "List of article objects"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                        title:
+                          type: string
+                        description:
+                          type: string
+                        body:
+                          type: string
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                        favorited:
+                          type: boolean
+                        favorites_count:
+                          type: number
+                        author:
+                          type: object
+                          properties:
+                            username:
+                              type: string
+                            name:
+                              type: string
+                            bio:
+                              type: string
+                            image:
+                              type: string
+                              format: uri
+                            following:
+                              type: boolean
+                        created_at:
+                          type: string
+                          format: date-time
+                        updated_at:
+                          type: string
+                          format: date-time
+                  articles_count:
+                    type: number
+    post:
+      tags:
+        - Articles
+      summary: Create Article
+      description: Creates a new article.
+      operationId: createArticle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                body:
+                  type: string
+                description:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: "An article object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  body:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  favorited:
+                    type: boolean
+                  favorites_count:
+                    type: number
+                  author:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      bio:
+                        type: string
+                      image:
+                        type: string
+                        format: uri
+                      following:
+                        type: boolean
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+  /articles/feed:
+    get:
+      tags:
+        - Articles
+      summary: All Feed Articles
+      description: Retrieves all feed articles that the current user is following.
+      operationId: allFeedArticles
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: number
+        - name: offset
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "List of article objects"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                        title:
+                          type: string
+                        description:
+                          type: string
+                        body:
+                          type: string
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                        favorited:
+                          type: boolean
+                        favorites_count:
+                          type: number
+                        author:
+                          type: object
+                          properties:
+                            username:
+                              type: string
+                            name:
+                              type: string
+                            bio:
+                              type: string
+                            image:
+                              type: string
+                              format: uri
+                            following:
+                              type: boolean
+                        created_at:
+                          type: string
+                          format: date-time
+                        updated_at:
+                          type: string
+                          format: date-time
+                  articles_count:
+                    type: number
+  /articles/{slug}:
+    get:
+      tags:
+        - Articles
+      summary: Article by Slug
+      description: Retrieves an article by slug.
+      operationId: articleBySlug
+      responses:
+        "200":
+          description: "An article object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  body:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  favorited:
+                    type: boolean
+                  favorites_count:
+                    type: number
+                  author:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      bio:
+                        type: string
+                      image:
+                        type: string
+                        format: uri
+                      following:
+                        type: boolean
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+    put:
+      tags:
+        - Articles
+      summary: Update Article by Slug
+      description: Updates an article.
+      operationId: updateArticle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                body:
+                  type: string
+      responses:
+        "200":
+          description: "An article object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  body:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  favorited:
+                    type: boolean
+                  favorites_count:
+                    type: number
+                  author:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      bio:
+                        type: string
+                      image:
+                        type: string
+                        format: uri
+                      following:
+                        type: boolean
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+    delete:
+      tags:
+        - Articles
+      summary: Delete Article by Slug
+      description: Deletes an article by slug.
+      operationId: deleteArticle
+      responses:
+        "200":
+          description: "Successfully deleted the article."
+    parameters:
+      - name: slug
+        description: Article's id
+        in: path
+        required: true
+        schema:
+          type: number
+  /articles/{slug}/favorite:
+    post:
+      tags:
+        - Articles
+      summary: Favorite Article by Slug
+      description: Favorites an article by slug.
+      operationId: favoriteArticle
+      responses:
+        "200":
+          description: "An article object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  body:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  favorited:
+                    type: boolean
+                  favorites_count:
+                    type: number
+                  author:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      bio:
+                        type: string
+                      image:
+                        type: string
+                        format: uri
+                      following:
+                        type: boolean
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+    delete:
+      tags:
+        - Articles
+      summary: Unfavorite Article by Slug
+      description: Unfavorites an article by slug.
+      operationId: unfavoriteArticle
+      responses:
+        "200":
+          description: "An article object"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  body:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  favorited:
+                    type: boolean
+                  favorites_count:
+                    type: number
+                  author:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      bio:
+                        type: string
+                      image:
+                        type: string
+                        format: uri
+                      following:
+                        type: boolean
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+    parameters:
+      - name: slug
+        description: Article's id
+        in: path
+        required: true
+        schema:
+          type: number
+  /articles/{slug}/comments:
+    get:
+      tags:
+        - Comments
+      summary: All Comments of Article
+      description: Retrieves all comments of an article.
+      operationId: allCommentsOfArticle
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                        body:
+                          type: string
+                        author:
+                          type: object
+                          properties:
+                            username:
+                              type: string
+                            name:
+                              type: string
+                            bio:
+                              type: string
+                            image:
+                              type: string
+                              format: uri
+                            following:
+                              type: boolean
+                        created_at:
+                          type: string
+                          format: date-time
+                        updated_at:
+                          type: string
+                          format: date-time
+    post:
+      tags:
+        - Comments
+      summary: Create Comment for Article
+      description: Creates a comment for an article.
+      operationId: createCommentForArticle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+      responses:
+        "200":
+          description: "A comment object."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  body:
+                    type: string
+                  author:
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      bio:
+                        type: string
+                      image:
+                        type: string
+                        format: uri
+                      following:
+                        type: boolean
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+    parameters:
+      - name: slug
+        description: Article's id
+        in: path
+        required: true
+        schema:
+          type: number
+  /articles/{slug}/comments/{id}:
+    delete:
+      tags:
+        - Comments
+      summary: Delete Comment from Article
+      description: Deletes a comment from an article.
+      operationId: deleteCommentFromArticle
+      responses:
+        "200":
+          description: "Successfully deleted the comment."
+    parameters:
+      - name: slug
+        description: Article's id
+        in: path
+        required: true
+        schema:
+          type: number
+      - name: id
+        description: Comment's id
+        in: path
+        required: true
+        schema:
+          type: number
+  /tags:
+    get:
+      tags:
+        - Tags
+      summary: All Tags
+      description: Retrieves all tags.
+      operationId: allTags
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      type: string
+tags:
+  - name: Auth
+  - name: Profiles
+  - name: Articles
+  - name: Comments
+  - name: Tags
