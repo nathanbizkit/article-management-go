@@ -57,7 +57,10 @@ func main() {
 
 	router.Use(gzip.DefaultHandler().Gin)
 	router.Use(middleware.CORS(e))
-	router.Use(middleware.Secure(e))
+
+	if e.TLSEnabled {
+		router.Use(middleware.Secure(e))
+	}
 
 	auth := auth.New(e)
 	us := store.NewUserStore(d)
@@ -71,10 +74,6 @@ func main() {
 
 	l.Info().Str("port", e.AppPort).Msg("starting server...")
 
-	if e.TLSEnabled {
-		l.Info().Str("port", e.AppTLSPort).Msg("also starting tls server...")
-	}
-
 	go func() {
 		err := router.Run(fmt.Sprintf(":%s", e.AppPort))
 		if err != nil && err != http.ErrServerClosed {
@@ -82,12 +81,16 @@ func main() {
 		}
 	}()
 
-	go func() {
-		err := router.RunTLS(fmt.Sprintf(":%s", e.AppTLSPort), e.TLSCertFile, e.TLSKeyFile)
-		if err != nil && err != http.ErrServerClosed {
-			l.Fatal().Err(err).Msg("failed to listen and serve")
-		}
-	}()
+	if e.TLSEnabled {
+		l.Info().Str("port", e.AppTLSPort).Msg("also starting tls server...")
+
+		go func() {
+			err := router.RunTLS(fmt.Sprintf(":%s", e.AppTLSPort), e.TLSCertFile, e.TLSKeyFile)
+			if err != nil && err != http.ErrServerClosed {
+				l.Fatal().Err(err).Msg("failed to listen and serve")
+			}
+		}()
+	}
 
 	<-ctx.Done()
 
