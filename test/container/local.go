@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -120,12 +122,24 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 		return nil, fmt.Errorf("failed to set db schema: %w", err)
 	}
 
+	appPort, err := getFreePort()
+	if err != nil {
+		closeResources()
+		return nil, fmt.Errorf("failed to get free app port: %w", err)
+	}
+
+	appTLSPort, err := getFreePort()
+	if err != nil {
+		closeResources()
+		return nil, fmt.Errorf("failed to get free app tls port: %w", err)
+	}
+
 	// set env
 	dbHostPort := strings.Split(dbResource.GetHostPort("5432/tcp"), ":")
 	environ := &env.ENV{
 		AppMode:          "test",
-		AppPort:          "8000",
-		AppTLSPort:       "8443",
+		AppPort:          strconv.Itoa(appPort),
+		AppTLSPort:       strconv.Itoa(appTLSPort),
 		AuthJWTSecretKey: "secretKey",
 		AuthCookieDomain: "localhost",
 		DBUser:           dbUser,
@@ -321,4 +335,16 @@ func copyFile(src string, dst string) error {
 	}
 
 	return out.Close()
+}
+
+func getFreePort() (port int, err error) {
+	var a *net.TCPAddr
+	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
+		var l *net.TCPListener
+		if l, err = net.ListenTCP("tcp", a); err == nil {
+			defer l.Close()
+			return l.Addr().(*net.TCPAddr).Port, nil
+		}
+	}
+	return
 }
