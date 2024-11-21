@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUnit_DB(t *testing.T) {
+func TestIntegration_DB(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration tests.")
 	}
