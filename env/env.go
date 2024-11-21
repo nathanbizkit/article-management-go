@@ -94,6 +94,9 @@ func Parse(envFile string) (*ENV, error) {
 			validation.Required,
 		),
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(environ.CORSAllowedOrigins) != 0 {
 		var allowedAllOrigins bool
@@ -114,5 +117,5 @@ func Parse(envFile string) (*ENV, error) {
 	environ.IsDevelopment = environ.AppMode == "dev" || environ.AppMode == "develop" ||
 		environ.AppMode == "test" || environ.AppMode == "testing"
 
-	return &environ, err
+	return &environ, nil
 }
