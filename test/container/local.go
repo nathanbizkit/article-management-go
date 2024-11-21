@@ -11,14 +11,24 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/nathanbizkit/article-management/env"
 	"github.com/nathanbizkit/article-management/util"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 )
 
+const (
+	networkName = "article-management-testing-app"
+	dbSchema    = "article_management"
+	dbUser      = "root"
+	dbPass      = "password"
+	dbName      = "app_test"
+)
+
 type LocalTestContainer struct {
 	network              string
 	pool                 *dockertest.Pool
+	environ              *env.ENV
 	db                   *sql.DB
 	dbName               string
 	dbContainer          *dockertest.Resource
@@ -33,7 +43,6 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	}
 
 	// network
-	networkName := "article-management-testing-app"
 	network, err := createNetwork(pool, networkName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create network: %w", err)
@@ -60,8 +69,8 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	db, err := getDBConnectionPool(
 		pool,
 		fmt.Sprintf(
-			"postgres://root:password@%s/app_test?sslmode=disable",
-			dbResource.GetHostPort("5432/tcp"),
+			"postgres://%s:%s@%s/%s?sslmode=disable",
+			dbUser, dbPass, dbResource.GetHostPort("5432/tcp"), dbName,
 		),
 	)
 	if err != nil {
@@ -73,8 +82,8 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 
 	// db migration
 	dbUrl := fmt.Sprintf(
-		"postgres://root:password@%s:%s/app_test?sslmode=disable",
-		strings.Trim(dbResource.Container.Name, "/"), "5432",
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		dbUser, dbPass, strings.Trim(dbResource.Container.Name, "/"), "5432", dbName,
 	)
 
 	tempDir, err := os.MkdirTemp("", "migrations")
@@ -105,20 +114,42 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 	log.Printf("migration container: %s\n", migrationResource.Container.Name)
 
 	// set db schema
-	_, err = db.Exec(`SET search_path TO article_management`)
+	_, err = db.Exec(fmt.Sprintf("SET search_path TO %s", dbSchema))
 	if err != nil {
 		closeResources()
 		return nil, fmt.Errorf("failed to set db schema: %w", err)
 	}
 
+	// set env
+	dbHostPort := strings.Split(dbResource.GetHostPort("5432/tcp"), ":")
+	environ := &env.ENV{
+		AppMode:          "test",
+		AppPort:          "8000",
+		AppTLSPort:       "8443",
+		AuthJWTSecretKey: "secretKey",
+		AuthCookieDomain: "localhost",
+		DBUser:           dbUser,
+		DBPass:           dbPass,
+		DBHost:           dbHostPort[0],
+		DBPort:           dbHostPort[1],
+		DBName:           dbName,
+		IsDevelopment:    true,
+	}
+
 	return &LocalTestContainer{
 		network:              networkName,
 		pool:                 pool,
+		environ:              environ,
 		db:                   db,
 		dbName:               dbResource.Container.Name,
 		dbContainer:          dbResource,
 		dbMigrationContainer: migrationResource,
 	}, nil
+}
+
+// Environ returns test env
+func (l *LocalTestContainer) Environ() *env.ENV {
+	return l.environ
 }
 
 // DB returns test database connection pool
@@ -200,9 +231,9 @@ func createPostgresDB(pool *dockertest.Pool, network *docker.Network) (*dockerte
 		Tag:        "16",
 		NetworkID:  network.ID,
 		Env: []string{
-			"POSTGRES_USER=root",
-			"POSTGRES_PASSWORD=password",
-			"POSTGRES_DB=app_test",
+			fmt.Sprintf("POSTGRES_USER=%s", dbUser),
+			fmt.Sprintf("POSTGRES_PASSWORD=%s", dbPass),
+			fmt.Sprintf("POSTGRES_DB=%s", dbName),
 			"TZ=UTC",
 			"PGTZ=UTC",
 			"listen_addresses = '*'",

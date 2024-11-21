@@ -26,14 +26,13 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
 
-		following := false
-		expected := barUser.ResponseProfile(following)
+		expected := barUser.ResponseProfile(false)
 
 		apiUrl := fmt.Sprintf("/api/v1/profiles/%s", barUser.Username)
 		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("username", barUser.Username)
 
 		h.ShowProfile(ctx)
@@ -53,14 +52,13 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
 
-		following := true
-		expected := barUser.ResponseProfile(following)
+		expected := barUser.ResponseProfile(true)
 
 		apiUrl := fmt.Sprintf("/api/v1/profiles/%s/follow", barUser.Username)
 		req := httptest.NewRequest(http.MethodPost, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("username", barUser.Username)
 
 		h.FollowUser(ctx)
@@ -79,7 +77,7 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, expected, actual)
-		assert.Equal(t, following, actualFollowing)
+		assert.True(t, actualFollowing)
 	})
 
 	t.Run("UnfollowUser", func(t *testing.T) {
@@ -91,14 +89,13 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		following := false
-		expected := barUser.ResponseProfile(following)
+		expected := barUser.ResponseProfile(false)
 
 		apiUrl := fmt.Sprintf("/api/v1/profiles/%s/follow", barUser.Username)
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("username", barUser.Username)
 
 		h.UnfollowUser(ctx)
@@ -117,6 +114,6 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, expected, actual)
-		assert.Equal(t, following, actualFollowing)
+		assert.False(t, actualFollowing)
 	})
 }

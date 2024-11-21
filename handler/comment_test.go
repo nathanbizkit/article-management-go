@@ -30,20 +30,14 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
 
-		barArticle := createRandomArticle(
-			t, lct.DB(),
-			barUser.ID,
-			[]string{test.RandomString(t, 10), test.RandomString(t, 10)},
-		)
+		barArticle := createRandomArticle(t, lct.DB(), barUser.ID)
 
 		randStr := test.RandomString(t, 20)
-		cm := model.Comment{
+		comment := model.Comment{
 			Body:   randStr,
 			Author: *fooUser,
 		}
-
-		following := false
-		expected := cm.ResponseComment(following)
+		expected := comment.ResponseComment(false)
 
 		r := message.CreateCommentRequest{
 			Body: randStr,
@@ -58,7 +52,7 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, apiUrl, bytes.NewReader(body))
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
 
 		h.CreateComment(ctx)
@@ -71,7 +65,7 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		defer w.Result().Body.Close()
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Greater(t, actual.ID, uint(0))
+		assert.NotEmpty(t, actual.ID)
 		assert.Equal(t, expected.Body, actual.Body)
 		assert.Equal(t, expected.Author, actual.Author)
 		assert.NotEmpty(t, actual.CreatedAt)
@@ -83,21 +77,16 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
 
-		barArticle := createRandomArticle(
-			t, lct.DB(),
-			barUser.ID,
-			[]string{test.RandomString(t, 10), test.RandomString(t, 10)},
-		)
+		barArticle := createRandomArticle(t, lct.DB(), barUser.ID)
 
-		cm1 := createRandomComment(t, lct.DB(), barArticle.ID, fooUser.ID)
+		comment1 := createRandomComment(t, lct.DB(), barArticle.ID, fooUser.ID)
 		time.Sleep(1 * time.Second)
-		cm2 := createRandomComment(t, lct.DB(), barArticle.ID, barUser.ID)
+		comment2 := createRandomComment(t, lct.DB(), barArticle.ID, barUser.ID)
 
-		following := false
 		expected := message.CommentsResponse{
 			Comments: []message.CommentResponse{
-				cm2.ResponseComment(following),
-				cm1.ResponseComment(following),
+				comment2.ResponseComment(false),
+				comment1.ResponseComment(false),
 			},
 		}
 
@@ -105,7 +94,7 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
 
 		h.GetComments(ctx)
@@ -125,11 +114,7 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
 
-		barArticle := createRandomArticle(
-			t, lct.DB(),
-			barUser.ID,
-			[]string{test.RandomString(t, 10), test.RandomString(t, 10)},
-		)
+		barArticle := createRandomArticle(t, lct.DB(), barUser.ID)
 
 		cm := createRandomComment(t, lct.DB(), barArticle.ID, fooUser.ID)
 
@@ -137,18 +122,18 @@ func TestIntegration_CommentHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
 		ctx.AddParam("id", strconv.Itoa(int(cm.ID)))
 
 		h.DeleteComment(ctx)
 
-		cms, err := h.as.GetComments(context.Background(), barArticle)
+		actualComments, err := h.as.GetComments(context.Background(), barArticle)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Empty(t, cms)
+		assert.Empty(t, actualComments)
 	})
 }

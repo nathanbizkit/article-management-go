@@ -265,8 +265,16 @@ func TestUnit_Auth(t *testing.T) {
 				true,
 			},
 			{
-				"get user id: allow unsecured connection",
+				"get user id: allow unsecured connection if no cookie is found",
 				noCookieCtx,
+				false,
+				false,
+				0,
+				false,
+			},
+			{
+				"get user id: allow unsecured connection if cookie is empty",
+				emptyTokenCtx,
 				false,
 				false,
 				0,

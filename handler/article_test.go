@@ -31,21 +31,19 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 
 		randStr := test.RandomString(t, 20)
-		a := model.Article{
+		article := model.Article{
 			Title:       randStr,
 			Description: randStr,
 			Body:        randStr,
 			Author:      *fooUser,
 		}
 
-		favorited := false
-		following := false
-		expected := a.ResponseArticle(favorited, following)
+		expected := article.ResponseArticle(false, false)
 
 		r := message.CreateArticleRequest{
-			Title:       a.Title,
-			Description: a.Description,
-			Body:        a.Body,
+			Title:       article.Title,
+			Description: article.Description,
+			Body:        article.Body,
 			Tags: []string{
 				test.RandomString(t, 10),
 				test.RandomString(t, 10),
@@ -60,7 +58,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "/api/v1/articles", bytes.NewReader(body))
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 
 		h.CreateArticle(ctx)
 
@@ -72,7 +70,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		defer w.Result().Body.Close()
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Greater(t, actual.ID, uint(0))
+		assert.NotEmpty(t, actual.ID)
 		assert.Equal(t, expected.Title, actual.Title)
 		assert.Equal(t, expected.Description, actual.Description)
 		assert.Equal(t, expected.Body, actual.Body)
@@ -85,20 +83,15 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 
 	t.Run("GetArticle", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
-		fooArticle := createRandomArticle(t, lct.DB(),
-			fooUser.ID,
-			[]string{test.RandomString(t, 10), test.RandomString(t, 10)},
-		)
 
-		favorited := false
-		following := false
-		expected := fooArticle.ResponseArticle(favorited, following)
+		fooArticle := createRandomArticle(t, lct.DB(), fooUser.ID)
+		expected := fooArticle.ResponseArticle(false, false)
 
 		apiUrl := fmt.Sprintf("/api/v1/articles/%d", fooArticle.ID)
 		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("slug", strconv.Itoa(int(fooArticle.ID)))
 
 		h.GetArticle(ctx)
@@ -129,54 +122,54 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 
 		tag := model.Tag{Name: test.RandomString(t, 10)}
 
-		as := make([]*model.Article, 0, 10)
+		articles := make([]*model.Article, 0, 10)
 		for i := 0; i < 10; i++ {
 			randStr := test.RandomString(t, 10)
-			a := model.Article{
+			article := model.Article{
 				Title:       randStr,
 				Description: randStr,
 				Body:        randStr,
 			}
 
 			if i < 5 {
-				a.UserID = fooUser.ID
-				a.Author = *fooUser
-				a.Tags = []model.Tag{tag}
+				article.UserID = fooUser.ID
+				article.Author = *fooUser
+				article.Tags = []model.Tag{tag}
 			} else {
-				a.UserID = barUser.ID
-				a.Author = *barUser
+				article.UserID = barUser.ID
+				article.Author = *barUser
 			}
 
-			as = append(as, &a)
+			articles = append(articles, &article)
 		}
 
-		for i, a := range as {
-			createdArticle, err := h.as.Create(context.Background(), a)
+		for i, article := range articles {
+			createdArticle, err := h.as.Create(context.Background(), article)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			a.ID = createdArticle.ID
-			a.CreatedAt = createdArticle.CreatedAt
-			a.UpdatedAt = createdArticle.UpdatedAt
+			article.ID = createdArticle.ID
+			article.CreatedAt = createdArticle.CreatedAt
+			article.UpdatedAt = createdArticle.UpdatedAt
 
 			if i < 5 {
-				err := h.as.AddFavorite(context.Background(), a, fooUser,
+				err := h.as.AddFavorite(context.Background(), article, fooUser,
 					func(favoritesCount int64, updatedAt time.Time) {
-						a.FavoritesCount = favoritesCount
-						a.UpdatedAt = updatedAt
+						article.FavoritesCount = favoritesCount
+						article.UpdatedAt = updatedAt
 					})
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			// delay creating articles
+			// delay creating articles, so we can sort them by date
 			time.Sleep(1 * time.Second)
 		}
 
-		sort.SliceStable(as, func(i, j int) bool {
-			return as[i].CreatedAt.After(as[j].CreatedAt)
+		sort.SliceStable(articles, func(i, j int) bool {
+			return articles[i].CreatedAt.After(articles[j].CreatedAt)
 		})
 
 		tests := []struct {
@@ -205,7 +198,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 					limit:     "0",
 					offset:    "0",
 				},
-				as,
+				articles,
 			},
 			{
 				"get articles with limit and offset",
@@ -222,7 +215,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 					limit:     "5",
 					offset:    "5",
 				},
-				as[5:10],
+				articles[5:10],
 			},
 			{
 				"get articles with tag",
@@ -239,7 +232,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 					limit:     "0",
 					offset:    "0",
 				},
-				as[5:10],
+				articles[5:10],
 			},
 			{
 				"get articles with author",
@@ -256,7 +249,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 					limit:     "0",
 					offset:    "0",
 				},
-				as[0:5],
+				articles[0:5],
 			},
 			{
 				"get articles with various queries",
@@ -273,7 +266,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 					limit:     "2",
 					offset:    "1",
 				},
-				as[6:8],
+				articles[6:8],
 			},
 			{
 				"get articles with favorited queries",
@@ -290,7 +283,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 					limit:     "0",
 					offset:    "0",
 				},
-				as[5:10],
+				articles[5:10],
 			},
 		}
 
@@ -306,7 +299,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 			req.URL.RawQuery = q.Encode()
 
 			w := httptest.NewRecorder()
-			ctx, _ := ctxWithToken(t, w, req, reqUser.ID, time.Now())
+			ctx, _ := ctxWithToken(t, lct.Environ(), w, req, reqUser.ID, time.Now())
 
 			h.GetArticles(ctx)
 
@@ -346,54 +339,54 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 
 		tag := model.Tag{Name: test.RandomString(t, 10)}
 
-		as := make([]*model.Article, 0, 10)
+		articles := make([]*model.Article, 0, 10)
 		for i := 0; i < 10; i++ {
 			randStr := test.RandomString(t, 10)
-			a := model.Article{
+			article := model.Article{
 				Title:       randStr,
 				Description: randStr,
 				Body:        randStr,
 			}
 
 			if i < 5 {
-				a.UserID = fooUser.ID
-				a.Author = *fooUser
-				a.Tags = []model.Tag{tag}
+				article.UserID = fooUser.ID
+				article.Author = *fooUser
+				article.Tags = []model.Tag{tag}
 			} else {
-				a.UserID = barUser.ID
-				a.Author = *barUser
+				article.UserID = barUser.ID
+				article.Author = *barUser
 			}
 
-			as = append(as, &a)
+			articles = append(articles, &article)
 		}
 
-		for i, a := range as {
-			createdArticle, err := h.as.Create(context.Background(), a)
+		for i, article := range articles {
+			createdArticle, err := h.as.Create(context.Background(), article)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			a.ID = createdArticle.ID
-			a.CreatedAt = createdArticle.CreatedAt
-			a.UpdatedAt = createdArticle.UpdatedAt
+			article.ID = createdArticle.ID
+			article.CreatedAt = createdArticle.CreatedAt
+			article.UpdatedAt = createdArticle.UpdatedAt
 
 			if i < 5 {
-				err := h.as.AddFavorite(context.Background(), a, fooUser,
+				err := h.as.AddFavorite(context.Background(), article, fooUser,
 					func(favoritesCount int64, updatedAt time.Time) {
-						a.FavoritesCount = favoritesCount
-						a.UpdatedAt = updatedAt
+						article.FavoritesCount = favoritesCount
+						article.UpdatedAt = updatedAt
 					})
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			// delay creating articles
+			// delay creating articles, so we can sort them by date
 			time.Sleep(1 * time.Second)
 		}
 
-		sort.SliceStable(as, func(i, j int) bool {
-			return as[i].CreatedAt.After(as[j].CreatedAt)
+		sort.SliceStable(articles, func(i, j int) bool {
+			return articles[i].CreatedAt.After(articles[j].CreatedAt)
 		})
 
 		tests := []struct {
@@ -415,7 +408,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 					limit:  "0",
 					offset: "0",
 				},
-				as[0:5],
+				articles[0:5],
 			},
 			{
 				"get articles with queries",
@@ -427,7 +420,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 					limit:  "2",
 					offset: "1",
 				},
-				as[1:3],
+				articles[1:3],
 			},
 			{
 				"get articles of user who has no followings",
@@ -452,7 +445,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 			req.URL.RawQuery = q.Encode()
 
 			w := httptest.NewRecorder()
-			ctx, _ := ctxWithToken(t, w, req, tt.reqUser.ID, time.Now())
+			ctx, _ := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now())
 
 			h.GetFeedArticles(ctx)
 
@@ -482,19 +475,22 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 
 	t.Run("UpdateArticle", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
-		fooArticle := createRandomArticle(t, lct.DB(),
-			fooUser.ID,
-			[]string{test.RandomString(t, 10), test.RandomString(t, 10)},
-		)
+		fooArticle := createRandomArticle(t, lct.DB(), fooUser.ID)
 
 		randStr := test.RandomString(t, 20)
-		fooArticle.Title = randStr
-		fooArticle.Description = randStr
-		fooArticle.Body = randStr
-
-		favorited := false
-		following := false
-		expected := fooArticle.ResponseArticle(favorited, following)
+		article := model.Article{
+			ID:             fooArticle.ID,
+			Title:          randStr,
+			Description:    randStr,
+			Body:           randStr,
+			Tags:           fooArticle.Tags,
+			UserID:         fooArticle.UserID,
+			Author:         fooArticle.Author,
+			FavoritesCount: fooArticle.FavoritesCount,
+			CreatedAt:      fooArticle.CreatedAt,
+			UpdatedAt:      fooArticle.UpdatedAt,
+		}
+		expected := article.ResponseArticle(false, false)
 
 		r := message.UpdateArticleRequest{
 			Title:       randStr,
@@ -511,7 +507,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, apiUrl, bytes.NewReader(body))
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("slug", strconv.Itoa(int(fooArticle.ID)))
 
 		h.UpdateArticle(ctx)
@@ -537,16 +533,13 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 
 	t.Run("DeleteArticle", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
-		fooArticle := createRandomArticle(t, lct.DB(),
-			fooUser.ID,
-			[]string{test.RandomString(t, 10), test.RandomString(t, 10)},
-		)
+		fooArticle := createRandomArticle(t, lct.DB(), fooUser.ID)
 
 		apiUrl := fmt.Sprintf("/api/v1/articles/%d", fooArticle.ID)
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("slug", strconv.Itoa(int(fooArticle.ID)))
 
 		h.DeleteArticle(ctx)
@@ -562,23 +555,15 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
 
-		barArticle := createRandomArticle(
-			t, lct.DB(),
-			barUser.ID,
-			[]string{test.RandomString(t, 10), test.RandomString(t, 10)},
-		)
-
-		favorited := true
-		following := false
-		expected := barArticle.ResponseArticle(favorited, following)
-		expected.Favorited = favorited
+		barArticle := createRandomArticle(t, lct.DB(), barUser.ID)
+		expected := barArticle.ResponseArticle(true, false)
 		expected.FavoritesCount = 1
 
 		apiUrl := fmt.Sprintf("/api/v1/articles/%d/favorite", barArticle.ID)
 		req := httptest.NewRequest(http.MethodPost, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
 
 		h.FavoriteArticle(ctx)
@@ -596,7 +581,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		}
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, favorited, actualFavorited)
+		assert.True(t, actualFavorited)
 		assert.Equal(t, expected.ID, actual.ID)
 		assert.Equal(t, expected.Title, actual.Title)
 		assert.Equal(t, expected.Description, actual.Description)
@@ -612,11 +597,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
 
-		barArticle := createRandomArticle(
-			t, lct.DB(),
-			barUser.ID,
-			[]string{test.RandomString(t, 10), test.RandomString(t, 10)},
-		)
+		barArticle := createRandomArticle(t, lct.DB(), barUser.ID)
 
 		err := h.as.AddFavorite(context.Background(), barArticle, fooUser,
 			func(favoritesCount int64, updatedAt time.Time) {
@@ -627,17 +608,14 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		favorited := false
-		following := false
-		expected := barArticle.ResponseArticle(favorited, following)
-		expected.Favorited = favorited
+		expected := barArticle.ResponseArticle(false, false)
 		expected.FavoritesCount = 0
 
 		apiUrl := fmt.Sprintf("/api/v1/articles/%d/favorite", barArticle.ID)
 		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
 
 		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, w, req, fooUser.ID, time.Now())
+		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
 		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
 
 		h.UnfavoriteArticle(ctx)
@@ -655,7 +633,7 @@ func TestIntegration_ArticleHandler(t *testing.T) {
 		}
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, favorited, actualFavorited)
+		assert.False(t, actualFavorited)
 		assert.Equal(t, expected.ID, actual.ID)
 		assert.Equal(t, expected.Title, actual.Title)
 		assert.Equal(t, expected.Description, actual.Description)

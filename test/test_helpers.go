@@ -18,13 +18,14 @@ const englishCharset = "abcdefghijklmnopqrstuvwxyz" +
 
 var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-// NewTestENV returns an env for testing (mock)
+// NewTestENV returns a mock of env object
 func NewTestENV(t *testing.T) *env.ENV {
 	t.Helper()
 
 	return &env.ENV{
 		AppMode:          "test",
 		AppPort:          "8000",
+		AppTLSPort:       "8443",
 		AuthJWTSecretKey: "secretkey",
 		AuthCookieDomain: "localhost",
 		DBUser:           "root",
@@ -32,6 +33,7 @@ func NewTestENV(t *testing.T) *env.ENV {
 		DBHost:           "db_test",
 		DBPort:           "5432",
 		DBName:           "app_test",
+		IsDevelopment:    true,
 	}
 }
 

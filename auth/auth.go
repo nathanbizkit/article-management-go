@@ -38,23 +38,12 @@ func New(environ *env.ENV) *Auth {
 	return &Auth{environ: environ}
 }
 
-// GenerateToken generates a new auth token
+// GenerateToken generates a new auth token with expired date computed with current time
 func (a *Auth) GenerateToken(id uint) (*AuthToken, error) {
-	token, err := generateToken(a.environ.AuthJWTSecretKey, id, time.Now(), tokenTTL)
-	if err != nil {
-		return nil, err
-	}
-
-	refreshToken, err := generateToken(a.environ.AuthJWTSecretKey, id, time.Now(), refreshTTL)
-	if err != nil {
-		return nil, err
-	}
-
-	return &AuthToken{Token: token, RefreshToken: refreshToken}, nil
+	return a.GenerateTokenWithTime(id, time.Now())
 }
 
 // GenerateTokenWithTime generates a new auth token with expired date computed with specified time
-// (for testing purposes)
 func (a *Auth) GenerateTokenWithTime(id uint, t time.Time) (*AuthToken, error) {
 	token, err := generateToken(a.environ.AuthJWTSecretKey, id, t, tokenTTL)
 	if err != nil {

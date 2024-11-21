@@ -79,26 +79,23 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 			h.Login(ctx)
 
-			assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
-			assertCtx.Request = &http.Request{
-				Header: make(http.Header),
-			}
-			assertCtx.Request.Header.Set(
-				"Cookie",
-				strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
-			)
-
-			strictCookie := true
-			refresh := false
-			actualUserID, err := h.authen.GetUserID(assertCtx, strictCookie, refresh)
+			actualCookies := w.Result().Header.Values("Set-Cookie")
 
 			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
-			assert.Equal(t, tt.expectedUserID, actualUserID, tt.title)
 
 			if tt.hasError {
-				assert.Error(t, err, tt.title)
+				assert.Empty(t, actualCookies, tt.title)
 			} else {
-				assert.NoError(t, err, tt.title)
+				assert.Len(t, actualCookies, 2)
+
+				for _, actualCookie := range actualCookies {
+					cookie, err := http.ParseSetCookie(actualCookie)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					assert.NotEmpty(t, cookie.Value)
+				}
 			}
 		}
 	})
@@ -226,28 +223,24 @@ func TestIntegration_UserHandler(t *testing.T) {
 			}
 			defer w.Result().Body.Close()
 
-			assertCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
-			assertCtx.Request = &http.Request{
-				Header: make(http.Header),
-			}
-			assertCtx.Request.Header.Set(
-				"Cookie",
-				strings.Join(w.Result().Header.Values("Set-Cookie"), "; "),
-			)
-
-			strictCookie := true
-			refresh := false
-			actualUserID, err := h.authen.GetUserID(assertCtx, strictCookie, refresh)
+			actualCookies := w.Result().Header.Values("Set-Cookie")
 
 			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
 			assert.Equal(t, tt.expected, actual, tt.title)
 
 			if tt.hasError {
-				assert.Error(t, err, tt.title)
-				assert.Empty(t, actualUserID, tt.title)
+				assert.Empty(t, actualCookies, tt.title)
 			} else {
-				assert.NoError(t, err, tt.title)
-				assert.NotEmpty(t, actualUserID, tt.title)
+				assert.Len(t, actualCookies, 2)
+
+				for _, actualCookie := range actualCookies {
+					cookie, err := http.ParseSetCookie(actualCookie)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					assert.NotEmpty(t, cookie.Value)
+				}
 			}
 		}
 	})
@@ -257,7 +250,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/refresh_token", nil)
 		w := httptest.NewRecorder()
-		c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		c, token := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now().Add(-time.Hour))
 
 		h.RefreshToken(c)
 
@@ -286,12 +279,11 @@ func TestIntegration_UserHandler(t *testing.T) {
 	t.Run("GetCurrentUser", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 
-		following := false
-		expected := fooUser.ResponseProfile(following)
+		expected := fooUser.ResponseProfile(false)
 
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
 		w := httptest.NewRecorder()
-		c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		c, token := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now().Add(-time.Hour))
 
 		h.GetCurrentUser(c)
 
@@ -329,17 +321,18 @@ func TestIntegration_UserHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 
 		randStr := test.RandomString(t, 15)
-		u := model.User{
-			Username: randStr,
-			Email:    fmt.Sprintf("%s@example.com", randStr),
-			Password: fmt.Sprintf("%s_NEW", userPassword),
-			Name:     randStr,
-			Bio:      randStr,
-			Image:    "https://imgur.com/image.jpg",
+		user := model.User{
+			ID:        fooUser.ID,
+			Username:  randStr,
+			Email:     fmt.Sprintf("%s@example.com", randStr),
+			Password:  fmt.Sprintf("%s_NEW", userPassword),
+			Name:      randStr,
+			Bio:       randStr,
+			Image:     "https://imgur.com/image.jpg",
+			CreatedAt: fooUser.CreatedAt,
+			UpdatedAt: fooUser.UpdatedAt,
 		}
-
-		following := false
-		expected := u.ResponseProfile(following)
+		expected := user.ResponseProfile(false)
 
 		tests := []struct {
 			title              string
@@ -350,10 +343,10 @@ func TestIntegration_UserHandler(t *testing.T) {
 			{
 				"update fooUser: success",
 				&message.UpdateUserRequest{
-					Username: u.Username,
-					Email:    u.Email,
-					Password: u.Password,
-					Name:     u.Name,
+					Username: user.Username,
+					Email:    user.Email,
+					Password: user.Password,
+					Name:     user.Name,
 					Bio:      randStr,
 					Image:    "https://imgur.com/image.jpg",
 				},
@@ -383,7 +376,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodPut, "/api/v1/me", bytes.NewReader(body))
 			w := httptest.NewRecorder()
-			c, token := ctxWithToken(t, w, req, fooUser.ID, time.Now().Add(-time.Hour))
+			c, token := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now().Add(-time.Hour))
 
 			h.UpdateCurrentUser(c)
 

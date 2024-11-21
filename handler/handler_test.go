@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nathanbizkit/article-management/auth"
+	"github.com/nathanbizkit/article-management/env"
 	"github.com/nathanbizkit/article-management/model"
 	"github.com/nathanbizkit/article-management/store"
 	"github.com/nathanbizkit/article-management/test"
@@ -23,8 +24,8 @@ func setup(t *testing.T) (*Handler, *container.LocalTestContainer) {
 	t.Helper()
 
 	l := test.NewTestLogger(t)
-	environ := test.NewTestENV(t)
 	lct := test.NewLocalTestContainer(t)
+	environ := lct.Environ()
 
 	authen := auth.New(environ)
 	as := store.NewArticleStore(lct.DB())
@@ -33,11 +34,10 @@ func setup(t *testing.T) (*Handler, *container.LocalTestContainer) {
 	return New(&l, environ, authen, us, as), lct
 }
 
-func ctxWithToken(t *testing.T, w http.ResponseWriter, req *http.Request, id uint, timeNow time.Time) (*gin.Context, *auth.AuthToken) {
+func ctxWithToken(t *testing.T, e *env.ENV, w http.ResponseWriter, req *http.Request, id uint, timeNow time.Time) (*gin.Context, *auth.AuthToken) {
 	t.Helper()
 
-	environ := test.NewTestENV(t)
-	authen := auth.New(environ)
+	authen := auth.New(e)
 
 	token, err := authen.GenerateTokenWithTime(id, timeNow)
 	if err != nil {
@@ -98,7 +98,7 @@ func deleteUser(t *testing.T, db *sql.DB, id uint) {
 	}
 }
 
-func createRandomArticle(t *testing.T, db *sql.DB, userID uint, tagNames []string) *model.Article {
+func createRandomArticle(t *testing.T, db *sql.DB, userID uint) *model.Article {
 	t.Helper()
 
 	randStr := test.RandomString(t, 15)
@@ -107,15 +107,10 @@ func createRandomArticle(t *testing.T, db *sql.DB, userID uint, tagNames []strin
 		Description: randStr,
 		Body:        randStr,
 		UserID:      userID,
-	}
-
-	if len(tagNames) != 0 {
-		tags := make([]model.Tag, 0, len(tagNames))
-		for _, name := range tagNames {
-			tags = append(tags, model.Tag{Name: name})
-		}
-
-		m.Tags = tags
+		Tags: []model.Tag{
+			{Name: test.RandomString(t, 10)},
+			{Name: test.RandomString(t, 10)},
+		},
 	}
 
 	as := store.NewArticleStore(db)
