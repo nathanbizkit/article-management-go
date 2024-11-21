@@ -14,11 +14,11 @@ func TestUnit_ENV(t *testing.T) {
 		t.Skip("skipping unit tests.")
 	}
 
-	t.Cleanup(func() {
-		resetEnvironment(t)
-	})
-
 	t.Run("Parse", func(t *testing.T) {
+		t.Cleanup(func() {
+			resetEnvironment(t)
+		})
+
 		tempDir, err := os.MkdirTemp("", "env")
 		if err != nil {
 			t.Fatal(err)
