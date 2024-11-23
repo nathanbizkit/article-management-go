@@ -62,9 +62,9 @@ func TestIntegration_DB(t *testing.T) {
 
 	t.Run("RunInTx", func(t *testing.T) {
 		tests := []struct {
-			title         string
-			transactionFn func(tx *sql.Tx) error
-			hasError      bool
+			title           string
+			doTransactionFn func(tx *sql.Tx) error
+			hasError        bool
 		}{
 			{
 				"run in tx: commit",
@@ -84,7 +84,7 @@ func TestIntegration_DB(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			err := RunInTx(lct.DB(), tt.transactionFn)
+			err := RunInTx(lct.DB(), tt.doTransactionFn)
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)

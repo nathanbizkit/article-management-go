@@ -23,7 +23,7 @@ func TestUnit_UserModel(t *testing.T) {
 
 		tests := []struct {
 			title           string
-			u               *User
+			user            *User
 			isPlainPassword bool
 			hasError        bool
 		}{
@@ -223,6 +223,19 @@ func TestUnit_UserModel(t *testing.T) {
 				true,
 			},
 			{
+				"validate user: skip password validation (already hashed)",
+				&User{
+					Username: "foo_user",
+					Email:    "foo@example.com",
+					Password: "already_hashed_password",
+					Name:     "FooUser",
+					Bio:      "This is my bio.",
+					Image:    "https://imgur.com/image.jpeg",
+				},
+				false,
+				false,
+			},
+			{
 				"validate user: password is too short",
 				&User{
 					Username: "foo_user",
@@ -303,7 +316,7 @@ func TestUnit_UserModel(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			err := tt.u.Validate(tt.isPlainPassword)
+			err := tt.user.Validate(tt.isPlainPassword)
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)
@@ -317,11 +330,11 @@ func TestUnit_UserModel(t *testing.T) {
 		now := time.Now()
 
 		tests := []struct {
-			title        string
-			u            *User
-			in           *User
-			expectedUser *User
-			expected     bool
+			title                   string
+			user                    *User
+			input                   *User
+			expectedUser            *User
+			expectedIsPlainPassword bool
 		}{
 			{
 				"overwrite user: success",
@@ -390,19 +403,19 @@ func TestUnit_UserModel(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			actual := tt.u.Overwrite(
-				tt.in.Username, tt.in.Email, tt.in.Password,
-				tt.in.Name, tt.in.Bio, tt.in.Image)
+			actualIsPlainPassword := tt.user.Overwrite(
+				tt.input.Username, tt.input.Email, tt.input.Password,
+				tt.input.Name, tt.input.Bio, tt.input.Image)
 
-			assert.Equal(t, tt.expected, actual, tt.title)
-			assert.Equal(t, tt.expectedUser, tt.u, tt.title)
+			assert.Equal(t, tt.expectedIsPlainPassword, actualIsPlainPassword, tt.title)
+			assert.Equal(t, tt.expectedUser, tt.user, tt.title)
 		}
 	})
 
 	t.Run("HashPassword", func(t *testing.T) {
 		tests := []struct {
 			title    string
-			u        *User
+			user     *User
 			hasError bool
 		}{
 			{
@@ -423,17 +436,17 @@ func TestUnit_UserModel(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tempPassword := tt.u.Password
-			err := tt.u.HashPassword()
+			tempPassword := tt.user.Password
+			err := tt.user.HashPassword()
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)
-				assert.Equal(t, tempPassword, tt.u.Password, tt.title)
+				assert.Equal(t, tempPassword, tt.user.Password, tt.title)
 			} else {
 				assert.NoError(t, err, tt.title)
-				assert.NotEqual(t, tempPassword, tt.u.Password, tt.title)
+				assert.NotEqual(t, tempPassword, tt.user.Password, tt.title)
 
-				err = bcrypt.CompareHashAndPassword([]byte(tt.u.Password), []byte(tempPassword))
+				err = bcrypt.CompareHashAndPassword([]byte(tt.user.Password), []byte(tempPassword))
 				assert.NoError(t, err, fmt.Sprintf("%s: expect password to be hashed", tt.title))
 			}
 		}
@@ -441,37 +454,37 @@ func TestUnit_UserModel(t *testing.T) {
 
 	t.Run("CheckPassword", func(t *testing.T) {
 		plain := "pA55w0Rd!"
-		h, _ := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
 
 		tests := []struct {
-			title    string
-			u        *User
-			in       string
-			expected bool
+			title           string
+			user            *User
+			input           string
+			expectedMatched bool
 		}{
 			{
 				"check password user: success",
-				&User{Password: string(h)},
+				&User{Password: string(hashedPassword)},
 				plain,
 				true,
 			},
 			{
 				"check password user: wrong password",
-				&User{Password: string(h)},
+				&User{Password: string(hashedPassword)},
 				"password",
 				false,
 			},
 		}
 
 		for _, tt := range tests {
-			actual := tt.u.CheckPassword(tt.in)
-			assert.Equal(t, tt.expected, actual, tt.title)
+			actualMatched := tt.user.CheckPassword(tt.input)
+			assert.Equal(t, tt.expectedMatched, actualMatched, tt.title)
 		}
 	})
 
 	t.Run("ResponseProfile", func(t *testing.T) {
 		now := time.Now()
-		u := User{
+		user := User{
 			ID:        1,
 			Username:  "foo_user",
 			Email:     "foo@example.com",
@@ -483,16 +496,15 @@ func TestUnit_UserModel(t *testing.T) {
 			UpdatedAt: now,
 		}
 
-		following := false
 		expected := message.ProfileResponse{
 			Username:  "foo_user",
 			Name:      "FooUser",
 			Bio:       "This is my bio.",
 			Image:     "https://imgur.com/image.jpeg",
-			Following: following,
+			Following: false,
 		}
 
-		actual := u.ResponseProfile(following)
+		actual := user.ResponseProfile(false)
 		assert.Equal(t, expected, actual)
 	})
 }

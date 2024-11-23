@@ -110,7 +110,7 @@
           }
         },
         "responses": {
-          "200": {
+          "204": {
             "description": "Successfully logged in the user. The authentication is returned in cookie (session in cookie named `session` and refresh token in cookie named `refreshToken`). You need to include these two cookies in subsequent private requests.\n",
             "headers": {
               "Set-Cookie": {
@@ -136,7 +136,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "Successfully refreshed authentication. The authentication is returned in cookie (session in cookie named `session` and refresh token in cookie named `refreshToken`). You need to include these two cookies in subsequent private requests.\n",
             "headers": {
               "Set-Cookie": {
@@ -887,7 +887,7 @@
         "description": "Deletes an article by slug.",
         "operationId": "deleteArticle",
         "responses": {
-          "200": {
+          "204": {
             "description": "Successfully deleted the article."
           }
         }
@@ -1215,7 +1215,7 @@
         "description": "Deletes a comment from an article.",
         "operationId": "deleteCommentFromArticle",
         "responses": {
-          "200": {
+          "204": {
             "description": "Successfully deleted the comment."
           }
         }

@@ -11,25 +11,24 @@ const APIGroupPath = "/api/v1"
 func Route(router *gin.Engine, h *Handler) {
 	root := router.Group(APIGroupPath)
 	{
-		unsecured := root.Group("")
+		public := root.Group("")
 
-		unsecured.POST("/login", h.Login)
-		unsecured.POST("/register", h.Register)
-		unsecured.POST("/refresh_token", h.RefreshToken)
+		public.POST("/login", h.Login)
+		public.POST("/register", h.Register)
+		public.POST("/refresh_token", h.RefreshToken)
 
+		public.GET("/tags", h.GetTags)
 	}
 
 	{
-		public := root.Group("")
+		privateOptional := root.Group("")
 
 		strictCookie := false
-		public.Use(middleware.Auth(h.logger, h.authen, strictCookie))
+		privateOptional.Use(middleware.Auth(h.logger, h.authen, strictCookie))
 
-		public.GET("/articles", h.GetArticles)
-		public.GET("/articles/:slug", h.GetArticle)
-		public.GET("/articles/:slug/comments", h.GetComments)
-
-		public.GET("/tags", h.GetTags)
+		privateOptional.GET("/articles", h.GetArticles)
+		privateOptional.GET("/articles/:slug", h.GetArticle)
+		privateOptional.GET("/articles/:slug/comments", h.GetComments)
 	}
 
 	{

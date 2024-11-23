@@ -99,7 +99,7 @@ func (a *Auth) GetUserID(ctx *gin.Context, strictCookie, refresh bool) (uint, er
 			return 0, err
 		}
 
-		// allow unsecured connection
+		// allow public connection
 		return 0, nil
 	}
 
@@ -108,7 +108,7 @@ func (a *Auth) GetUserID(ctx *gin.Context, strictCookie, refresh bool) (uint, er
 			return 0, errors.New("auth token is empty")
 		}
 
-		// allow unsecured connection
+		// allow public connection
 		return 0, nil
 	}
 

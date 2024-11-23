@@ -24,5 +24,5 @@ func (h *Handler) GetTags(ctx *gin.Context) {
 		tagNames = append(tagNames, t.Name)
 	}
 
-	ctx.JSON(http.StatusOK, message.TagsResponse{Tags: tagNames})
+	ctx.AbortWithStatusJSON(http.StatusOK, message.TagsResponse{Tags: tagNames})
 }

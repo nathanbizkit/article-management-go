@@ -32,37 +32,37 @@ func TestIntegration_UserHandler(t *testing.T) {
 			title              string
 			reqBody            *message.LoginUserRequest
 			expectedStatusCode int
-			expectedUserID     uint
+			expectedError      map[string]interface{}
 			hasError           bool
 		}{
 			{
-				"login to fooUser: success",
+				"login: success",
 				&message.LoginUserRequest{
 					Email:    fooUser.Email,
 					Password: userPassword,
 				},
-				http.StatusOK,
-				fooUser.ID,
+				http.StatusNoContent,
+				nil,
 				false,
 			},
 			{
-				"login to fooUser: wrong email",
+				"login: wrong email",
 				&message.LoginUserRequest{
 					Email:    "fooooo@example.com",
 					Password: userPassword,
 				},
 				http.StatusNotFound,
-				uint(0),
+				map[string]interface{}{"error": "user not found"},
 				true,
 			},
 			{
-				"login to fooUser: wrong password",
+				"login: wrong password",
 				&message.LoginUserRequest{
 					Email:    fooUser.Email,
 					Password: "wrong_password",
 				},
 				http.StatusBadRequest,
-				uint(0),
+				map[string]interface{}{"error": "invalid password"},
 				true,
 			},
 		}
@@ -84,23 +84,27 @@ func TestIntegration_UserHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
 
 			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
 				assert.Empty(t, actualCookies, tt.title)
 			} else {
-				assert.Len(t, actualCookies, 2)
+				assert.Len(t, actualCookies, 2, tt.title)
 
 				for _, actualCookie := range actualCookies {
 					cookie, err := http.ParseSetCookie(actualCookie)
 					if err != nil {
 						t.Fatal(err)
 					}
-
-					assert.NotEmpty(t, cookie.Value)
+					assert.NotEmpty(t, cookie.Value, tt.title)
 				}
 			}
 		}
 	})
 
 	t.Run("Register", func(t *testing.T) {
+		shortMaxLenString := strings.Repeat("a", 101)
+		passwordMaxLenString := strings.Repeat("a", 51)
+
 		fooUser := createRandomUser(t, lct.DB())
 
 		randStr := test.RandomString(t, 10)
@@ -115,7 +119,8 @@ func TestIntegration_UserHandler(t *testing.T) {
 			title              string
 			reqBody            *message.CreateUserRequest
 			expectedStatusCode int
-			expected           message.ProfileResponse
+			expectedBody       message.ProfileResponse
+			expectedError      map[string]interface{}
 			hasError           bool
 		}{
 			{
@@ -128,6 +133,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 				},
 				http.StatusOK,
 				barUser.ResponseProfile(false),
+				nil,
 				false,
 			},
 			{
@@ -140,6 +146,46 @@ func TestIntegration_UserHandler(t *testing.T) {
 				},
 				http.StatusBadRequest,
 				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Username: cannot be blank."},
+				true,
+			},
+			{
+				"register barUser: invalid username format",
+				&message.CreateUserRequest{
+					Username: "_invalid@@username_",
+					Email:    barUser.Email,
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Username: must be in a valid format."},
+				true,
+			},
+			{
+				"register barUser: username is too short",
+				&message.CreateUserRequest{
+					Username: "abc",
+					Email:    barUser.Email,
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Username: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"register barUser: username is too long",
+				&message.CreateUserRequest{
+					Username: shortMaxLenString,
+					Email:    barUser.Email,
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Username: the length must be between 5 and 100."},
 				true,
 			},
 			{
@@ -152,6 +198,46 @@ func TestIntegration_UserHandler(t *testing.T) {
 				},
 				http.StatusBadRequest,
 				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Password: cannot be blank."},
+				true,
+			},
+			{
+				"register barUser: password is too short",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    barUser.Email,
+					Password: "abc",
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Password: the length must be between 7 and 50."},
+				true,
+			},
+			{
+				"register barUser: password is too long",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    barUser.Email,
+					Password: passwordMaxLenString,
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Password: the length must be between 7 and 50."},
+				true,
+			},
+			{
+				"register barUser: weak password",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    barUser.Email,
+					Password: "password",
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Password: must have at least one uppercase, one number, one symbol or punctuation."},
 				true,
 			},
 			{
@@ -164,6 +250,46 @@ func TestIntegration_UserHandler(t *testing.T) {
 				},
 				http.StatusBadRequest,
 				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Email: cannot be blank."},
+				true,
+			},
+			{
+				"register barUser: email is too short",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    "abc",
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Email: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"register barUser: email is too long",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    shortMaxLenString,
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Email: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"register barUser: invalid email format",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    "invalid_email_format",
+					Password: barUser.Password,
+					Name:     barUser.Name,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Email: must be a valid email address."},
 				true,
 			},
 			{
@@ -176,6 +302,33 @@ func TestIntegration_UserHandler(t *testing.T) {
 				},
 				http.StatusBadRequest,
 				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Name: cannot be blank."},
+				true,
+			},
+			{
+				"register barUser: name is too short",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    barUser.Email,
+					Password: barUser.Password,
+					Name:     "abc",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Name: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"register barUser: name is too long",
+				&message.CreateUserRequest{
+					Username: barUser.Username,
+					Email:    barUser.Email,
+					Password: barUser.Password,
+					Name:     shortMaxLenString,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Name: the length must be between 5 and 100."},
 				true,
 			},
 			{
@@ -188,6 +341,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 				},
 				http.StatusInternalServerError,
 				message.ProfileResponse{},
+				map[string]interface{}{"error": "failed to create user"},
 				true,
 			},
 			{
@@ -200,6 +354,7 @@ func TestIntegration_UserHandler(t *testing.T) {
 				},
 				http.StatusInternalServerError,
 				message.ProfileResponse{},
+				map[string]interface{}{"error": "failed to create user"},
 				true,
 			},
 		}
@@ -216,29 +371,24 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 			h.Register(ctx)
 
-			var actual message.ProfileResponse
-			err = json.NewDecoder(w.Result().Body).Decode(&actual)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer w.Result().Body.Close()
-
 			actualCookies := w.Result().Header.Values("Set-Cookie")
 
 			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
-			assert.Equal(t, tt.expected, actual, tt.title)
 
 			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
 				assert.Empty(t, actualCookies, tt.title)
 			} else {
-				assert.Len(t, actualCookies, 2)
+				actualBody := test.GetResponseBody[message.ProfileResponse](t, w.Result())
+				assert.Equal(t, tt.expectedBody, actualBody, tt.title)
+				assert.Len(t, actualCookies, 2, tt.title)
 
 				for _, actualCookie := range actualCookies {
 					cookie, err := http.ParseSetCookie(actualCookie)
 					if err != nil {
 						t.Fatal(err)
 					}
-
 					assert.NotEmpty(t, cookie.Value)
 				}
 			}
@@ -248,30 +398,62 @@ func TestIntegration_UserHandler(t *testing.T) {
 	t.Run("RefreshToken", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/refresh_token", nil)
-		w := httptest.NewRecorder()
-		c, token := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now().Add(-time.Hour))
+		tests := []struct {
+			title              string
+			reqUser            *model.User
+			expectedStatusCode int
+			expectedError      map[string]interface{}
+			hasError           bool
+		}{
+			{
+				"refresh token: success",
+				fooUser,
+				http.StatusNoContent,
+				nil,
+				false,
+			},
+			{
+				"refresh token: wrong user id",
+				&model.User{ID: 0},
+				http.StatusNotFound,
+				map[string]interface{}{"error": "user not found"},
+				true,
+			},
+		}
 
-		h.RefreshToken(c)
+		for _, tt := range tests {
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/refresh_token", nil)
+			w := httptest.NewRecorder()
+			c, token := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now().Add(-time.Hour))
 
-		actualCookies := w.Result().Header.Values("Set-Cookie")
+			h.RefreshToken(c)
 
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Len(t, actualCookies, 2)
+			actualCookies := w.Result().Header.Values("Set-Cookie")
 
-		for _, actualCookie := range actualCookies {
-			cookie, err := http.ParseSetCookie(actualCookie)
-			if err != nil {
-				t.Fatal(err)
-			}
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
 
-			assert.NotEmpty(t, cookie.Value)
+			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
+				assert.Empty(t, actualCookies, tt.title)
+			} else {
+				assert.Len(t, actualCookies, 2, tt.title)
 
-			switch cookie.Name {
-			case "session":
-				assert.NotEqual(t, token.Token, cookie.Value)
-			case "refreshToken":
-				assert.NotEqual(t, token.RefreshToken, cookie.Value)
+				for _, actualCookie := range actualCookies {
+					cookie, err := http.ParseSetCookie(actualCookie)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					assert.NotEmpty(t, cookie.Value, tt.title)
+
+					switch cookie.Name {
+					case "session":
+						assert.NotEqual(t, token.Token, cookie.Value, tt.title)
+					case "refreshToken":
+						assert.NotEqual(t, token.RefreshToken, cookie.Value, tt.title)
+					}
+				}
 			}
 		}
 	})
@@ -279,45 +461,76 @@ func TestIntegration_UserHandler(t *testing.T) {
 	t.Run("GetCurrentUser", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 
-		expected := fooUser.ResponseProfile(false)
-
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
-		w := httptest.NewRecorder()
-		c, token := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now().Add(-time.Hour))
-
-		h.GetCurrentUser(c)
-
-		var actual message.ProfileResponse
-		err := json.NewDecoder(w.Result().Body).Decode(&actual)
-		if err != nil {
-			t.Fatal(err)
+		tests := []struct {
+			title              string
+			reqUser            *model.User
+			expectedStatusCode int
+			expectedBody       message.ProfileResponse
+			expectedError      map[string]interface{}
+			hasError           bool
+		}{
+			{
+				"get current user: success",
+				fooUser,
+				http.StatusOK,
+				fooUser.ResponseProfile(false),
+				nil,
+				false,
+			},
+			{
+				"get current user: wrong user id",
+				&model.User{ID: 0},
+				http.StatusNotFound,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "current user not found"},
+				true,
+			},
 		}
-		defer w.Result().Body.Close()
 
-		actualCookies := w.Result().Header.Values("Set-Cookie")
+		for _, tt := range tests {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
+			w := httptest.NewRecorder()
+			c, token := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now().Add(-time.Hour))
 
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, expected, actual)
-		assert.Len(t, actualCookies, 2)
+			h.GetCurrentUser(c)
 
-		for _, actualCookie := range actualCookies {
-			cookie, err := http.ParseSetCookie(actualCookie)
-			if err != nil {
-				t.Fatal(err)
-			}
+			actualCookies := w.Result().Header.Values("Set-Cookie")
 
-			assert.NotEmpty(t, cookie.Value)
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
 
-			switch cookie.Name {
-			case "session":
-				assert.NotEqual(t, token.Token, cookie.Value)
-			case "refreshToken":
-				assert.NotEqual(t, token.RefreshToken, cookie.Value)
+			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
+				assert.Empty(t, actualCookies, tt.title)
+			} else {
+				actualBody := test.GetResponseBody[message.ProfileResponse](t, w.Result())
+				assert.Equal(t, tt.expectedBody, actualBody, tt.title)
+				assert.Len(t, actualCookies, 2, tt.title)
+
+				for _, actualCookie := range actualCookies {
+					cookie, err := http.ParseSetCookie(actualCookie)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					assert.NotEmpty(t, cookie.Value, tt.title)
+
+					switch cookie.Name {
+					case "session":
+						assert.NotEqual(t, token.Token, cookie.Value, tt.title)
+					case "refreshToken":
+						assert.NotEqual(t, token.RefreshToken, cookie.Value, tt.title)
+					}
+				}
 			}
 		}
 	})
 
 	t.Run("UpdateCurrentUser", func(t *testing.T) {
+		shortMaxLenString := strings.Repeat("a", 101)
+		longMaxLenString := strings.Repeat("a", 256)
+		passwordMaxLenString := strings.Repeat("a", 51)
+
 		fooUser := createRandomUser(t, lct.DB())
 
 		randStr := test.RandomString(t, 15)
@@ -336,12 +549,16 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 		tests := []struct {
 			title              string
+			reqUser            *model.User
 			reqBody            *message.UpdateUserRequest
 			expectedStatusCode int
-			expected           message.ProfileResponse
+			expectedBody       message.ProfileResponse
+			expectedError      map[string]interface{}
+			hasError           bool
 		}{
 			{
 				"update fooUser: success",
+				fooUser,
 				&message.UpdateUserRequest{
 					Username: user.Username,
 					Email:    user.Email,
@@ -352,9 +569,12 @@ func TestIntegration_UserHandler(t *testing.T) {
 				},
 				http.StatusOK,
 				expected,
+				nil,
+				false,
 			},
 			{
 				"update fooUser: ignore zero-value field",
+				fooUser,
 				&message.UpdateUserRequest{
 					Username: "",
 					Email:    "",
@@ -365,6 +585,171 @@ func TestIntegration_UserHandler(t *testing.T) {
 				},
 				http.StatusOK,
 				expected,
+				nil,
+				false,
+			},
+			{
+				"update: wrong user id",
+				&model.User{ID: 0},
+				&message.UpdateUserRequest{},
+				http.StatusNotFound,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "current user not found"},
+				true,
+			},
+			{
+				"update: invalid username format",
+				fooUser,
+				&message.UpdateUserRequest{
+					Username: "_invalid@@username_",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Username: must be in a valid format."},
+				true,
+			},
+			{
+				"update: username is too short",
+				fooUser,
+				&message.UpdateUserRequest{
+					Username: "abc",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Username: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"update: username is too long",
+				fooUser,
+				&message.UpdateUserRequest{
+					Username: shortMaxLenString,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Username: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"update: password is too short",
+				fooUser,
+				&message.UpdateUserRequest{
+					Password: "abc",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Password: the length must be between 7 and 50."},
+				true,
+			},
+			{
+				"update: password is too long",
+				fooUser,
+				&message.UpdateUserRequest{
+					Password: passwordMaxLenString,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Password: the length must be between 7 and 50."},
+				true,
+			},
+			{
+				"update: weak password",
+				fooUser,
+				&message.UpdateUserRequest{
+					Password: "password",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Password: must have at least one uppercase, one number, one symbol or punctuation."},
+				true,
+			},
+			{
+				"update: email is too short",
+				fooUser,
+				&message.UpdateUserRequest{
+					Email: "abc",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Email: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"update: email is too long",
+				fooUser,
+				&message.UpdateUserRequest{
+					Email: shortMaxLenString,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Email: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"update: invalid email format",
+				fooUser,
+				&message.UpdateUserRequest{
+					Email: "invalid_email_format",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Email: must be a valid email address."},
+				true,
+			},
+			{
+				"update: name is too short",
+				fooUser,
+				&message.UpdateUserRequest{
+					Name: "abc",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Name: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"update: name is too long",
+				fooUser,
+				&message.UpdateUserRequest{
+					Name: shortMaxLenString,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Name: the length must be between 5 and 100."},
+				true,
+			},
+			{
+				"update: bio is too long",
+				fooUser,
+				&message.UpdateUserRequest{
+					Bio: longMaxLenString,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Bio: the length must be no more than 255."},
+				true,
+			},
+			{
+				"update: image is too long",
+				fooUser,
+				&message.UpdateUserRequest{
+					Image: longMaxLenString,
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Image: the length must be no more than 255."},
+				true,
+			},
+			{
+				"update: invalid image url format",
+				fooUser,
+				&message.UpdateUserRequest{
+					Image: "invalid_url_format",
+				},
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "validation error: Image: must be a valid URL."},
+				true,
 			},
 		}
 
@@ -376,36 +761,37 @@ func TestIntegration_UserHandler(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodPut, "/api/v1/me", bytes.NewReader(body))
 			w := httptest.NewRecorder()
-			c, token := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now().Add(-time.Hour))
+			c, token := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now().Add(-time.Hour))
 
 			h.UpdateCurrentUser(c)
 
-			var actual message.ProfileResponse
-			err = json.NewDecoder(w.Result().Body).Decode(&actual)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer w.Result().Body.Close()
-
 			actualCookies := w.Result().Header.Values("Set-Cookie")
 
-			assert.Equal(t, http.StatusOK, w.Result().StatusCode, tt.title)
-			assert.Equal(t, expected, actual, tt.title)
-			assert.Len(t, actualCookies, 2, tt.title)
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
 
-			for _, actualCookie := range actualCookies {
-				cookie, err := http.ParseSetCookie(actualCookie)
-				if err != nil {
-					t.Fatal(err)
-				}
+			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
+				assert.Empty(t, actualCookies, tt.title)
+			} else {
+				actualBody := test.GetResponseBody[message.ProfileResponse](t, w.Result())
+				assert.Equal(t, tt.expectedBody, actualBody, tt.title)
+				assert.Len(t, actualCookies, 2, tt.title)
 
-				assert.NotEmpty(t, cookie.Value, tt.title)
+				for _, actualCookie := range actualCookies {
+					cookie, err := http.ParseSetCookie(actualCookie)
+					if err != nil {
+						t.Fatal(err)
+					}
 
-				switch cookie.Name {
-				case "session":
-					assert.NotEqual(t, token.Token, cookie.Value, tt.title)
-				case "refreshToken":
-					assert.NotEqual(t, token.RefreshToken, cookie.Value, tt.title)
+					assert.NotEmpty(t, cookie.Value, tt.title)
+
+					switch cookie.Name {
+					case "session":
+						assert.NotEqual(t, token.Token, cookie.Value, tt.title)
+					case "refreshToken":
+						assert.NotEqual(t, token.RefreshToken, cookie.Value, tt.title)
+					}
 				}
 			}
 		}

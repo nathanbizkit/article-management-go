@@ -10,18 +10,18 @@ import (
 
 // Secure attaches secure tls middleware to http engine
 func Secure(environ *env.ENV) gin.HandlerFunc {
+	opts := secure.Options{
+		SSLRedirect:   true,
+		IsDevelopment: environ.IsDevelopment,
+	}
+
+	if environ.IsDevelopment {
+		opts.SSLHost = fmt.Sprintf("localhost:%s", environ.AppTLSPort)
+	}
+
+	secureMiddleware := secure.New(opts)
+
 	return func(ctx *gin.Context) {
-		opts := secure.Options{
-			SSLRedirect:   true,
-			IsDevelopment: environ.IsDevelopment,
-		}
-
-		if environ.IsDevelopment {
-			opts.SSLHost = fmt.Sprintf("localhost:%s", environ.AppTLSPort)
-		}
-
-		secureMiddleware := secure.New(opts)
-
 		err := secureMiddleware.Process(ctx.Writer, ctx.Request)
 		if err != nil {
 			ctx.Abort()

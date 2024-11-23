@@ -47,7 +47,7 @@ func (h *Handler) Login(ctx *gin.Context) {
 
 	h.authen.SetCookieToken(ctx, *token, APIGroupPath)
 
-	ctx.AbortWithStatus(http.StatusOK)
+	ctx.AbortWithStatus(http.StatusNoContent)
 }
 
 // Register creates a new user and attaches tokens to cookie
@@ -72,6 +72,7 @@ func (h *Handler) Register(ctx *gin.Context) {
 	isPlainPassword := true
 	err = user.Validate(isPlainPassword)
 	if err != nil {
+		err := fmt.Errorf("validation error: %w", err)
 		h.logger.Error().Err(err).Msg("validation error")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -120,7 +121,15 @@ func (h *Handler) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	token, err := h.authen.GenerateToken(id)
+	user, err := h.us.GetByID(ctx.Request.Context(), id)
+	if err != nil {
+		msg := "user not found"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": msg})
+		return
+	}
+
+	token, err := h.authen.GenerateToken(user.ID)
 	if err != nil {
 		msg := "failed to generate token"
 		h.logger.Error().Err(err).Msg(msg)
@@ -130,14 +139,20 @@ func (h *Handler) RefreshToken(ctx *gin.Context) {
 
 	h.authen.SetCookieToken(ctx, *token, APIGroupPath)
 
-	ctx.AbortWithStatus(http.StatusOK)
+	ctx.AbortWithStatus(http.StatusNoContent)
 }
 
 // GetCurrentUser gets current user's profile
 func (h *Handler) GetCurrentUser(ctx *gin.Context) {
 	h.logger.Info().Msg("get current user")
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
+	currentUser, err := h.GetCurrentUserFromContext(ctx)
+	if err != nil {
+		msg := "current user not found"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": msg})
+		return
+	}
 
 	token, err := h.authen.GenerateToken(currentUser.ID)
 	if err != nil {
@@ -157,20 +172,27 @@ func (h *Handler) GetCurrentUser(ctx *gin.Context) {
 func (h *Handler) UpdateCurrentUser(ctx *gin.Context) {
 	h.logger.Info().Msg("update current user")
 
+	currentUser, err := h.GetCurrentUserFromContext(ctx)
+	if err != nil {
+		msg := "current user not found"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": msg})
+		return
+	}
+
 	var req message.UpdateUserRequest
-	err := ctx.ShouldBindJSON(&req)
+	err = ctx.ShouldBindJSON(&req)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("failed to bind request body")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
-
 	isPlainPassword := currentUser.Overwrite(req.Username, req.Email, req.Password, req.Name, req.Bio, req.Image)
 
 	err = currentUser.Validate(isPlainPassword)
 	if err != nil {
+		err := fmt.Errorf("validation error: %w", err)
 		h.logger.Error().Err(err).Msg("validation error")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

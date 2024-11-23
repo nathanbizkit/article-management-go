@@ -65,7 +65,7 @@
               "script": {
                 "exec": [
                   "pm.test(\"Auth cookie is present\", () => {",
-                  "    pm.response.to.have.status(200)",
+                  "    pm.response.to.have.status(204)",
                   "    pm.expect(pm.cookies.has('session')).to.be.true",
                   "    pm.expect(pm.cookies.has('refreshToken')).to.be.true",
                   "})",
@@ -112,7 +112,7 @@
               "script": {
                 "exec": [
                   "pm.test(\"Auth cookie is present\", () => {",
-                  "    pm.response.to.have.status(200)",
+                  "    pm.response.to.have.status(204)",
                   "    pm.expect(pm.cookies.has('session')).to.be.true",
                   "    pm.expect(pm.cookies.has('refreshToken')).to.be.true",
                   "})",
@@ -280,7 +280,7 @@
                   "script": {
                     "exec": [
                       "pm.test(\"Auth cookie is present\", () => {",
-                      "    pm.response.to.have.status(200)",
+                      "    pm.response.to.have.status(204)",
                       "    pm.expect(pm.cookies.has('session')).to.be.true",
                       "    pm.expect(pm.cookies.has('refreshToken')).to.be.true",
                       "})",
@@ -646,7 +646,7 @@
                   "script": {
                     "exec": [
                       "pm.test(\"Auth cookie is present\", () => {",
-                      "    pm.response.to.have.status(200)",
+                      "    pm.response.to.have.status(204)",
                       "    pm.expect(pm.cookies.has('session')).to.be.true",
                       "    pm.expect(pm.cookies.has('refreshToken')).to.be.true",
                       "})",
@@ -1105,7 +1105,7 @@
                   "script": {
                     "exec": [
                       "pm.test(\"Auth cookie is present\", () => {",
-                      "    pm.response.to.have.status(200)",
+                      "    pm.response.to.have.status(204)",
                       "    pm.expect(pm.cookies.has('session')).to.be.true",
                       "    pm.expect(pm.cookies.has('refreshToken')).to.be.true",
                       "})",
@@ -1341,7 +1341,7 @@
                   "    pm.expect(jsonData.articles.length).to.equal(jsonData.articles_count)",
                   "",
                   "    const articles = [...jsonData.articles]",
-                  "    if (articles.length != 0) {",
+                  "    if (articles.length !== 0) {",
                   "        articles.forEach((article) => {",
                   "            pm.expect(article).to.have.property('id')",
                   "            pm.expect(article.id).to.be.a('number')",
@@ -1413,7 +1413,7 @@
                   "    pm.expect(jsonData.articles.length).to.equal(jsonData.articles_count)",
                   "",
                   "    const articles = [...jsonData.articles]",
-                  "    if (articles.length != 0) {",
+                  "    if (articles.length !== 0) {",
                   "        articles.forEach((article) => {",
                   "            pm.expect(article).to.have.property('id')",
                   "            pm.expect(article.id).to.be.a('number')",
@@ -1488,7 +1488,7 @@
                   "    pm.expect(jsonData.articles.length).to.equal(jsonData.articles_count)",
                   "",
                   "    const articles = [...jsonData.articles]",
-                  "    if (articles.length != 0) {",
+                  "    if (articles.length !== 0) {",
                   "        articles.forEach((article) => {",
                   "            pm.expect(article).to.have.property('id')",
                   "            pm.expect(article.id).to.be.a('number')",
@@ -1560,7 +1560,7 @@
                   "    pm.expect(jsonData.articles.length).to.equal(jsonData.articles_count)",
                   "",
                   "    const articles = [...jsonData.articles]",
-                  "    if (articles.length != 0) {",
+                  "    if (articles.length !== 0) {",
                   "        articles.forEach((article) => {",
                   "            pm.expect(article).to.have.property('id')",
                   "            pm.expect(article.id).to.be.a('number')",
@@ -1641,7 +1641,7 @@
                   "    pm.expect(jsonData.articles.length).to.equal(jsonData.articles_count)",
                   "",
                   "    const articles = [...jsonData.articles]",
-                  "    if (articles.length != 0) {",
+                  "    if (articles.length !== 0) {",
                   "        articles.forEach((article) => {",
                   "            pm.expect(article).to.have.property('id')",
                   "            pm.expect(article.id).to.be.a('number')",
@@ -1719,7 +1719,7 @@
                   "    pm.expect(jsonData.articles.length).to.equal(jsonData.articles_count)",
                   "",
                   "    const articles = [...jsonData.articles]",
-                  "    if (articles.length != 0) {",
+                  "    if (articles.length !== 0) {",
                   "        articles.forEach((article) => {",
                   "            pm.expect(article).to.have.property('id')",
                   "            pm.expect(article.id).to.be.a('number')",
@@ -1800,7 +1800,7 @@
                   "    pm.expect(jsonData.articles.length).to.equal(jsonData.articles_count)",
                   "",
                   "    const articles = [...jsonData.articles]",
-                  "    if (articles.length != 0) {",
+                  "    if (articles.length !== 0) {",
                   "        articles.forEach((article) => {",
                   "            pm.expect(article).to.have.property('id')",
                   "            pm.expect(article.id).to.be.a('number')",
@@ -1878,7 +1878,7 @@
                   "    pm.expect(jsonData.articles.length).to.equal(jsonData.articles_count)",
                   "",
                   "    const articles = [...jsonData.articles]",
-                  "    if (articles.length != 0) {",
+                  "    if (articles.length !== 0) {",
                   "        articles.forEach((article) => {",
                   "            pm.expect(article).to.have.property('id')",
                   "            pm.expect(article.id).to.be.a('number')",
@@ -1959,7 +1959,7 @@
                   "    pm.expect(jsonData.articles.length).to.equal(jsonData.articles_count)",
                   "",
                   "    const articles = [...jsonData.articles]",
-                  "    if (articles.length != 0) {",
+                  "    if (articles.length !== 0) {",
                   "        articles.forEach((article) => {",
                   "            pm.expect(article).to.have.property('id')",
                   "            pm.expect(article.id).to.be.a('number')",
@@ -2225,7 +2225,7 @@
               "script": {
                 "exec": [
                   "pm.test(\"Delete successfully\", () => {",
-                  "    pm.response.to.have.status(200)",
+                  "    pm.response.to.have.status(204)",
                   "})",
                   ""
                 ],
@@ -2408,7 +2408,7 @@
                   "    pm.expect(jsonData.comments).to.be.an('array')",
                   "",
                   "    const comments = [...jsonData.comments]",
-                  "    if (comments.length != 0) {",
+                  "    if (comments.length !== 0) {",
                   "        comments.forEach((comment) => {",
                   "            pm.expect(comment).to.have.property('id')",
                   "            pm.expect(comment.id).to.be.a('number')",
@@ -2461,7 +2461,7 @@
               "script": {
                 "exec": [
                   "pm.test(\"Delete successfully\", () => {",
-                  "    pm.response.to.have.status(200)",
+                  "    pm.response.to.have.status(204)",
                   "})"
                 ],
                 "type": "text/javascript",
@@ -2505,7 +2505,7 @@
                   "    pm.expect(jsonBody.tags).to.be.an('array')",
                   "",
                   "    const tags = [...jsonBody.tags]",
-                  "    if (tags.length != 0) {",
+                  "    if (tags.length !== 0) {",
                   "        tags.forEach((tag) => {",
                   "            pm.expect(tag).to.be.a('string')",
                   "        })",

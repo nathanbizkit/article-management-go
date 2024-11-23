@@ -161,12 +161,12 @@ func TestUnit_Auth(t *testing.T) {
 		}
 
 		tests := []struct {
-			title        string
-			ctx          func() *gin.Context
-			strictCookie bool
-			refresh      bool
-			expected     uint
-			hasError     bool
+			title          string
+			getContextFn   func() *gin.Context
+			strictCookie   bool
+			refresh        bool
+			expectedUserID uint
+			hasError       bool
 		}{
 			{
 				"get user id (session): success",
@@ -265,7 +265,7 @@ func TestUnit_Auth(t *testing.T) {
 				true,
 			},
 			{
-				"get user id: allow unsecured connection if no cookie is found",
+				"get user id: allow public connection if no cookie is found",
 				noCookieCtx,
 				false,
 				false,
@@ -273,7 +273,7 @@ func TestUnit_Auth(t *testing.T) {
 				false,
 			},
 			{
-				"get user id: allow unsecured connection if cookie is empty",
+				"get user id: allow public connection if cookie is empty",
 				emptyTokenCtx,
 				false,
 				false,
@@ -283,7 +283,7 @@ func TestUnit_Auth(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			actual, err := authen.GetUserID(tt.ctx(), tt.strictCookie, tt.refresh)
+			actualUserID, err := authen.GetUserID(tt.getContextFn(), tt.strictCookie, tt.refresh)
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)
@@ -291,7 +291,7 @@ func TestUnit_Auth(t *testing.T) {
 				assert.NoError(t, err, tt.title)
 			}
 
-			assert.Equal(t, tt.expected, actual, tt.title)
+			assert.Equal(t, tt.expectedUserID, actualUserID, tt.title)
 		}
 	})
 

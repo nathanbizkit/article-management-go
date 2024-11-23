@@ -9,14 +9,14 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Auth guards against unauthenticated incoming request
+// Auth guards against unauthorized incoming request
 func Auth(l *zerolog.Logger, authen *auth.Auth, strictCookie bool) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		refresh := false
 		id, err := authen.GetUserID(ctx, strictCookie, refresh)
 		if err != nil {
-			msg := "unauthenticated"
-			err = fmt.Errorf("unauthenticated: %w", err)
+			msg := "unauthorized"
+			err = fmt.Errorf("unauthorized: %w", err)
 			l.Error().Err(err).Msg(msg)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": msg})
 			return

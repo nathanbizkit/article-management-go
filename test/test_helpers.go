@@ -1,6 +1,7 @@
 package test
 
 import (
+	"encoding/json"
 	"io"
 	"math/rand"
 	"net/http"
@@ -115,4 +116,18 @@ func AddCookieToResponse(t *testing.T, w http.ResponseWriter, name, value, domai
 	if v := cookie.String(); v != "" {
 		w.Header().Add("Set-Cookie", v)
 	}
+}
+
+// GetResponseBody parses http json response body into specific object type
+func GetResponseBody[T any](t *testing.T, res *http.Response) T {
+	t.Helper()
+
+	var jsonBody T
+	err := json.NewDecoder(res.Body).Decode(&jsonBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	return jsonBody
 }

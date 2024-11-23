@@ -11,7 +11,13 @@ import (
 func (h *Handler) ShowProfile(ctx *gin.Context) {
 	h.logger.Info().Msg("show profile")
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
+	currentUser, err := h.GetCurrentUserFromContext(ctx)
+	if err != nil {
+		msg := "current user not found"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": msg})
+		return
+	}
 
 	username := ctx.Param("username")
 	user, err := h.us.GetByUsername(ctx.Request.Context(), username)
@@ -30,16 +36,22 @@ func (h *Handler) ShowProfile(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user.ResponseProfile(following))
+	ctx.AbortWithStatusJSON(http.StatusOK, user.ResponseProfile(following))
 }
 
 // FollowUser follows a user
 func (h *Handler) FollowUser(ctx *gin.Context) {
 	h.logger.Info().Msg("follow user")
 
-	username := ctx.Param("username")
+	currentUser, err := h.GetCurrentUserFromContext(ctx)
+	if err != nil {
+		msg := "current user not found"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": msg})
+		return
+	}
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
+	username := ctx.Param("username")
 
 	if currentUser.Username == username {
 		msg := "cannot follow yourself"
@@ -68,7 +80,7 @@ func (h *Handler) FollowUser(ctx *gin.Context) {
 	if following {
 		err := fmt.Errorf("current user (ID: %d) is already following user (ID: %d)", currentUser.ID, user.ID)
 		h.logger.Error().Err(err).Msg("current user is already following the user")
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "you are already following the user"})
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "you are already following this user"})
 		return
 	}
 
@@ -81,16 +93,22 @@ func (h *Handler) FollowUser(ctx *gin.Context) {
 	}
 
 	following = true
-	ctx.JSON(http.StatusOK, user.ResponseProfile(following))
+	ctx.AbortWithStatusJSON(http.StatusOK, user.ResponseProfile(following))
 }
 
 // UnfollowUser unfollows a user
 func (h *Handler) UnfollowUser(ctx *gin.Context) {
 	h.logger.Info().Msg("unfollow user")
 
-	username := ctx.Param("username")
+	currentUser, err := h.GetCurrentUserFromContext(ctx)
+	if err != nil {
+		msg := "current user not found"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": msg})
+		return
+	}
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
+	username := ctx.Param("username")
 
 	if currentUser.Username == username {
 		msg := "cannot unfollow yourself"
@@ -119,7 +137,7 @@ func (h *Handler) UnfollowUser(ctx *gin.Context) {
 	if !following {
 		err := fmt.Errorf("current user (ID: %d) is not following user (ID: %d)", currentUser.ID, user.ID)
 		h.logger.Error().Err(err).Msg("current user is not following the user")
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "you are not following the user"})
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "you are not following this user"})
 		return
 	}
 
@@ -132,5 +150,5 @@ func (h *Handler) UnfollowUser(ctx *gin.Context) {
 	}
 
 	following = false
-	ctx.JSON(http.StatusOK, user.ResponseProfile(following))
+	ctx.AbortWithStatusJSON(http.StatusOK, user.ResponseProfile(following))
 }

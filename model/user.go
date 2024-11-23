@@ -82,12 +82,8 @@ func isStrongPassword(isPlainPassword bool) validation.RuleFunc {
 
 		password, _ := value.(string)
 
-		if len(password) < passwordMinLen {
-			return fmt.Errorf("the length must be no less than %d", passwordMinLen)
-		}
-
-		if len(password) > passwordMaxLen {
-			return fmt.Errorf("the length must be no more than %d", passwordMaxLen)
+		if len(password) < passwordMinLen || len(password) > passwordMaxLen {
+			return fmt.Errorf("the length must be between %d and %d", passwordMinLen, passwordMaxLen)
 		}
 
 		var (

@@ -70,15 +70,11 @@ func validateTag(value interface{}) error {
 	t, _ := value.(Tag)
 
 	if t.Name == "" {
-		return errors.New("must not be empty")
+		return errors.New("tag name cannot be blank")
 	}
 
-	if len(t.Name) < tagMinLen {
-		return fmt.Errorf("the length must be more than %d", tagMinLen)
-	}
-
-	if len(t.Name) > tagMaxLen {
-		return fmt.Errorf("the length must be no more than %d", tagMaxLen)
+	if len(t.Name) < tagMinLen || len(t.Name) > tagMaxLen {
+		return fmt.Errorf("tag name length must be between %d and %d", tagMinLen, tagMaxLen)
 	}
 
 	return nil

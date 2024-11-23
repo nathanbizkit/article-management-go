@@ -20,7 +20,7 @@ func TestUnit_ArticleModel(t *testing.T) {
 
 		tests := []struct {
 			title    string
-			a        *Article
+			article  *Article
 			hasError bool
 		}{
 			{
@@ -158,7 +158,7 @@ func TestUnit_ArticleModel(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			err := tt.a.Validate()
+			err := tt.article.Validate()
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)
@@ -173,8 +173,8 @@ func TestUnit_ArticleModel(t *testing.T) {
 
 		tests := []struct {
 			title    string
-			a        *Article
-			in       *Article
+			article  *Article
+			input    *Article
 			expected *Article
 		}{
 			{
@@ -230,8 +230,8 @@ func TestUnit_ArticleModel(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt.a.Overwrite(tt.in.Title, tt.in.Description, tt.in.Body)
-			assert.Equal(t, tt.expected, tt.a, tt.title)
+			tt.article.Overwrite(tt.input.Title, tt.input.Description, tt.input.Body)
+			assert.Equal(t, tt.expected, tt.article, tt.title)
 		}
 	})
 
@@ -239,8 +239,6 @@ func TestUnit_ArticleModel(t *testing.T) {
 		now := time.Now()
 		nowString := now.Format(time.RFC3339Nano)
 
-		favorited := false
-		following := false
 		expected := message.ArticleResponse{
 			ID:          1,
 			Title:       "Article 1",
@@ -251,16 +249,16 @@ func TestUnit_ArticleModel(t *testing.T) {
 				Name:      "FooUser",
 				Bio:       "This is my bio.",
 				Image:     "https://imgur.com/image.jpeg",
-				Following: following,
+				Following: false,
 			},
-			Favorited:      favorited,
+			Favorited:      false,
 			FavoritesCount: 10,
 			CreatedAt:      nowString,
 			UpdatedAt:      nowString,
 			Tags:           []string{"tag-1", "tag-2"},
 		}
 
-		a := Article{
+		article := Article{
 			ID:          1,
 			Title:       "Article 1",
 			Description: "This is a description.",
@@ -283,7 +281,7 @@ func TestUnit_ArticleModel(t *testing.T) {
 			UpdatedAt:      now,
 		}
 
-		actual := a.ResponseArticle(favorited, following)
+		actual := article.ResponseArticle(false, false)
 		assert.Equal(t, expected, actual)
 	})
 }

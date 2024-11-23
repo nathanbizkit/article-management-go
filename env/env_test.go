@@ -47,11 +47,11 @@ func TestUnit_ENV(t *testing.T) {
 		}
 
 		tests := []struct {
-			title    string
-			envFile  string
-			setEnv   func(t *testing.T)
-			expected *ENV
-			hasError bool
+			title            string
+			envFile          string
+			setEnvironmentFn func(t *testing.T)
+			expectedEnviron  *ENV
+			hasError         bool
 		}{
 			{
 				"parse with env file: success",
@@ -331,12 +331,11 @@ func TestUnit_ENV(t *testing.T) {
 
 		for _, tt := range tests {
 			resetEnvironment(t)
+			tt.setEnvironmentFn(t)
 
-			tt.setEnv(t)
+			actualEnviron, err := Parse(tt.envFile)
 
-			actual, err := Parse(tt.envFile)
-
-			assert.Equal(t, tt.expected, actual, tt.title)
+			assert.Equal(t, tt.expectedEnviron, actualEnviron, tt.title)
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)

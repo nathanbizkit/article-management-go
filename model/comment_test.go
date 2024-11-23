@@ -16,7 +16,7 @@ func TestUnit_CommentModel(t *testing.T) {
 	t.Run("Validate", func(t *testing.T) {
 		tests := []struct {
 			title    string
-			c        *Comment
+			comment  *Comment
 			hasError bool
 		}{
 			{
@@ -58,7 +58,7 @@ func TestUnit_CommentModel(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			err := tt.c.Validate()
+			err := tt.comment.Validate()
 
 			if tt.hasError {
 				assert.Error(t, err, tt.title)
@@ -72,7 +72,6 @@ func TestUnit_CommentModel(t *testing.T) {
 		now := time.Now()
 		nowString := now.Format(time.RFC3339Nano)
 
-		following := false
 		expected := message.CommentResponse{
 			ID:   1,
 			Body: "This is my comment.",
@@ -81,13 +80,13 @@ func TestUnit_CommentModel(t *testing.T) {
 				Name:      "FooUser",
 				Bio:       "This is my bio.",
 				Image:     "https://imgur.com/image.jpeg",
-				Following: following,
+				Following: false,
 			},
 			CreatedAt: nowString,
 			UpdatedAt: nowString,
 		}
 
-		c := Comment{
+		comment := Comment{
 			ID:     1,
 			Body:   "This is my comment.",
 			UserID: 1,
@@ -107,7 +106,7 @@ func TestUnit_CommentModel(t *testing.T) {
 			UpdatedAt: now,
 		}
 
-		actual := c.ResponseComment(following)
+		actual := comment.ResponseComment(false)
 		assert.Equal(t, expected, actual)
 	})
 }

@@ -37,103 +37,331 @@ func TestIntegration_CommentHandler(t *testing.T) {
 			Body:   randStr,
 			Author: *fooUser,
 		}
-		expected := comment.ResponseComment(false)
 
-		r := message.CreateCommentRequest{
-			Body: randStr,
+		tests := []struct {
+			title              string
+			reqUser            *model.User
+			reqSlug            string
+			reqBody            *message.CreateCommentRequest
+			expectedStatusCode int
+			expectedBody       message.CommentResponse
+			expectedError      map[string]interface{}
+			hasError           bool
+		}{
+			{
+				"create comment: success",
+				fooUser,
+				strconv.Itoa(int(barArticle.ID)),
+				&message.CreateCommentRequest{
+					Body: randStr,
+				},
+				http.StatusOK,
+				comment.ResponseComment(false),
+				nil,
+				false,
+			},
+			{
+				"create comment: wrong current user id",
+				&model.User{ID: 0},
+				strconv.Itoa(int(barArticle.ID)),
+				&message.CreateCommentRequest{},
+				http.StatusNotFound,
+				message.CommentResponse{},
+				map[string]interface{}{"error": "current user not found"},
+				true,
+			},
+			{
+				"create comment: invalid slug",
+				fooUser,
+				"invalid_slug",
+				&message.CreateCommentRequest{},
+				http.StatusBadRequest,
+				message.CommentResponse{},
+				map[string]interface{}{"error": "invalid slug"},
+				true,
+			},
+			{
+				"create comment: wrong slug",
+				fooUser,
+				"0",
+				&message.CreateCommentRequest{},
+				http.StatusNotFound,
+				message.CommentResponse{},
+				map[string]interface{}{"error": "article not found"},
+				true,
+			},
+			{
+				"create comment: no body",
+				fooUser,
+				strconv.Itoa(int(barArticle.ID)),
+				&message.CreateCommentRequest{
+					Body: "",
+				},
+				http.StatusBadRequest,
+				message.CommentResponse{},
+				map[string]interface{}{"error": "validation error: Body: cannot be blank."},
+				true,
+			},
 		}
 
-		body, err := json.Marshal(r)
-		if err != nil {
-			t.Fatal(err)
+		for _, tt := range tests {
+			body, err := json.Marshal(tt.reqBody)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			apiUrl := fmt.Sprintf("/api/v1/articles/%v/comments", tt.reqSlug)
+			req := httptest.NewRequest(http.MethodPost, apiUrl, bytes.NewReader(body))
+
+			w := httptest.NewRecorder()
+			ctx, _ := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now())
+			ctx.AddParam("slug", tt.reqSlug)
+
+			h.CreateComment(ctx)
+
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
+
+			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
+			} else {
+				actualBody := test.GetResponseBody[message.CommentResponse](t, w.Result())
+				assert.NotEmpty(t, actualBody.ID, tt.title)
+				assert.Equal(t, tt.expectedBody.Body, actualBody.Body, tt.title)
+				assert.Equal(t, tt.expectedBody.Author, actualBody.Author, tt.title)
+				assert.NotEmpty(t, actualBody.CreatedAt, tt.title)
+				assert.NotEmpty(t, actualBody.UpdatedAt, tt.title)
+				assert.Equal(t, actualBody.CreatedAt, actualBody.UpdatedAt, tt.title)
+			}
 		}
-
-		apiUrl := fmt.Sprintf("/api/v1/articles/%d/comments", barArticle.ID)
-		req := httptest.NewRequest(http.MethodPost, apiUrl, bytes.NewReader(body))
-
-		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
-		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
-
-		h.CreateComment(ctx)
-
-		var actual message.CommentResponse
-		err = json.NewDecoder(w.Result().Body).Decode(&actual)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer w.Result().Body.Close()
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.NotEmpty(t, actual.ID)
-		assert.Equal(t, expected.Body, actual.Body)
-		assert.Equal(t, expected.Author, actual.Author)
-		assert.NotEmpty(t, actual.CreatedAt)
-		assert.NotEmpty(t, actual.UpdatedAt)
-		assert.Equal(t, actual.CreatedAt, actual.UpdatedAt)
 	})
 
 	t.Run("GetComments", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
 
+		fooArticle := createRandomArticle(t, lct.DB(), fooUser.ID)
 		barArticle := createRandomArticle(t, lct.DB(), barUser.ID)
 
 		comment1 := createRandomComment(t, lct.DB(), barArticle.ID, fooUser.ID)
 		time.Sleep(1 * time.Second)
 		comment2 := createRandomComment(t, lct.DB(), barArticle.ID, barUser.ID)
 
-		expected := message.CommentsResponse{
-			Comments: []message.CommentResponse{
-				comment2.ResponseComment(false),
-				comment1.ResponseComment(false),
+		tests := []struct {
+			title              string
+			reqUser            *model.User
+			reqSlug            string
+			expectedStatusCode int
+			expectedBody       message.CommentsResponse
+			expectedError      map[string]interface{}
+			hasError           bool
+		}{
+			{
+				"get comments from barArticle: success",
+				fooUser,
+				strconv.Itoa(int(barArticle.ID)),
+				http.StatusOK,
+				message.CommentsResponse{
+					Comments: []message.CommentResponse{
+						comment2.ResponseComment(false),
+						comment1.ResponseComment(false),
+					},
+				},
+				nil,
+				false,
+			},
+			{
+				"get comments from barArticle: success (empty comments)",
+				fooUser,
+				strconv.Itoa(int(fooArticle.ID)),
+				http.StatusOK,
+				message.CommentsResponse{
+					Comments: []message.CommentResponse{},
+				},
+				nil,
+				false,
+			},
+			{
+				"get comments from barArticle (without auth): success",
+				&model.User{ID: 0},
+				strconv.Itoa(int(barArticle.ID)),
+				http.StatusOK,
+				message.CommentsResponse{
+					Comments: []message.CommentResponse{
+						comment2.ResponseComment(false),
+						comment1.ResponseComment(false),
+					},
+				},
+				nil,
+				false,
+			},
+			{
+				"get comments from barArticle (without auth): success (empty comments)",
+				&model.User{ID: 0},
+				strconv.Itoa(int(fooArticle.ID)),
+				http.StatusOK,
+				message.CommentsResponse{
+					Comments: []message.CommentResponse{},
+				},
+				nil,
+				false,
+			},
+			{
+				"get comments: invalid slug",
+				fooUser,
+				"invalid_slug",
+				http.StatusBadRequest,
+				message.CommentsResponse{},
+				map[string]interface{}{"error": "invalid slug"},
+				true,
+			},
+			{
+				"get comments: wrong slug",
+				fooUser,
+				"0",
+				http.StatusNotFound,
+				message.CommentsResponse{},
+				map[string]interface{}{"error": "article not found"},
+				true,
 			},
 		}
 
-		apiUrl := fmt.Sprintf("/api/v1/articles/%d/comments", barArticle.ID)
-		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
+		for _, tt := range tests {
+			apiUrl := fmt.Sprintf("/api/v1/articles/%v/comments", tt.reqSlug)
+			req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
 
-		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
-		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
+			w := httptest.NewRecorder()
+			ctx, _ := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now())
+			ctx.AddParam("slug", tt.reqSlug)
 
-		h.GetComments(ctx)
+			h.GetComments(ctx)
 
-		var actual message.CommentsResponse
-		err := json.NewDecoder(w.Result().Body).Decode(&actual)
-		if err != nil {
-			t.Fatal(err)
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
+
+			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
+			} else {
+				actualBody := test.GetResponseBody[message.CommentsResponse](t, w.Result())
+				assert.Equal(t, tt.expectedBody, actualBody, tt.title)
+			}
 		}
-		defer w.Result().Body.Close()
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.ElementsMatch(t, expected.Comments, actual.Comments)
 	})
 
 	t.Run("DeleteComment", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
+		bazUser := createRandomUser(t, lct.DB())
+
+		fooArticle := createRandomArticle(t, lct.DB(), fooUser.ID)
 
 		barArticle := createRandomArticle(t, lct.DB(), barUser.ID)
+		barComment := createRandomComment(t, lct.DB(), barArticle.ID, fooUser.ID)
 
-		cm := createRandomComment(t, lct.DB(), barArticle.ID, fooUser.ID)
+		bazArticle := createRandomArticle(t, lct.DB(), bazUser.ID)
+		bazComment := createRandomComment(t, lct.DB(), bazArticle.ID, bazUser.ID)
 
-		apiUrl := fmt.Sprintf("/api/v1/articles/%d/comments/%d", barArticle.ID, cm.ID)
-		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
-
-		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
-		ctx.AddParam("slug", strconv.Itoa(int(barArticle.ID)))
-		ctx.AddParam("id", strconv.Itoa(int(cm.ID)))
-
-		h.DeleteComment(ctx)
-
-		actualComments, err := h.as.GetComments(context.Background(), barArticle)
-		if err != nil {
-			t.Fatal(err)
+		tests := []struct {
+			title              string
+			reqUser            *model.User
+			reqSlug            string
+			reqID              string
+			expectedStatusCode int
+			expectedError      map[string]interface{}
+			hasError           bool
+		}{
+			{
+				"delete comment: success",
+				fooUser,
+				strconv.Itoa(int(barArticle.ID)),
+				strconv.Itoa(int(barComment.ID)),
+				http.StatusNoContent,
+				nil,
+				false,
+			},
+			{
+				"delete comment: wrong current user id",
+				&model.User{ID: 0},
+				strconv.Itoa(int(barArticle.ID)),
+				strconv.Itoa(int(barComment.ID)),
+				http.StatusNotFound,
+				map[string]interface{}{"error": "current user not found"},
+				true,
+			},
+			{
+				"delete comment: invalid slug",
+				fooUser,
+				"invalid_slug",
+				strconv.Itoa(int(barComment.ID)),
+				http.StatusBadRequest,
+				map[string]interface{}{"error": "invalid slug"},
+				true,
+			},
+			{
+				"delete comment: invalid comment id",
+				fooUser,
+				strconv.Itoa(int(barArticle.ID)),
+				"invalid_id",
+				http.StatusBadRequest,
+				map[string]interface{}{"error": "invalid comment id"},
+				true,
+			},
+			{
+				"delete comment: wrong comment id",
+				fooUser,
+				strconv.Itoa(int(barArticle.ID)),
+				"0",
+				http.StatusNotFound,
+				map[string]interface{}{"error": "comment not found"},
+				true,
+			},
+			{
+				"delete comment: comment is not from the article",
+				fooUser,
+				strconv.Itoa(int(fooArticle.ID)),
+				strconv.Itoa(int(bazComment.ID)),
+				http.StatusBadRequest,
+				map[string]interface{}{"error": "the comment is not from this article"},
+				true,
+			},
+			{
+				"delete comment: forbidden to delete other user's comment",
+				fooUser,
+				strconv.Itoa(int(bazArticle.ID)),
+				strconv.Itoa(int(bazComment.ID)),
+				http.StatusForbidden,
+				map[string]interface{}{"error": "forbidden"},
+				true,
+			},
 		}
 
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Empty(t, actualComments)
+		for _, tt := range tests {
+			apiUrl := fmt.Sprintf("/api/v1/articles/%v/comments/%v", tt.reqSlug, tt.reqID)
+			req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
+
+			w := httptest.NewRecorder()
+			ctx, _ := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now())
+			ctx.AddParam("slug", tt.reqSlug)
+			ctx.AddParam("id", tt.reqID)
+
+			h.DeleteComment(ctx)
+
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
+
+			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
+			} else {
+				reqID, err := strconv.ParseUint(tt.reqID, 10, 0)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				actualComment, err := h.as.GetCommentByID(context.Background(), uint(reqID))
+
+				assert.Error(t, err, tt.title)
+				assert.Nil(t, actualComment, tt.title)
+			}
+		}
 	})
 }

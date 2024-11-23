@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nathanbizkit/article-management/message"
+	"github.com/nathanbizkit/article-management/model"
+	"github.com/nathanbizkit/article-management/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,94 +27,253 @@ func TestIntegration_ProfileHandler(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
 
-		expected := barUser.ResponseProfile(false)
-
-		apiUrl := fmt.Sprintf("/api/v1/profiles/%s", barUser.Username)
-		req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
-
-		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
-		ctx.AddParam("username", barUser.Username)
-
-		h.ShowProfile(ctx)
-
-		var actual message.ProfileResponse
-		err := json.NewDecoder(w.Result().Body).Decode(&actual)
-		if err != nil {
-			t.Fatal(err)
+		tests := []struct {
+			title              string
+			reqUser            *model.User
+			reqUsername        string
+			expectedStatusCode int
+			expectedBody       message.ProfileResponse
+			expectedError      map[string]interface{}
+			hasError           bool
+		}{
+			{
+				"show profile: barUser profile",
+				fooUser,
+				barUser.Username,
+				http.StatusOK,
+				barUser.ResponseProfile(false),
+				nil,
+				false,
+			},
+			{
+				"show profile: wrong current user id",
+				&model.User{ID: 0},
+				barUser.Username,
+				http.StatusNotFound,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "current user not found"},
+				true,
+			},
+			{
+				"show profile: wrong profile username",
+				fooUser,
+				"unknown_user",
+				http.StatusNotFound,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "user not found"},
+				true,
+			},
 		}
-		defer w.Result().Body.Close()
 
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, expected, actual)
+		for _, tt := range tests {
+			apiUrl := fmt.Sprintf("/api/v1/profiles/%s", tt.reqUsername)
+			req := httptest.NewRequest(http.MethodGet, apiUrl, nil)
+
+			w := httptest.NewRecorder()
+			ctx, _ := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now())
+			ctx.AddParam("username", tt.reqUsername)
+
+			h.ShowProfile(ctx)
+
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
+
+			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
+			} else {
+				actualBody := test.GetResponseBody[message.ProfileResponse](t, w.Result())
+				assert.Equal(t, tt.expectedBody, actualBody, tt.title)
+			}
+		}
 	})
 
 	t.Run("FollowUser", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
+		bazUser := createRandomUser(t, lct.DB())
 
-		expected := barUser.ResponseProfile(true)
-
-		apiUrl := fmt.Sprintf("/api/v1/profiles/%s/follow", barUser.Username)
-		req := httptest.NewRequest(http.MethodPost, apiUrl, nil)
-
-		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
-		ctx.AddParam("username", barUser.Username)
-
-		h.FollowUser(ctx)
-
-		var actual message.ProfileResponse
-		err := json.NewDecoder(w.Result().Body).Decode(&actual)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer w.Result().Body.Close()
-
-		actualFollowing, err := h.us.IsFollowing(context.Background(), fooUser, barUser)
+		err := h.us.Follow(context.Background(), fooUser, bazUser)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, expected, actual)
-		assert.True(t, actualFollowing)
+		tests := []struct {
+			title              string
+			reqUser            *model.User
+			reqUsername        string
+			expectedStatusCode int
+			expectedBody       message.ProfileResponse
+			expectedError      map[string]interface{}
+			hasError           bool
+		}{
+			{
+				"follow user: fooUser follows barUser",
+				fooUser,
+				barUser.Username,
+				http.StatusOK,
+				barUser.ResponseProfile(true),
+				nil,
+				false,
+			},
+			{
+				"follow user: wrong current user id",
+				&model.User{ID: 0},
+				barUser.Username,
+				http.StatusNotFound,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "current user not found"},
+				true,
+			},
+			{
+				"follow user: cannot follow yourself",
+				fooUser,
+				fooUser.Username,
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "cannot follow yourself"},
+				true,
+			},
+			{
+				"follow user: wrong username",
+				fooUser,
+				"unknown_user",
+				http.StatusNotFound,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "user not found"},
+				true,
+			},
+			{
+				"follow user: fooUser is already following bazUser",
+				fooUser,
+				bazUser.Username,
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "you are already following this user"},
+				true,
+			},
+		}
+
+		for _, tt := range tests {
+			apiUrl := fmt.Sprintf("/api/v1/profiles/%s/follow", tt.reqUsername)
+			req := httptest.NewRequest(http.MethodPost, apiUrl, nil)
+
+			w := httptest.NewRecorder()
+			ctx, _ := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now())
+			ctx.AddParam("username", tt.reqUsername)
+
+			h.FollowUser(ctx)
+
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
+
+			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
+			} else {
+				actualBody := test.GetResponseBody[message.ProfileResponse](t, w.Result())
+				assert.Equal(t, tt.expectedBody, actualBody, tt.title)
+
+				actualFollowing, err := h.us.IsFollowing(context.Background(), fooUser, barUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				assert.True(t, actualFollowing, tt.title)
+			}
+		}
 	})
 
 	t.Run("UnfollowUser", func(t *testing.T) {
 		fooUser := createRandomUser(t, lct.DB())
 		barUser := createRandomUser(t, lct.DB())
+		bazUser := createRandomUser(t, lct.DB())
 
 		err := h.us.Follow(context.Background(), fooUser, barUser)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expected := barUser.ResponseProfile(false)
-
-		apiUrl := fmt.Sprintf("/api/v1/profiles/%s/follow", barUser.Username)
-		req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
-
-		w := httptest.NewRecorder()
-		ctx, _ := ctxWithToken(t, lct.Environ(), w, req, fooUser.ID, time.Now())
-		ctx.AddParam("username", barUser.Username)
-
-		h.UnfollowUser(ctx)
-
-		var actual message.ProfileResponse
-		err = json.NewDecoder(w.Result().Body).Decode(&actual)
-		if err != nil {
-			t.Fatal(err)
+		tests := []struct {
+			title              string
+			reqUser            *model.User
+			reqUsername        string
+			expectedStatusCode int
+			expectedBody       message.ProfileResponse
+			expectedError      map[string]interface{}
+			hasError           bool
+		}{
+			{
+				"unfollow user: fooUser unfollows barUser",
+				fooUser,
+				barUser.Username,
+				http.StatusOK,
+				barUser.ResponseProfile(false),
+				nil,
+				false,
+			},
+			{
+				"unfollow user: wrong current user id",
+				&model.User{ID: 0},
+				barUser.Username,
+				http.StatusNotFound,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "current user not found"},
+				true,
+			},
+			{
+				"unfollow user: cannot unfollow yourself",
+				fooUser,
+				fooUser.Username,
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "cannot unfollow yourself"},
+				true,
+			},
+			{
+				"unfollow user: wrong username",
+				fooUser,
+				"unknown_user",
+				http.StatusNotFound,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "user not found"},
+				true,
+			},
+			{
+				"unfollow user: fooUser is not following bazUser",
+				fooUser,
+				bazUser.Username,
+				http.StatusBadRequest,
+				message.ProfileResponse{},
+				map[string]interface{}{"error": "you are not following this user"},
+				true,
+			},
 		}
-		defer w.Result().Body.Close()
 
-		actualFollowing, err := h.us.IsFollowing(context.Background(), fooUser, barUser)
-		if err != nil {
-			t.Fatal(err)
+		for _, tt := range tests {
+			apiUrl := fmt.Sprintf("/api/v1/profiles/%s/follow", tt.reqUsername)
+			req := httptest.NewRequest(http.MethodDelete, apiUrl, nil)
+
+			w := httptest.NewRecorder()
+			ctx, _ := ctxWithToken(t, lct.Environ(), w, req, tt.reqUser.ID, time.Now())
+			ctx.AddParam("username", tt.reqUsername)
+
+			h.UnfollowUser(ctx)
+
+			assert.Equal(t, tt.expectedStatusCode, w.Result().StatusCode, tt.title)
+
+			if tt.hasError {
+				actualBody := test.GetResponseBody[map[string]interface{}](t, w.Result())
+				assert.Equal(t, tt.expectedError, actualBody, tt.title)
+			} else {
+				actualBody := test.GetResponseBody[message.ProfileResponse](t, w.Result())
+				assert.Equal(t, tt.expectedBody, actualBody, tt.title)
+
+				actualFollowing, err := h.us.IsFollowing(context.Background(), fooUser, barUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				assert.False(t, actualFollowing, tt.title)
+			}
 		}
-
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, expected, actual)
-		assert.False(t, actualFollowing)
 	})
 }

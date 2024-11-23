@@ -52,13 +52,17 @@ paths:
       responses:
         "200":
           description: >
-            Successfully registered the new user.
-            The authentication is returned in cookie (session in cookie named `session` and refresh token in cookie named `refreshToken`). You need to include these two cookies in subsequent private requests.
+            Successfully registered the new user. The authentication is returned
+            in cookie (session in cookie named `session` and refresh token in
+            cookie named `refreshToken`). You need to include these two cookies
+            in subsequent private requests.
           headers:
             Set-Cookie:
               schema:
                 type: string
-                example: session=abcde12345; Path=/; HttpOnly; refreshToken=abcde12345; Path=/; HttpOnly
+                example: >-
+                  session=abcde12345; Path=/; HttpOnly; refreshToken=abcde12345;
+                  Path=/; HttpOnly
   /login:
     post:
       tags:
@@ -81,34 +85,44 @@ paths:
                   type: string
                   format: password
       responses:
-        "200":
+        "204":
           description: >
-            Successfully logged in the user.
-            The authentication is returned in cookie (session in cookie named `session` and refresh token in cookie named `refreshToken`). You need to include these two cookies in subsequent private requests.
+            Successfully logged in the user. The authentication is returned in
+            cookie (session in cookie named `session` and refresh token in
+            cookie named `refreshToken`). You need to include these two cookies
+            in subsequent private requests.
           headers:
             Set-Cookie:
               schema:
                 type: string
-                example: session=abcde12345; Path=/; HttpOnly; refreshToken=abcde12345; Path=/; HttpOnly
+                example: >-
+                  session=abcde12345; Path=/; HttpOnly; refreshToken=abcde12345;
+                  Path=/; HttpOnly
   /refresh_token:
     post:
       tags:
         - Auth
       summary: Refresh Token
-      description: Refreshes session with authentication in request headers and returns a new authentication in cookie.
+      description: >-
+        Refreshes session with authentication in request headers and returns a
+        new authentication in cookie.
       operationId: refreshToken
       security:
         - refreshAuth: []
       responses:
-        "200":
+        "204":
           description: >
-            Successfully refreshed authentication.
-            The authentication is returned in cookie (session in cookie named `session` and refresh token in cookie named `refreshToken`). You need to include these two cookies in subsequent private requests.
+            Successfully refreshed authentication. The authentication is
+            returned in cookie (session in cookie named `session` and refresh
+            token in cookie named `refreshToken`). You need to include these two
+            cookies in subsequent private requests.
           headers:
             Set-Cookie:
               schema:
                 type: string
-                example: session=abcde12345; Path=/; HttpOnly; refreshToken=abcde12345; Path=/; HttpOnly
+                example: >-
+                  session=abcde12345; Path=/; HttpOnly; refreshToken=abcde12345;
+                  Path=/; HttpOnly
   /me:
     get:
       tags:
@@ -118,7 +132,7 @@ paths:
       operationId: me
       responses:
         "200":
-          description: "A profile object"
+          description: A profile object
           content:
             application/json:
               schema:
@@ -163,7 +177,7 @@ paths:
                   format: uri
       responses:
         "200":
-          description: "A profile object"
+          description: A profile object
           content:
             application/json:
               schema:
@@ -189,7 +203,7 @@ paths:
       operationId: profile
       responses:
         "200":
-          description: "A profile object"
+          description: A profile object
           content:
             application/json:
               schema:
@@ -221,7 +235,7 @@ paths:
       operationId: followUser
       responses:
         "200":
-          description: "A profile object"
+          description: A profile object
           content:
             application/json:
               schema:
@@ -246,7 +260,7 @@ paths:
       operationId: unfollowUser
       responses:
         "200":
-          description: "A profile object"
+          description: A profile object
           content:
             application/json:
               schema:
@@ -301,7 +315,7 @@ paths:
             type: number
       responses:
         "200":
-          description: "List of article objects"
+          description: List of article objects
           content:
             application/json:
               schema:
@@ -375,7 +389,7 @@ paths:
                     type: string
       responses:
         "200":
-          description: "An article object"
+          description: An article object
           content:
             application/json:
               schema:
@@ -435,7 +449,7 @@ paths:
             type: number
       responses:
         "200":
-          description: "List of article objects"
+          description: List of article objects
           content:
             application/json:
               schema:
@@ -493,7 +507,7 @@ paths:
       operationId: articleBySlug
       responses:
         "200":
-          description: "An article object"
+          description: An article object
           content:
             application/json:
               schema:
@@ -555,7 +569,7 @@ paths:
                   type: string
       responses:
         "200":
-          description: "An article object"
+          description: An article object
           content:
             application/json:
               schema:
@@ -604,8 +618,8 @@ paths:
       description: Deletes an article by slug.
       operationId: deleteArticle
       responses:
-        "200":
-          description: "Successfully deleted the article."
+        "204":
+          description: Successfully deleted the article.
     parameters:
       - name: slug
         description: Article's id
@@ -622,7 +636,7 @@ paths:
       operationId: favoriteArticle
       responses:
         "200":
-          description: "An article object"
+          description: An article object
           content:
             application/json:
               schema:
@@ -672,7 +686,7 @@ paths:
       operationId: unfavoriteArticle
       responses:
         "200":
-          description: "An article object"
+          description: An article object
           content:
             application/json:
               schema:
@@ -781,7 +795,7 @@ paths:
                   type: string
       responses:
         "200":
-          description: "A comment object."
+          description: A comment object.
           content:
             application/json:
               schema:
@@ -826,8 +840,8 @@ paths:
       description: Deletes a comment from an article.
       operationId: deleteCommentFromArticle
       responses:
-        "200":
-          description: "Successfully deleted the comment."
+        "204":
+          description: Successfully deleted the comment.
     parameters:
       - name: slug
         description: Article's id

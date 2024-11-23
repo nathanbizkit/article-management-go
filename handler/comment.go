@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nathanbizkit/article-management/message"
@@ -14,9 +13,22 @@ import (
 func (h *Handler) CreateComment(ctx *gin.Context) {
 	h.logger.Info().Msg("create comment")
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
+	currentUser, err := h.GetCurrentUserFromContext(ctx)
+	if err != nil {
+		msg := "current user not found"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": msg})
+		return
+	}
 
-	slug := h.GetParamAsIDOrAbort(ctx, "slug")
+	slug, err := h.GetIDFromParam(ctx, "slug")
+	if err != nil {
+		msg := "invalid slug"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
+		return
+	}
+
 	article, err := h.as.GetByID(ctx.Request.Context(), slug)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", slug))
@@ -43,7 +55,7 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 	if err != nil {
 		err := fmt.Errorf("validation error: %w", err)
 		h.logger.Error().Err(err).Msg("validation error")
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -56,14 +68,21 @@ func (h *Handler) CreateComment(ctx *gin.Context) {
 	}
 
 	following := false
-	ctx.JSON(http.StatusOK, createdComment.ResponseComment(following))
+	ctx.AbortWithStatusJSON(http.StatusOK, createdComment.ResponseComment(following))
 }
 
 // GetComments gets comments of an article
 func (h *Handler) GetComments(ctx *gin.Context) {
 	h.logger.Info().Msg("get comments")
 
-	slug := h.GetParamAsIDOrAbort(ctx, "slug")
+	slug, err := h.GetIDFromParam(ctx, "slug")
+	if err != nil {
+		msg := "invalid slug"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
+		return
+	}
+
 	article, err := h.as.GetByID(ctx.Request.Context(), slug)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("article (slug=%d) not found", slug))
@@ -104,16 +123,37 @@ func (h *Handler) GetComments(ctx *gin.Context) {
 		resp = append(resp, c.ResponseComment(following))
 	}
 
-	ctx.JSON(http.StatusOK, message.CommentsResponse{Comments: resp})
+	ctx.AbortWithStatusJSON(http.StatusOK, message.CommentsResponse{Comments: resp})
 }
 
 // DeleteComment deletes a comment from an article
 func (h *Handler) DeleteComment(ctx *gin.Context) {
 	h.logger.Info().Msg("delete comment")
 
-	currentUser := h.GetCurrentUserOrAbort(ctx)
+	currentUser, err := h.GetCurrentUserFromContext(ctx)
+	if err != nil {
+		msg := "current user not found"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": msg})
+		return
+	}
 
-	id := h.GetParamAsIDOrAbort(ctx, "id")
+	slug, err := h.GetIDFromParam(ctx, "slug")
+	if err != nil {
+		msg := "invalid slug"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
+		return
+	}
+
+	id, err := h.GetIDFromParam(ctx, "id")
+	if err != nil {
+		msg := "invalid comment id"
+		h.logger.Error().Err(err).Msg(msg)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
+		return
+	}
+
 	comment, err := h.as.GetCommentByID(ctx.Request.Context(), id)
 	if err != nil {
 		h.logger.Error().Err(err).Msg(fmt.Sprintf("comment (id=%d) not found", id))
@@ -121,7 +161,7 @@ func (h *Handler) DeleteComment(ctx *gin.Context) {
 		return
 	}
 
-	if ctx.Param("slug") != strconv.Itoa(int(comment.ArticleID)) {
+	if slug != comment.ArticleID {
 		msg := "the comment is not from this article"
 		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
@@ -147,5 +187,5 @@ func (h *Handler) DeleteComment(ctx *gin.Context) {
 		return
 	}
 
-	ctx.AbortWithStatus(http.StatusOK)
+	ctx.AbortWithStatus(http.StatusNoContent)
 }
