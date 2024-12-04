@@ -1,4 +1,13 @@
-.PHONY: unittest integrationtest unitcoverage integrationcoverage testall coverage e2etest
+.PHONY: start stop restart unittest integrationtest unitcoverage integrationcoverage testall coverage e2etest
+
+start:
+	docker-compose up -d
+
+stop:
+	docker-compose down -v
+
+restart:
+	docker-compose restart
 
 unittest:
 	go test -v ./... -short

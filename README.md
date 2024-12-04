@@ -18,7 +18,7 @@ API endpoints: checking out `swagger.json` file in `doc/swagger/v1` with [swagge
    2. Update `ports` in `app` service to reflect the ports in env file.
    3. If TLS is enabled, update `app` volumes to bind to your certificate folder location.
 4. If you change app ports from anything other than `8000` and `8443`, you need to update `Dockerfile` to expose those ports correctly.
-5. Start by running `docker-compose up -d --build` and stop by running `docker-compose down -v`.
+5. Start by running `make start` and stop by running `make stop`.
 
 ### Testing
 
@@ -36,8 +36,9 @@ make coverage
 
 # e2e
 # Set --ssl-client-cert in e2e/run-api-tests.sh first
-docker-compose up -d
+make start
 make e2etest
+make stop
 ```
 
 ## TODOs
