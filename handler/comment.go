@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/message"
-	"github.com/nathanbizkit/article-management/model"
+	"github.com/nathanbizkit/article-management-go/message"
+	"github.com/nathanbizkit/article-management-go/model"
 )
 
 // CreateComment creates a comment

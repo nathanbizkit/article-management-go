@@ -1,4 +1,4 @@
-module github.com/nathanbizkit/article-management
+module github.com/nathanbizkit/article-management-go
 
 go 1.23.1
 

@@ -1,4 +1,4 @@
-# Article Management System
+# Article Management System (Go)
 
 ## Getting Started
 

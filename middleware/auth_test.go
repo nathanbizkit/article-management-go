@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/auth"
-	"github.com/nathanbizkit/article-management/test"
+	"github.com/nathanbizkit/article-management-go/auth"
+	"github.com/nathanbizkit/article-management-go/test"
 	"github.com/stretchr/testify/assert"
 )
 

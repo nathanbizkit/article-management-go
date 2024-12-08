@@ -12,12 +12,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nanmu42/gzip"
-	"github.com/nathanbizkit/article-management/auth"
-	"github.com/nathanbizkit/article-management/db"
-	"github.com/nathanbizkit/article-management/env"
-	"github.com/nathanbizkit/article-management/handler"
-	"github.com/nathanbizkit/article-management/middleware"
-	"github.com/nathanbizkit/article-management/store"
+	"github.com/nathanbizkit/article-management-go/auth"
+	"github.com/nathanbizkit/article-management-go/db"
+	"github.com/nathanbizkit/article-management-go/env"
+	"github.com/nathanbizkit/article-management-go/handler"
+	"github.com/nathanbizkit/article-management-go/middleware"
+	"github.com/nathanbizkit/article-management-go/store"
 	"github.com/rs/zerolog"
 )
 

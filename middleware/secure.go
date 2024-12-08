@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/env"
+	"github.com/nathanbizkit/article-management-go/env"
 	"github.com/unrolled/secure"
 )
 

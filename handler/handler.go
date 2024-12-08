@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"github.com/nathanbizkit/article-management/auth"
-	"github.com/nathanbizkit/article-management/env"
-	"github.com/nathanbizkit/article-management/store"
+	"github.com/nathanbizkit/article-management-go/auth"
+	"github.com/nathanbizkit/article-management-go/env"
+	"github.com/nathanbizkit/article-management-go/store"
 	"github.com/rs/zerolog"
 )
 

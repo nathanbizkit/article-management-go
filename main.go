@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/nathanbizkit/article-management/server"
+	"github.com/nathanbizkit/article-management-go/server"
 	_ "go.uber.org/automaxprocs"
 )
 

@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/model"
+	"github.com/nathanbizkit/article-management-go/model"
 )
 
 // GetCurrentUserFromContext returns current auth user

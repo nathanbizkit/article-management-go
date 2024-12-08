@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/nathanbizkit/article-management/db"
-	"github.com/nathanbizkit/article-management/model"
+	"github.com/nathanbizkit/article-management-go/db"
+	"github.com/nathanbizkit/article-management-go/model"
 )
 
 // ArticleStore is a data access struct for articles

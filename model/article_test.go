@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanbizkit/article-management/message"
+	"github.com/nathanbizkit/article-management-go/message"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/nathanbizkit/article-management/env"
-	"github.com/nathanbizkit/article-management/test"
+	"github.com/nathanbizkit/article-management-go/env"
+	"github.com/nathanbizkit/article-management-go/test"
 	"github.com/stretchr/testify/assert"
 )
 

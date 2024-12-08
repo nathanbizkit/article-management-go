@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "6bed5be9-50ae-425a-b445-530b0821831c",
     "name": "ArticleManagementSystem",
-    "description": "Collection of tests for the article management system API.\n\n[https://github.com/nathanbizkit/article-management](https://github.com/nathanbizkit/article-management)",
+    "description": "Collection of tests for the article management system API.\n\n[https://github.com/nathanbizkit/article-management-go](https://github.com/nathanbizkit/article-management-go)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "1971676"
   },

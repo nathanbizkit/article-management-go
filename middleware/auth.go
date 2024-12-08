@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/auth"
+	"github.com/nathanbizkit/article-management-go/auth"
 	"github.com/rs/zerolog"
 )
 

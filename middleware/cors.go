@@ -3,7 +3,7 @@ package middleware
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/env"
+	"github.com/nathanbizkit/article-management-go/env"
 )
 
 // CORS attaches cors middleware to http engine

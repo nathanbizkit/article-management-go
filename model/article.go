@@ -6,7 +6,7 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/nathanbizkit/article-management/message"
+	"github.com/nathanbizkit/article-management-go/message"
 )
 
 const (

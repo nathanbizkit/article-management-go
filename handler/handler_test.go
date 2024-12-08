@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/auth"
-	"github.com/nathanbizkit/article-management/env"
-	"github.com/nathanbizkit/article-management/model"
-	"github.com/nathanbizkit/article-management/store"
-	"github.com/nathanbizkit/article-management/test"
-	"github.com/nathanbizkit/article-management/test/container"
+	"github.com/nathanbizkit/article-management-go/auth"
+	"github.com/nathanbizkit/article-management-go/env"
+	"github.com/nathanbizkit/article-management-go/model"
+	"github.com/nathanbizkit/article-management-go/store"
+	"github.com/nathanbizkit/article-management-go/test"
+	"github.com/nathanbizkit/article-management-go/test/container"
 )
 
 const userPassword = "P@55w0rD!"

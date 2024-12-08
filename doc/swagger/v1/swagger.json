@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Article Management System",
-    "description": "Collection of tests for the article management system API.\n\n[https://github.com/nathanbizkit/article-management](https://github.com/nathanbizkit/article-management)",
+    "description": "Collection of tests for the article management system API.\n\n[https://github.com/nathanbizkit/article-management-go](https://github.com/nathanbizkit/article-management-go)",
     "version": "1.0.0",
     "contact": {}
   },

@@ -13,8 +13,8 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/nathanbizkit/article-management/env"
-	"github.com/nathanbizkit/article-management/util"
+	"github.com/nathanbizkit/article-management-go/env"
+	"github.com/nathanbizkit/article-management-go/util"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 )

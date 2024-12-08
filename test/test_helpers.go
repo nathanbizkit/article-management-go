@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanbizkit/article-management/env"
-	"github.com/nathanbizkit/article-management/test/container"
+	"github.com/nathanbizkit/article-management-go/env"
+	"github.com/nathanbizkit/article-management-go/test/container"
 	"github.com/rs/zerolog"
 )
 

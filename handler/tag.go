@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/message"
+	"github.com/nathanbizkit/article-management-go/message"
 )
 
 // GetTags returns all of tags

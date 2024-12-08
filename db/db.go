@@ -7,7 +7,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/nathanbizkit/article-management/env"
+	"github.com/nathanbizkit/article-management-go/env"
 )
 
 // New returns a database pool connection

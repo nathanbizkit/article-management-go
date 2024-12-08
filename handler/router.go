@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/nathanbizkit/article-management/middleware"
+	"github.com/nathanbizkit/article-management-go/middleware"
 )
 
 const APIGroupPath = "/api/v1"

@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanbizkit/article-management/db"
-	"github.com/nathanbizkit/article-management/model"
+	"github.com/nathanbizkit/article-management-go/db"
+	"github.com/nathanbizkit/article-management-go/model"
 )
 
 // UserStore is a data access struct for users
