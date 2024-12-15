@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	tokenTTL     = 72 * time.Hour
+	tokenTTL     = 3 * (24 * time.Hour)
 	refreshTTL   = 7 * (24 * time.Hour)
 	cookieMaxAge = 5 * (24 * time.Hour)
 )
