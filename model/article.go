@@ -21,7 +21,7 @@ type Tag struct {
 	ID        uint
 	Name      string
 	CreatedAt time.Time
-	UpdatedAt *time.Time
+	UpdatedAt time.Time
 }
 
 // Article model
