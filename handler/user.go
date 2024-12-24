@@ -32,7 +32,7 @@ func (h *Handler) Login(ctx *gin.Context) {
 	if !user.CheckPassword(req.Password) {
 		msg := "invalid password"
 		err := fmt.Errorf("password (%s) is not matched", req.Password)
-		h.logger.Error().Err(err).Msgf(msg)
+		h.logger.Error().Err(err).Msg(msg)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
 	}
