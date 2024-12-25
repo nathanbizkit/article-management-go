@@ -53,7 +53,7 @@ func TestUnit_AuthMiddleware(t *testing.T) {
 					{
 						Name:     "session",
 						Value:    url.QueryEscape(token.Token),
-						MaxAge:   int((5 * (24 * time.Hour)).Seconds()),
+						MaxAge:   int((7 * (24 * time.Hour)).Seconds()),
 						Path:     "/api/v1",
 						Domain:   environ.AuthCookieDomain,
 						SameSite: http.SameSiteStrictMode,

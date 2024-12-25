@@ -13,8 +13,8 @@ import (
 
 const (
 	tokenTTL     = 3 * (24 * time.Hour)
-	refreshTTL   = 7 * (24 * time.Hour)
-	cookieMaxAge = 5 * (24 * time.Hour)
+	refreshTTL   = 5 * (24 * time.Hour)
+	cookieMaxAge = 7 * (24 * time.Hour)
 )
 
 type claims struct {

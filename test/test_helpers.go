@@ -85,7 +85,7 @@ func AddCookieToRequest(t *testing.T, req *http.Request, name, value, domain str
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    url.QueryEscape(value),
-		MaxAge:   int((5 * (24 * time.Hour)).Seconds()),
+		MaxAge:   int((7 * (24 * time.Hour)).Seconds()),
 		Path:     "/api/v1",
 		Domain:   domain,
 		SameSite: http.SameSiteStrictMode,
@@ -105,7 +105,7 @@ func AddCookieToResponse(t *testing.T, w http.ResponseWriter, name, value, domai
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    url.QueryEscape(value),
-		MaxAge:   int((5 * (24 * time.Hour)).Seconds()),
+		MaxAge:   int((7 * (24 * time.Hour)).Seconds()),
 		Path:     "/api/v1",
 		Domain:   domain,
 		SameSite: http.SameSiteStrictMode,
