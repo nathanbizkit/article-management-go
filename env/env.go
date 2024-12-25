@@ -15,7 +15,6 @@ type ENV struct {
 	TLSKeyFile         string   `mapstructure:"TLS_KEY_FILE"`
 	CORSAllowedOrigins []string `mapstructure:"CORS_ALLOWED_ORIGINS"`
 	AuthJWTSecretKey   string   `mapstructure:"AUTH_JWT_SECRET_KEY"`
-	AuthCookieDomain   string   `mapstructure:"AUTH_COOKIE_DOMAIN"`
 	DBUser             string   `mapstructure:"DB_USER"`
 	DBPass             string   `mapstructure:"DB_PASS"`
 	DBHost             string   `mapstructure:"DB_HOST"`
@@ -51,7 +50,6 @@ func Parse(envFile string) (*ENV, error) {
 	viper.SetDefault("TLS_KEY_FILE", "")
 	viper.SetDefault("CORS_ALLOWED_ORIGINS", "*")
 	viper.SetDefault("AUTH_JWT_SECRET_KEY", "")
-	viper.SetDefault("AUTH_COOKIE_DOMAIN", "localhost")
 	viper.SetDefault("DB_USER", "")
 	viper.SetDefault("DB_PASS", "")
 	viper.SetDefault("DB_HOST", "localhost")

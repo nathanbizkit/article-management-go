@@ -83,14 +83,8 @@ func TestUnit_Auth(t *testing.T) {
 			ctx.Request = &http.Request{
 				Header: make(http.Header),
 			}
-			test.AddCookieToRequest(
-				t, ctx.Request,
-				"session", token.Token, environ.AuthCookieDomain,
-			)
-			test.AddCookieToRequest(
-				t, ctx.Request,
-				"refreshToken", token.RefreshToken, environ.AuthCookieDomain,
-			)
+			test.AddCookieToRequest(t, ctx.Request, "session", token.Token)
+			test.AddCookieToRequest(t, ctx.Request, "refreshToken", token.RefreshToken)
 			return ctx
 		}
 
@@ -107,8 +101,8 @@ func TestUnit_Auth(t *testing.T) {
 			ctx.Request = &http.Request{
 				Header: make(http.Header),
 			}
-			test.AddCookieToRequest(t, ctx.Request, "session", "", environ.AuthCookieDomain)
-			test.AddCookieToRequest(t, ctx.Request, "refreshToken", "", environ.AuthCookieDomain)
+			test.AddCookieToRequest(t, ctx.Request, "session", "")
+			test.AddCookieToRequest(t, ctx.Request, "refreshToken", "")
 			return ctx
 		}
 
@@ -117,14 +111,8 @@ func TestUnit_Auth(t *testing.T) {
 			ctx.Request = &http.Request{
 				Header: make(http.Header),
 			}
-			test.AddCookieToRequest(
-				t, ctx.Request,
-				"session", expiredToken.Token, environ.AuthCookieDomain,
-			)
-			test.AddCookieToRequest(
-				t, ctx.Request, "refreshToken",
-				expiredToken.RefreshToken, environ.AuthCookieDomain,
-			)
+			test.AddCookieToRequest(t, ctx.Request, "session", expiredToken.Token)
+			test.AddCookieToRequest(t, ctx.Request, "refreshToken", expiredToken.RefreshToken)
 			return ctx
 		}
 
@@ -133,14 +121,8 @@ func TestUnit_Auth(t *testing.T) {
 			ctx.Request = &http.Request{
 				Header: make(http.Header),
 			}
-			test.AddCookieToRequest(
-				t, ctx.Request,
-				"session", rsaToken, environ.AuthCookieDomain,
-			)
-			test.AddCookieToRequest(
-				t, ctx.Request,
-				"refreshToken", rsaToken, environ.AuthCookieDomain,
-			)
+			test.AddCookieToRequest(t, ctx.Request, "session", rsaToken)
+			test.AddCookieToRequest(t, ctx.Request, "refreshToken", rsaToken)
 			return ctx
 		}
 
@@ -149,14 +131,8 @@ func TestUnit_Auth(t *testing.T) {
 			ctx.Request = &http.Request{
 				Header: make(http.Header),
 			}
-			test.AddCookieToRequest(
-				t, ctx.Request,
-				"session", emptyClaimToken, environ.AuthCookieDomain,
-			)
-			test.AddCookieToRequest(
-				t, ctx.Request,
-				"refreshToken", emptyClaimToken, environ.AuthCookieDomain,
-			)
+			test.AddCookieToRequest(t, ctx.Request, "session", emptyClaimToken)
+			test.AddCookieToRequest(t, ctx.Request, "refreshToken", emptyClaimToken)
 			return ctx
 		}
 
@@ -303,8 +279,8 @@ func TestUnit_Auth(t *testing.T) {
 		}
 
 		w1 := httptest.NewRecorder()
-		test.AddCookieToResponse(t, w1, "session", token.Token, environ.AuthCookieDomain)
-		test.AddCookieToResponse(t, w1, "refreshToken", token.RefreshToken, environ.AuthCookieDomain)
+		test.AddCookieToResponse(t, w1, "session", token.Token)
+		test.AddCookieToResponse(t, w1, "refreshToken", token.RefreshToken)
 		expected := w1.Header().Get("Set-Cookie")
 
 		w2 := httptest.NewRecorder()

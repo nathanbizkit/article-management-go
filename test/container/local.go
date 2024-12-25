@@ -141,7 +141,6 @@ func NewLocalTestContainer() (*LocalTestContainer, error) {
 		AppPort:          strconv.Itoa(appPort),
 		AppTLSPort:       strconv.Itoa(appTLSPort),
 		AuthJWTSecretKey: "secretKey",
-		AuthCookieDomain: "localhost",
 		DBUser:           dbUser,
 		DBPass:           dbPass,
 		DBHost:           dbHostPort[0],

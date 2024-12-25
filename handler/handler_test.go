@@ -47,14 +47,8 @@ func ctxWithToken(t *testing.T, e *env.ENV, w http.ResponseWriter, req *http.Req
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request = req.Clone(context.Background())
 
-	test.AddCookieToRequest(
-		t, ctx.Request,
-		"session", token.Token, "localhost",
-	)
-	test.AddCookieToRequest(
-		t, ctx.Request,
-		"refreshToken", token.RefreshToken, "localhost",
-	)
+	test.AddCookieToRequest(t, ctx.Request, "session", token.Token)
+	test.AddCookieToRequest(t, ctx.Request, "refreshToken", token.RefreshToken)
 
 	authen.SetContextUserID(ctx, id)
 

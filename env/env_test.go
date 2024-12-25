@@ -33,7 +33,6 @@ func TestUnit_ENV(t *testing.T) {
 		TLS_KEY_FILE="/certs/localCA_unencrypted.key"
 		CORS_ALLOWED_ORIGINS=http://localhost:8000,https://localhost:8443
 		AUTH_JWT_SECRET_KEY=secret
-		AUTH_COOKIE_DOMAIN=localhost
 		DB_USER=root
 		DB_PASS=password
 		DB_HOST=db
@@ -68,7 +67,6 @@ func TestUnit_ENV(t *testing.T) {
 						"https://localhost:8443",
 					},
 					AuthJWTSecretKey: "secret",
-					AuthCookieDomain: "localhost",
 					DBUser:           "root",
 					DBPass:           "password",
 					DBHost:           "db",
@@ -93,7 +91,6 @@ func TestUnit_ENV(t *testing.T) {
 						"http://localhost:8000,https://localhost:8443",
 					)
 					t.Setenv("AUTH_JWT_SECRET_KEY", "secret")
-					t.Setenv("AUTH_COOKIE_DOMAIN", "localhost")
 					t.Setenv("DB_USER", "root")
 					t.Setenv("DB_PASS", "password")
 					t.Setenv("DB_HOST", "db")
@@ -111,7 +108,6 @@ func TestUnit_ENV(t *testing.T) {
 						"https://localhost:8443",
 					},
 					AuthJWTSecretKey: "secret",
-					AuthCookieDomain: "localhost",
 					DBUser:           "root",
 					DBPass:           "password",
 					DBHost:           "db",
@@ -133,7 +129,6 @@ func TestUnit_ENV(t *testing.T) {
 					t.Setenv("TLS_KEY_FILE", "/certs/localCA_unencrypted.key")
 					t.Setenv("CORS_ALLOWED_ORIGINS", "*")
 					t.Setenv("AUTH_JWT_SECRET_KEY", "secret")
-					t.Setenv("AUTH_COOKIE_DOMAIN", "localhost")
 					t.Setenv("DB_USER", "root")
 					t.Setenv("DB_PASS", "password")
 					t.Setenv("DB_HOST", "db")
@@ -148,7 +143,6 @@ func TestUnit_ENV(t *testing.T) {
 					TLSKeyFile:         "/certs/localCA_unencrypted.key",
 					CORSAllowedOrigins: []string{},
 					AuthJWTSecretKey:   "secret",
-					AuthCookieDomain:   "localhost",
 					DBUser:             "root",
 					DBPass:             "password",
 					DBHost:             "db",
@@ -173,7 +167,6 @@ func TestUnit_ENV(t *testing.T) {
 						"http://localhost:8000,https://localhost:8443",
 					)
 					t.Setenv("AUTH_JWT_SECRET_KEY", "secret")
-					t.Setenv("AUTH_COOKIE_DOMAIN", "localhost")
 					t.Setenv("DB_USER", "root")
 					t.Setenv("DB_PASS", "password")
 					t.Setenv("DB_HOST", "db")
@@ -197,7 +190,6 @@ func TestUnit_ENV(t *testing.T) {
 						"http://localhost:8000,https://localhost:8443",
 					)
 					t.Setenv("AUTH_JWT_SECRET_KEY", "secret")
-					t.Setenv("AUTH_COOKIE_DOMAIN", "localhost")
 					t.Setenv("DB_USER", "root")
 					t.Setenv("DB_PASS", "password")
 					t.Setenv("DB_HOST", "db")
@@ -221,7 +213,6 @@ func TestUnit_ENV(t *testing.T) {
 						"http://localhost:8000,https://localhost:8443",
 					)
 					t.Setenv("AUTH_JWT_SECRET_KEY", "secret")
-					t.Setenv("AUTH_COOKIE_DOMAIN", "localhost")
 					t.Setenv("DB_USER", "root")
 					t.Setenv("DB_PASS", "password")
 					t.Setenv("DB_HOST", "db")
@@ -245,7 +236,6 @@ func TestUnit_ENV(t *testing.T) {
 						"http://localhost:8000,https://localhost:8443",
 					)
 					t.Setenv("AUTH_JWT_SECRET_KEY", "")
-					t.Setenv("AUTH_COOKIE_DOMAIN", "localhost")
 					t.Setenv("DB_USER", "root")
 					t.Setenv("DB_PASS", "password")
 					t.Setenv("DB_HOST", "db")
@@ -269,7 +259,6 @@ func TestUnit_ENV(t *testing.T) {
 						"http://localhost:8000,https://localhost:8443",
 					)
 					t.Setenv("AUTH_JWT_SECRET_KEY", "secret")
-					t.Setenv("AUTH_COOKIE_DOMAIN", "localhost")
 					t.Setenv("DB_USER", "")
 					t.Setenv("DB_PASS", "password")
 					t.Setenv("DB_HOST", "db")
@@ -293,7 +282,6 @@ func TestUnit_ENV(t *testing.T) {
 						"http://localhost:8000,https://localhost:8443",
 					)
 					t.Setenv("AUTH_JWT_SECRET_KEY", "secret")
-					t.Setenv("AUTH_COOKIE_DOMAIN", "localhost")
 					t.Setenv("DB_USER", "root")
 					t.Setenv("DB_PASS", "")
 					t.Setenv("DB_HOST", "db")
@@ -317,7 +305,6 @@ func TestUnit_ENV(t *testing.T) {
 						"http://localhost:8000,https://localhost:8443",
 					)
 					t.Setenv("AUTH_JWT_SECRET_KEY", "secret")
-					t.Setenv("AUTH_COOKIE_DOMAIN", "localhost")
 					t.Setenv("DB_USER", "root")
 					t.Setenv("DB_PASS", "password")
 					t.Setenv("DB_HOST", "db")
@@ -357,7 +344,6 @@ func resetEnvironment(t *testing.T) {
 	t.Setenv("TLS_KEY_FILE", "")
 	t.Setenv("CORS_ALLOWED_ORIGINS", "")
 	t.Setenv("AUTH_JWT_SECRET_KEY", "")
-	t.Setenv("AUTH_COOKIE_DOMAIN", "")
 	t.Setenv("DB_USER", "")
 	t.Setenv("DB_PASS", "")
 	t.Setenv("DB_HOST", "")

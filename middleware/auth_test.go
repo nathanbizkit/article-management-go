@@ -55,7 +55,7 @@ func TestUnit_AuthMiddleware(t *testing.T) {
 						Value:    url.QueryEscape(token.Token),
 						MaxAge:   int((7 * (24 * time.Hour)).Seconds()),
 						Path:     "/api/v1",
-						Domain:   environ.AuthCookieDomain,
+						Domain:   "",
 						SameSite: http.SameSiteStrictMode,
 						Secure:   true,
 						HttpOnly: true,

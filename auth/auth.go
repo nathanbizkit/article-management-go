@@ -137,15 +137,20 @@ func (a *Auth) GetUserID(ctx *gin.Context, strictCookie, refresh bool) (uint, er
 
 // SetCookieToken sets a jwt token cookie in http header
 func (a *Auth) SetCookieToken(ctx *gin.Context, token AuthToken, path string) {
+	var host string
+	if ctx.Request != nil {
+		host = ctx.Request.Host
+	}
+
 	ctx.SetSameSite(http.SameSiteStrictMode)
 	ctx.SetCookie(
 		"session", token.Token,
 		int(cookieMaxAge.Seconds()),
-		path, a.environ.AuthCookieDomain, true, true,
+		path, host, true, true,
 	)
 	ctx.SetCookie(
 		"refreshToken", token.RefreshToken,
 		int(cookieMaxAge.Seconds()),
-		path, a.environ.AuthCookieDomain, true, true,
+		path, host, true, true,
 	)
 }

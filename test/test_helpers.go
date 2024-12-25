@@ -28,7 +28,6 @@ func NewTestENV(t *testing.T) *env.ENV {
 		AppPort:          "8000",
 		AppTLSPort:       "8443",
 		AuthJWTSecretKey: "secretkey",
-		AuthCookieDomain: "localhost",
 		DBUser:           "root",
 		DBPass:           "password",
 		DBHost:           "db_test",
@@ -79,7 +78,7 @@ func RandomString(t *testing.T, length int) string {
 }
 
 // AddCookieToRequest attaches a api-related cookie to request header
-func AddCookieToRequest(t *testing.T, req *http.Request, name, value, domain string) {
+func AddCookieToRequest(t *testing.T, req *http.Request, name, value string) {
 	t.Helper()
 
 	cookie := &http.Cookie{
@@ -87,7 +86,7 @@ func AddCookieToRequest(t *testing.T, req *http.Request, name, value, domain str
 		Value:    url.QueryEscape(value),
 		MaxAge:   int((7 * (24 * time.Hour)).Seconds()),
 		Path:     "/api/v1",
-		Domain:   domain,
+		Domain:   "",
 		SameSite: http.SameSiteStrictMode,
 		Secure:   true,
 		HttpOnly: true,
@@ -99,7 +98,7 @@ func AddCookieToRequest(t *testing.T, req *http.Request, name, value, domain str
 }
 
 // AddCookieToResponse attaches a api-related cookie to response header
-func AddCookieToResponse(t *testing.T, w http.ResponseWriter, name, value, domain string) {
+func AddCookieToResponse(t *testing.T, w http.ResponseWriter, name, value string) {
 	t.Helper()
 
 	cookie := &http.Cookie{
@@ -107,7 +106,7 @@ func AddCookieToResponse(t *testing.T, w http.ResponseWriter, name, value, domai
 		Value:    url.QueryEscape(value),
 		MaxAge:   int((7 * (24 * time.Hour)).Seconds()),
 		Path:     "/api/v1",
-		Domain:   domain,
+		Domain:   "",
 		SameSite: http.SameSiteStrictMode,
 		Secure:   true,
 		HttpOnly: true,
