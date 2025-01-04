@@ -4,9 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ~/certs:/certs
+      - /certs:/certs # set your path to certs as as in env
     env_file:
-      - env/local.env
+      - env/.env
     depends_on:
       db:
         condition: service_healthy
