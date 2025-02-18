@@ -7,8 +7,8 @@ import (
 
 const APIGroupPath = "/api/v1"
 
-// Route links handlers to http api router
-func Route(router *gin.Engine, h *Handler) {
+// LinkRouter links handlers to http api router
+func LinkRouter(router *gin.Engine, h *Handler) {
 	root := router.Group(APIGroupPath)
 	{
 		public := root.Group("")

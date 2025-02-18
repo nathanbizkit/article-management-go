@@ -62,12 +62,12 @@ func Start() {
 		router.Use(middleware.Secure(environ))
 	}
 
-	auth := auth.New(environ)
+	authen := auth.New(environ)
 	us := store.NewUserStore(dbPool)
 	as := store.NewArticleStore(dbPool)
-	h := handler.New(&l, environ, auth, us, as)
+	h := handler.New(&l, environ, authen, us, as)
 
-	handler.Route(router, h)
+	handler.LinkRouter(router, h)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
