@@ -97,13 +97,16 @@ func Start() {
 	stop()
 	l.Info().Msg("shutting down gracefully, press Ctrl+C again to force")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
 
 	err = dbPool.Close()
 	if err != nil {
 		l.Fatal().Err(err).Msg("failed to close database connection")
 	}
 
+	<-shutdownCtx.Done()
+
+	shutdownCancel()
 	l.Info().Msg("server exiting...")
 }

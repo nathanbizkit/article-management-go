@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"os"
 	"syscall"
 	"testing"
@@ -51,14 +50,12 @@ func TestIntegration_Server(t *testing.T) {
 		t.Setenv("DB_PORT", lct.Environ().DBPort)
 		t.Setenv("DB_NAME", lct.Environ().DBName)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		panicChan := make(chan bool, 0)
+		panicChan := make(chan bool)
 
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
+					// send panic true if it panicked
 					panicChan <- true
 					return
 				}
@@ -66,24 +63,19 @@ func TestIntegration_Server(t *testing.T) {
 
 			go Start()
 
-			for {
-				select {
-				case <-ctx.Done():
-					panicChan <- false
+			// send interrupt signal to Start()
+			time.Sleep(5 * time.Second)
+			syscall.Kill(os.Getpid(), syscall.SIGINT)
 
-					// send interrupt signal to Start()
-					syscall.Kill(os.Getpid(), syscall.SIGINT)
-					return
-				}
-			}
+			// send panic false if it's normal
+			time.Sleep(5 * time.Second)
+			panicChan <- false
 		}()
 
-		select {
-		case actual := <-panicChan:
-			// wait for server to shutdown
-			time.Sleep(5 * time.Second)
+		// wait for server to shutdown
+		time.Sleep(15 * time.Second)
 
-			assert.False(t, actual, "Start() must not panic")
-		}
+		actual := <-panicChan
+		assert.False(t, actual, "Start() must not panic")
 	})
 }
